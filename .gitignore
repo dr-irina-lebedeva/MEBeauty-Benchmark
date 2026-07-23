@@ -1,0 +1,33 @@
+# macOS
+.DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Secrets
+.env
+*.pem
+*.key
+
+# Local datasets
+data/*
+!data/README.md
+
+# Experiments and models
+outputs/
+checkpoints/
+wandb/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+
+# IDE
+.vscode/
+.idea/
