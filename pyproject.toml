@@ -7,7 +7,10 @@ authors = [
     { name = "Irina Lebedeva", email = "dr.irina.lebedeva@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "datasets>=5.0.0",
+    "huggingface-hub>=1.24.0",
+]
 
 [project.scripts]
 mebeauty-benchmark = "mebeauty_benchmark:main"
