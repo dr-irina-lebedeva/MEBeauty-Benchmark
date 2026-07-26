@@ -1,0 +1,287 @@
+{
+  "images_scored": 2547,
+  "identity_set": "vggface2",
+  "identity_count": 8631,
+  "method": "Max softmax over a celebrity-trained identity classifier, used as a ranking signal for human review. Does not name anyone and is not a determination -- see this script's docstring.",
+  "validation_known_public_figures": [
+    {
+      "image": "female/black/michelle-obama-1129160_1920.jpg",
+      "known_as": "Michelle Obama",
+      "rank": 573,
+      "percentile": 77.54,
+      "confidence": 0.111949
+    },
+    {
+      "image": "female/indian/deepika-padukone-2779557_1920.jpg",
+      "known_as": "Deepika Padukone",
+      "rank": 1055,
+      "percentile": 58.62,
+      "confidence": 0.079168
+    },
+    {
+      "image": "female/indian/aditi-rao-hydari-1748439_1920.jpg",
+      "known_as": "Aditi Rao Hydari",
+      "rank": 347,
+      "percentile": 86.42,
+      "confidence": 0.145079
+    }
+  ],
+  "confidence_distribution": {
+    "max": 0.802663,
+    "p99": 0.34231,
+    "p95": 0.221009,
+    "median": 0.069635
+  },
+  "top_ranked_for_review": [
+    {
+      "image": "male/caucasian/guy12.jpg",
+      "confidence": 0.802663,
+      "matched_identity_index": 4537
+    },
+    {
+      "image": "male/caucasian/man-67467_1920.jpg",
+      "confidence": 0.802663,
+      "matched_identity_index": 4537
+    },
+    {
+      "image": "male/asian/imansyah-muhamad-putera-n4KewLKFOZw-unsplash.jpg",
+      "confidence": 0.719722,
+      "matched_identity_index": 3633
+    },
+    {
+      "image": "male/caucasian/dima-dallacqua-4c23dXiYPhc-unsplash.jpg",
+      "confidence": 0.642879,
+      "matched_identity_index": 78
+    },
+    {
+      "image": "male/asian/pexels-min-an-1157461.jpg",
+      "confidence": 0.639164,
+      "matched_identity_index": 2473
+    },
+    {
+      "image": "male/mideastern/man-1129953_1920.jpg",
+      "confidence": 0.591438,
+      "matched_identity_index": 5737
+    },
+    {
+      "image": "male/caucasian/brazil-1368806_1920.jpg",
+      "confidence": 0.589231,
+      "matched_identity_index": 190
+    },
+    {
+      "image": "female/caucasian/redhead-1903320_1920.jpg",
+      "confidence": 0.550189,
+      "matched_identity_index": 849
+    },
+    {
+      "image": "female/caucasian/pexels-alina-schelkanova-4495746.jpg",
+      "confidence": 0.538224,
+      "matched_identity_index": 304
+    },
+    {
+      "image": "female/black/wadi-lissa-PnCTTH_mmYg-unsplash.jpg",
+      "confidence": 0.466252,
+      "matched_identity_index": 3499
+    },
+    {
+      "image": "female/asian/bin-thi-u-xOBpdqH2Uao-unsplash.jpg",
+      "confidence": 0.460649,
+      "matched_identity_index": 5698
+    },
+    {
+      "image": "male/black/pexels-nappy-936119.jpg",
+      "confidence": 0.446089,
+      "matched_identity_index": 5157
+    },
+    {
+      "image": "male/asian/pexels-cottonbro-5319510.jpg",
+      "confidence": 0.442728,
+      "matched_identity_index": 6602
+    },
+    {
+      "image": "female/asian/pexels-meijii-2014864.jpg",
+      "confidence": 0.433198,
+      "matched_identity_index": 724
+    },
+    {
+      "image": "female/black/oladimeji-odunsi-aU_eOcelLhQ-unsplash.jpg",
+      "confidence": 0.426601,
+      "matched_identity_index": 205
+    },
+    {
+      "image": "female/asian/woman-3951558_1920.jpg",
+      "confidence": 0.421388,
+      "matched_identity_index": 4247
+    },
+    {
+      "image": "female/hispanic/steven-aguilar-9kmy3mYHo6Y-unsplash.jpg",
+      "confidence": 0.417944,
+      "matched_identity_index": 3803
+    },
+    {
+      "image": "female/asian/pexels-tu\u1ea5n-ki\u1ec7t-jr-1391499.jpg",
+      "confidence": 0.409458,
+      "matched_identity_index": 4589
+    },
+    {
+      "image": "male/mideastern/pexels-ayaka-kato-2860892.jpg",
+      "confidence": 0.390387,
+      "matched_identity_index": 1764
+    },
+    {
+      "image": "female/mideastern/girl-1364014_1920.jpg",
+      "confidence": 0.380293,
+      "matched_identity_index": 8509
+    },
+    {
+      "image": "female/asian/d9.jpg",
+      "confidence": 0.369391,
+      "matched_identity_index": 1493
+    },
+    {
+      "image": "male/mideastern/thobe-805762_1920.jpg",
+      "confidence": 0.360379,
+      "matched_identity_index": 5730
+    },
+    {
+      "image": "female/asian/cris-trung-LRLxSTpq2Ds-unsplash.jpg",
+      "confidence": 0.353164,
+      "matched_identity_index": 1879
+    },
+    {
+      "image": "male/caucasian/max-bender-1uMdzWWCAJk-unsplash.jpg",
+      "confidence": 0.352584,
+      "matched_identity_index": 4179
+    },
+    {
+      "image": "male/caucasian/jd-mason-13_7xGYBb7c-unsplash.jpg",
+      "confidence": 0.348611,
+      "matched_identity_index": 2249
+    },
+    {
+      "image": "female/asian/cozies-tone-k4PSfwVsHIY-unsplash.jpg",
+      "confidence": 0.34231,
+      "matched_identity_index": 4474
+    },
+    {
+      "image": "female/asian/asian-2302727_1920.jpg",
+      "confidence": 0.341274,
+      "matched_identity_index": 7067
+    },
+    {
+      "image": "female/mideastern/pexels-fauzan-ahmad-muzakky-2698444.jpg",
+      "confidence": 0.338501,
+      "matched_identity_index": 7463
+    },
+    {
+      "image": "female/asian/42.jpg",
+      "confidence": 0.338224,
+      "matched_identity_index": 4459
+    },
+    {
+      "image": "female/mideastern/pexels-anubhaw-anand-3263992.jpg",
+      "confidence": 0.338108,
+      "matched_identity_index": 1879
+    },
+    {
+      "image": "male/asian/pexels-ba-phi-1339536.jpg",
+      "confidence": 0.333306,
+      "matched_identity_index": 1492
+    },
+    {
+      "image": "female/indian/agnieszka-kowalczyk-W0d-rh52NgE-unsplash.jpg",
+      "confidence": 0.331359,
+      "matched_identity_index": 5739
+    },
+    {
+      "image": "male/caucasian/benjamin-klaver-9oZc8FXHVAQ-unsplash.jpg",
+      "confidence": 0.330159,
+      "matched_identity_index": 5381
+    },
+    {
+      "image": "female/hispanic/rafaella-mendes-diniz-AoL-mVxprmk-unsplash.jpg",
+      "confidence": 0.321952,
+      "matched_identity_index": 3806
+    },
+    {
+      "image": "female/caucasian/girl-4930782_1920.jpg",
+      "confidence": 0.321519,
+      "matched_identity_index": 1490
+    },
+    {
+      "image": "female/indian/pexels-nandhu-kumar-2703082.jpg",
+      "confidence": 0.320837,
+      "matched_identity_index": 5458
+    },
+    {
+      "image": "male/black/pexels-oladimeji-ajegbile-2650090.jpg",
+      "confidence": 0.3203,
+      "matched_identity_index": 8215
+    },
+    {
+      "image": "male/asian/face-1223346_1920.jpg",
+      "confidence": 0.319733,
+      "matched_identity_index": 4588
+    },
+    {
+      "image": "male/black/karsten-winegeart-JfN0kpooAyw-unsplash.jpg",
+      "confidence": 0.316111,
+      "matched_identity_index": 1882
+    },
+    {
+      "image": "female/asian/europeana-m9LowiQVMLA-unsplash.jpg",
+      "confidence": 0.314477,
+      "matched_identity_index": 5698
+    },
+    {
+      "image": "female/hispanic/dollar-gill-qBhFwtGQGag-unsplash.jpg",
+      "confidence": 0.310299,
+      "matched_identity_index": 5440
+    },
+    {
+      "image": "male/indian/juanma-velasquez-JrNsKhB5aRQ-unsplash.jpg",
+      "confidence": 0.308806,
+      "matched_identity_index": 1494
+    },
+    {
+      "image": "female/mideastern/mohammad-khaksarmadani-4FDsNcCR8iQ-unsplash.jpg",
+      "confidence": 0.306118,
+      "matched_identity_index": 2274
+    },
+    {
+      "image": "female/asian/girl-1733349_1920.jpg",
+      "confidence": 0.30531,
+      "matched_identity_index": 4730
+    },
+    {
+      "image": "female/indian/charles-postiaux-J9vlgGgytC0-unsplash.jpg",
+      "confidence": 0.303359,
+      "matched_identity_index": 125
+    },
+    {
+      "image": "male/black/pexels-nappy-935969.jpg",
+      "confidence": 0.303066,
+      "matched_identity_index": 1951
+    },
+    {
+      "image": "female/hispanic/vinicius-amnx-amano-4mK2KVuYrDs-unsplash.jpg",
+      "confidence": 0.300121,
+      "matched_identity_index": 585
+    },
+    {
+      "image": "male/indian/yogendra-singh-DFyFd76t1NY-unsplash.jpg",
+      "confidence": 0.299206,
+      "matched_identity_index": 6507
+    },
+    {
+      "image": "male/indian/white-1513923_1920.jpg",
+      "confidence": 0.296582,
+      "matched_identity_index": 8255
+    },
+    {
+      "image": "male/caucasian/christian-buehner-rzXvU-H0u6U-unsplash.jpg",
+      "confidence": 0.295614,
+      "matched_identity_index": 2792
+    }
+  ]
+}

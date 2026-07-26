@@ -32,7 +32,14 @@ No images, embeddings, or annotations have been uploaded anywhere.
 > structurally have caught. That is direct evidence the screening method
 > (filename patterns) has a real, demonstrated blind spot, not a
 > reassurance that it's now thorough. Treat "3 found and removed" as a
-> floor, not a ceiling, until a visual/perceptual identity pass is done.
+> floor, not a ceiling.
+>
+> A perceptual screen has since been built and validated (Finding 18): it
+> ranks all three confirmed figures inside the top 19% of images, cutting a
+> visual review ~5x. It is **triage, not a detector** — it identifies nobody,
+> its validation rests on three examples, and VGGFace2's 8,631 identities are
+> a small, English-media-skewed fraction of all public figures. No method
+> available here supports claiming the dataset is free of public figures.
 
 ## Dataset summary
 

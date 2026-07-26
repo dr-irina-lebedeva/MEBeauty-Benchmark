@@ -977,6 +977,70 @@ the dominant lossy step, so lossless encoding would roughly quadruple the
 download (73MB -> ~325MB) to preserve detail the resample already removed.
 Native remains authoritative either way.
 
+## Finding 18 — perceptual public-figure screening: works, but only as triage
+
+Finding 13's screening was filename-based and provably incomplete — it cannot
+see an image whose filename carries no name, and 101 images have no filename
+signal at all. `scripts/data/screen_public_figures.py` screens the *pixels*
+instead, using `facenet-pytorch`'s InceptionResnetV1 classification head over
+VGGFace2's 8,631 identities (a dataset built by image-searching celebrities,
+so its classes are overwhelmingly public figures). Maximum softmax
+probability is used as a **ranking signal for human review** — it names
+nobody, because the class-index-to-name mapping is not published with the
+weights.
+
+**Validated against the three confirmed cases rather than assumed**, and the
+first attempt was wrong. Feeding the model raw resized crops performed close
+to chance; the VGGFace2 weights expect MTCNN-aligned faces, and adding that
+step changed the result substantially:
+
+| Confirmed figure | Rank, unaligned | Rank, MTCNN-aligned |
+|---|---|---|
+| Aditi Rao Hydari | 347 (top 13.6%) | **3 (top 0.1%)** |
+| Michelle Obama | 573 (top 22.5%) | **255 (top 10.0%)** |
+| Deepika Padukone | 1,055 (top 41.4%) | **478 (top 18.7%)** |
+
+Catching all three requires reviewing the top **478 of 2,546** — a roughly
+**5x reduction** in human review effort versus looking at everything. That is
+genuinely useful triage, and it is not a detector.
+
+**Limits, stated because they bound what this can support:**
+
+- **n = 3.** The "top 19% catches everything" figure rests on three known
+  positives, two of which are stylized digital paintings rather than
+  photographs. The error bars are enormous.
+- **VGGFace2's 8,631 identities are a small fraction of all public figures**,
+  and skew toward English-language media. A regionally famous person absent
+  from that set scores low regardless.
+- **High confidence is not identification.** The top two ranked images are the
+  same photograph of an unidentified male model under two filenames
+  (byte-identical, correctly collapsed in v3 — they appear twice only because
+  the screen runs over the legacy snapshot's 2,547 paths).
+
+**Conclusion**: this replaces "review 2,547 images" with "review the top few
+hundred", which makes a visual pass tractable. It does not license a claim
+that the dataset is free of public figures, and no such claim should be made.
+Reports: `reports/legacy_audit/public_figure_screen{,_aligned}.json`.
+
+## Finding 19 — roughly 1.7% of images contain a second face
+
+MTCNN with `keep_all=True` over a 300-image random sample found **5 images
+(1.7%, extrapolating to ~43 of 2,547) with two or more faces detected above
+0.95 confidence** — e.g. `female/mideastern/hamid-tajik-QXbJ3yhMNK4-unsplash.jpg`,
+which shows two women together and ranked 4th in Finding 18's screen.
+
+This creates an ambiguity the dataset does not record: **when an image
+contains two faces, which one does the rating describe, and which one did the
+crop pipeline select?** The legacy pipeline kept a single crop per file with
+no record of which detection it chose, so a rating for a two-person photo
+cannot be attributed to a specific face. The gender/ethnicity label has the
+same problem.
+
+Reported, not resolved. Quantifying it exactly (rather than from a 300-image
+sample) and deciding whether such images should be excluded or re-cropped is
+a judgement call, and it interacts with Finding 17: these are already crops,
+so "re-crop the correct face" is not available from the released pixels.
+
 ## Recovery summary
 
 After the recovery work in Findings 3–4, coverage across the full 2,547

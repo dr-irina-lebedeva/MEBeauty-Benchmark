@@ -1,0 +1,287 @@
+{
+  "images_scored": 2546,
+  "identity_set": "vggface2",
+  "identity_count": 8631,
+  "method": "Max softmax over a celebrity-trained identity classifier, used as a ranking signal for human review. Does not name anyone and is not a determination -- see this script's docstring.",
+  "validation_known_public_figures": [
+    {
+      "image": "female/black/michelle-obama-1129160_1920.jpg",
+      "known_as": "Michelle Obama",
+      "rank": 255,
+      "percentile": 90.02,
+      "confidence": 0.158074
+    },
+    {
+      "image": "female/indian/deepika-padukone-2779557_1920.jpg",
+      "known_as": "Deepika Padukone",
+      "rank": 478,
+      "percentile": 81.26,
+      "confidence": 0.118021
+    },
+    {
+      "image": "female/indian/aditi-rao-hydari-1748439_1920.jpg",
+      "known_as": "Aditi Rao Hydari",
+      "rank": 3,
+      "percentile": 99.92,
+      "confidence": 0.730995
+    }
+  ],
+  "confidence_distribution": {
+    "max": 0.771945,
+    "p99": 0.301109,
+    "p95": 0.198918,
+    "median": 0.064569
+  },
+  "top_ranked_for_review": [
+    {
+      "image": "male/caucasian/guy12.jpg",
+      "confidence": 0.771945,
+      "matched_identity_index": 4537
+    },
+    {
+      "image": "male/caucasian/man-67467_1920.jpg",
+      "confidence": 0.771945,
+      "matched_identity_index": 4537
+    },
+    {
+      "image": "female/indian/aditi-rao-hydari-1748439_1920.jpg",
+      "confidence": 0.730995,
+      "matched_identity_index": 74
+    },
+    {
+      "image": "female/mideastern/hamid-tajik-QXbJ3yhMNK4-unsplash.jpg",
+      "confidence": 0.614208,
+      "matched_identity_index": 2274
+    },
+    {
+      "image": "male/asian/pexels-min-an-1157461.jpg",
+      "confidence": 0.591681,
+      "matched_identity_index": 2473
+    },
+    {
+      "image": "male/caucasian/mehmet-turgut-kirkgoz-GHks3u7dzcc-unsplash.jpg",
+      "confidence": 0.448533,
+      "matched_identity_index": 4537
+    },
+    {
+      "image": "female/mideastern/yogendra-singh-AlpBsZF_uXM-unsplash.jpg",
+      "confidence": 0.436673,
+      "matched_identity_index": 6259
+    },
+    {
+      "image": "female/asian/pexels-rodnae-productions-4920897.jpg",
+      "confidence": 0.428135,
+      "matched_identity_index": 4903
+    },
+    {
+      "image": "female/hispanic/conner-ching-b9833srFlac-unsplash.jpg",
+      "confidence": 0.417134,
+      "matched_identity_index": 1011
+    },
+    {
+      "image": "female/caucasian/girl-3848191_1920.jpg",
+      "confidence": 0.407102,
+      "matched_identity_index": 4493
+    },
+    {
+      "image": "male/black/clem-onojeghuo-f1_w7Wrnabg-unsplash.jpg",
+      "confidence": 0.391873,
+      "matched_identity_index": 4050
+    },
+    {
+      "image": "male/caucasian/brazil-1368806_1920.jpg",
+      "confidence": 0.390282,
+      "matched_identity_index": 190
+    },
+    {
+      "image": "male/asian/jiangxulei1990-U3G3ed8-BT4-unsplash.jpg",
+      "confidence": 0.380378,
+      "matched_identity_index": 2214
+    },
+    {
+      "image": "male/caucasian/143.jpg",
+      "confidence": 0.373981,
+      "matched_identity_index": 6529
+    },
+    {
+      "image": "male/hispanic/man-2482464_1920.jpg",
+      "confidence": 0.353201,
+      "matched_identity_index": 7953
+    },
+    {
+      "image": "female/caucasian/anton-malanin-lxEqRDB9Ng8-unsplash.jpg",
+      "confidence": 0.335067,
+      "matched_identity_index": 8289
+    },
+    {
+      "image": "female/caucasian/daniel-spase-s4bml9X2lVs-unsplash.jpg",
+      "confidence": 0.32965,
+      "matched_identity_index": 3078
+    },
+    {
+      "image": "male/asian/pexels-padli-pradana-3751857.jpg",
+      "confidence": 0.323099,
+      "matched_identity_index": 1146
+    },
+    {
+      "image": "female/caucasian/jj-jordan-t9tNNBEPwV0-unsplash.jpg",
+      "confidence": 0.320357,
+      "matched_identity_index": 2116
+    },
+    {
+      "image": "female/hispanic/patrick-gillespie-8j0CTWsImzo-unsplash.jpg",
+      "confidence": 0.319038,
+      "matched_identity_index": 1188
+    },
+    {
+      "image": "male/mideastern/arabs-618749_1920.jpg",
+      "confidence": 0.314881,
+      "matched_identity_index": 8014
+    },
+    {
+      "image": "male/black/hunter-newton-7eTWaJ4Ex8I-unsplash.jpg",
+      "confidence": 0.310063,
+      "matched_identity_index": 8139
+    },
+    {
+      "image": "female/asian/jim-flores-dE6c9RZoyL8-unsplash.jpg",
+      "confidence": 0.309616,
+      "matched_identity_index": 1521
+    },
+    {
+      "image": "male/indian/man-2933801_1920.jpg",
+      "confidence": 0.302083,
+      "matched_identity_index": 2030
+    },
+    {
+      "image": "male/indian/indian-3459541_1920.jpg",
+      "confidence": 0.301525,
+      "matched_identity_index": 7584
+    },
+    {
+      "image": "female/asian/42.jpg",
+      "confidence": 0.301109,
+      "matched_identity_index": 4459
+    },
+    {
+      "image": "male/caucasian/young-2807688_1920.jpg",
+      "confidence": 0.300651,
+      "matched_identity_index": 230
+    },
+    {
+      "image": "female/indian/yogendra-singh-Sx00bDu24_k-unsplash.jpg",
+      "confidence": 0.300216,
+      "matched_identity_index": 4366
+    },
+    {
+      "image": "female/caucasian/pexels-alina-schelkanova-4495746.jpg",
+      "confidence": 0.295779,
+      "matched_identity_index": 304
+    },
+    {
+      "image": "female/mideastern/mosoianu-bogdan-eY1_nQs9aNI-unsplash.jpg",
+      "confidence": 0.291439,
+      "matched_identity_index": 43
+    },
+    {
+      "image": "female/black/demorris-byrd-7Xqi7VLqfpA-unsplash.jpg",
+      "confidence": 0.287208,
+      "matched_identity_index": 1417
+    },
+    {
+      "image": "female/indian/indian-5033682_1920.jpg",
+      "confidence": 0.286343,
+      "matched_identity_index": 3720
+    },
+    {
+      "image": "male/black/alekzan-powell-5t5krHi1LQ8-unsplash.jpg",
+      "confidence": 0.285552,
+      "matched_identity_index": 4404
+    },
+    {
+      "image": "male/mideastern/pexels-hussein-altameemi-1678821.jpg",
+      "confidence": 0.282529,
+      "matched_identity_index": 3964
+    },
+    {
+      "image": "female/black/national-cancer-institute-duNbFJRhaJQ-unsplash.jpg",
+      "confidence": 0.282044,
+      "matched_identity_index": 3964
+    },
+    {
+      "image": "male/black/pexels-nappy-935969.jpg",
+      "confidence": 0.277848,
+      "matched_identity_index": 1951
+    },
+    {
+      "image": "female/black/cute-4721888_1920.jpg",
+      "confidence": 0.272523,
+      "matched_identity_index": 1987
+    },
+    {
+      "image": "female/mideastern/woman-1462682_1920.jpg",
+      "confidence": 0.271631,
+      "matched_identity_index": 564
+    },
+    {
+      "image": "female/black/smile-2072908_1920.jpg",
+      "confidence": 0.26789,
+      "matched_identity_index": 2745
+    },
+    {
+      "image": "male/asian/imansyah-muhamad-putera-n4KewLKFOZw-unsplash.jpg",
+      "confidence": 0.265734,
+      "matched_identity_index": 3633
+    },
+    {
+      "image": "female/indian/59.jpg",
+      "confidence": 0.261692,
+      "matched_identity_index": 5976
+    },
+    {
+      "image": "female/caucasian/remy_loz-K3YvfgwLHBs-unsplash.jpg",
+      "confidence": 0.260452,
+      "matched_identity_index": 6537
+    },
+    {
+      "image": "female/asian/girl-1741941_1920.jpg",
+      "confidence": 0.258833,
+      "matched_identity_index": 7791
+    },
+    {
+      "image": "female/indian/jennifer-marquez-9oLwI18NFfY-unsplash.jpg",
+      "confidence": 0.257194,
+      "matched_identity_index": 2093
+    },
+    {
+      "image": "female/indian/pexels-tima-miroshnichenko-5988665.jpg",
+      "confidence": 0.2556,
+      "matched_identity_index": 831
+    },
+    {
+      "image": "female/caucasian/fezbot2000-h_OTf7uvXuM-unsplash.jpg",
+      "confidence": 0.254572,
+      "matched_identity_index": 2339
+    },
+    {
+      "image": "female/asian/pexels-ike-louie-natividad-2709388.jpg",
+      "confidence": 0.254202,
+      "matched_identity_index": 5892
+    },
+    {
+      "image": "female/asian/girl-2894898_1920.jpg",
+      "confidence": 0.253837,
+      "matched_identity_index": 125
+    },
+    {
+      "image": "female/caucasian/sofia-kuniakina-GeAqNAWZ1d0-unsplash.jpg",
+      "confidence": 0.252494,
+      "matched_identity_index": 5120
+    },
+    {
+      "image": "male/indian/juanma-velasquez-JrNsKhB5aRQ-unsplash.jpg",
+      "confidence": 0.249724,
+      "matched_identity_index": 1494
+    }
+  ]
+}

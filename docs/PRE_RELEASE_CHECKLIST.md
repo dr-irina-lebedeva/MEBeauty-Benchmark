@@ -78,9 +78,16 @@ filename-based, and is **demonstrably incomplete**: the second pass found a
 case the first pass's own regex could not structurally have caught. Treat 3
 as a floor.
 
-Decide whether filename screening is acceptable for a gated research
-release, or whether a visual/perceptual identity pass is required first.
-This is a risk-appetite decision, not a technical one.
+A perceptual screen now exists (`scripts/data/screen_public_figures.py`,
+Finding 18) and is validated: MTCNN-aligned, it ranks all three confirmed
+figures inside the top 19%, cutting review effort ~5x. **It is triage, not a
+detector** — it names nobody, and its validation rests on n=3.
+
+Decide: review the top ~250-500 ranked images visually (a few hours, and the
+most defensible option available), or accept filename screening as
+sufficient for a gated research release. Either way the dataset card must
+keep saying the screen is incomplete — no method available here supports
+claiming otherwise.
 
 ### ☐ 1.3 Ship both rating tasks, or generic only?
 
