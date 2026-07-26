@@ -31,3 +31,4 @@ wandb/
 # IDE
 .vscode/
 .idea/
+reports/local/

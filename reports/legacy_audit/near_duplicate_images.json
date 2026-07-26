@@ -1,0 +1,12 @@
+{
+  "images_scanned": 2495,
+  "threshold": 20,
+  "near_duplicate_pair_count": 1,
+  "pairs": [
+    {
+      "image_id_a": "37eab20f6736a183ef1718d924224cad659fcfeb819e81b96de2f4df04503a6d",
+      "image_id_b": "fecc8e0005965b9667859fb9fd660bfc626d566b4cd1cec9542735a79ba2ceb6",
+      "hamming_distance": 16
+    }
+  ]
+}

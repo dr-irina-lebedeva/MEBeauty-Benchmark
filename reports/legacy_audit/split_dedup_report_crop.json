@@ -1,0 +1,231 @@
+{
+  "source_generation": "crop",
+  "priority_order": [
+    "train",
+    "test"
+  ],
+  "raw_row_count": 2056,
+  "counts": {
+    "train": 1418,
+    "test": 603
+  },
+  "existence_resolution": [],
+  "existence_resolution_summary": {
+    "relabeled": 0,
+    "ambiguous_dropped": 0,
+    "not_found_dropped": 0
+  },
+  "removed_for_exact_path_leakage": [],
+  "removed_for_content_duplicate_leakage": [
+    {
+      "path": "female/indian/pexels-ketut-subiyanto-4307688.jpg",
+      "normalized_image": "female/indian/pexels-ketut-subiyanto-4307688.jpg",
+      "sha256": "4b9923292bd2e2f4dc5aa2ad70eb57cd0b6245bcc698c255b632babf6c0c0fc7",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/caucasian/pexels-anna-shvets-4971982.jpg",
+      "normalized_image": "male/caucasian/pexels-anna-shvets-4971982.jpg",
+      "sha256": "dfc9cc419ec47ddd556390894765c853d93318f0f9ca34448569ff4f34570a21",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/caucasian/guy5.jpg",
+      "normalized_image": "male/caucasian/guy5.jpg",
+      "sha256": "548e7c8992cd289357de23c08c00b88cbda3415f29d8f28c5d0615729df929b8",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "female/indian/35.jpg",
+      "normalized_image": "female/indian/35.jpg",
+      "sha256": "75b15da46ad048570f5a8d68617328ea9233934d799c8eb6c201938241f6f5fc",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "female/indian/woman-5576751_1920.jpg",
+      "normalized_image": "female/indian/woman-5576751_1920.jpg",
+      "sha256": "8b76f9d33e9204ff3cb437757c4b22a0227b3532f08fbce000c0f7f14e22268c",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/caucasian/guy2.jpg",
+      "normalized_image": "male/caucasian/guy2.jpg",
+      "sha256": "08c374db85c60f39c37b96bc5154e5cf98d1f547e914c6627b2a85bda8ec47cc",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/caucasian/tobi-oshinnaike-Z7MKNGFnbOw-unsplash.jpg",
+      "normalized_image": "male/caucasian/tobi-oshinnaike-Z7MKNGFnbOw-unsplash.jpg",
+      "sha256": "b0f078665778164e12fbc87dab9023089e13ee08e39910486717d1779230a1e1",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/black/gift-habeshaw-KBv5dEN3QtY-unsplash(2).jpg",
+      "normalized_image": "male/black/gift-habeshaw-KBv5dEN3QtY-unsplash(2).jpg",
+      "sha256": "9e9b9894966819c6f7b0aa1631c6d9833cf72c7ca6c1671c61ddf1742dc5b154",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "female/black/52.jpg",
+      "normalized_image": "female/black/52.jpg",
+      "sha256": "297afaae4a630416013fb5a4194c3a9029f48798817cf8a8e787b93103ef9f64",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/black/pexels-moh-mckenzie-3597035.jpg",
+      "normalized_image": "male/black/pexels-moh-mckenzie-3597035.jpg",
+      "sha256": "e8fd62eeec15d81f0be50a10952b2e96683d3cb69cd434209ea6f8353db8bf39",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/caucasian/james-barr-G6ACpD4bPOw-unsplash.jpg",
+      "normalized_image": "male/caucasian/james-barr-G6ACpD4bPOw-unsplash.jpg",
+      "sha256": "867e1645c6865c9facc054185e1de449849173c060f1e3a7431a23d9bf56a4b5",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/caucasian/person-700003_1920.jpg",
+      "normalized_image": "male/caucasian/person-700003_1920.jpg",
+      "sha256": "406479de03e69aac2b9be89b6c8fdd915dc0119110b146ffc671dbb305f2f5a8",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "female/hispanic/26.jpg",
+      "normalized_image": "female/hispanic/26.jpg",
+      "sha256": "eaaef26460bd39fbd0bbcc5c294921fbebd3170a7f05dccef8e9c881c6f9c879",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "female/black/woman-868521_1920.jpg",
+      "normalized_image": "female/black/woman-868521_1920.jpg",
+      "sha256": "766a2e690868b7c27be72d0807620db5a8d760a2c2689a02354a1d1ce979a28c",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "female/asian/nathan-anderson-2nqji_XO20w-unsplash.jpg",
+      "normalized_image": "female/asian/nathan-anderson-2nqji_XO20w-unsplash.jpg",
+      "sha256": "6b7477a1da5b2e06babb9b2565b15c2be02ee73f240b9978510ab9edd6ab456a",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "female/caucasian/girl-3183050_1920.jpg",
+      "normalized_image": "female/caucasian/girl-3183050_1920.jpg",
+      "sha256": "122e8425a063c7d7f0e274071f10e9c258f85b6fecba91ffc939521a7ae66fb2",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/hispanic/g_12.jpg",
+      "normalized_image": "male/hispanic/g_12.jpg",
+      "sha256": "08305b6500b22f1c97cfc2e9cc282e4223ef2ccf2ec7a4b741da77d3fa033fcb",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/caucasian/sayo-garcia-n-LARjYGIeg-unsplash.jpg",
+      "normalized_image": "male/caucasian/sayo-garcia-n-LARjYGIeg-unsplash.jpg",
+      "sha256": "5fa61a234e10f39b47ab22456f2d3c81938c3f91cab823af24c1cc7f408e5bf4",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "female/caucasian/theo-rql-a4pyoiTdSqI-unsplash.jpg",
+      "normalized_image": "female/caucasian/theo-rql-a4pyoiTdSqI-unsplash.jpg",
+      "sha256": "2f1f04c5250828fabb1ed6d1fc0657c40060df60b535fdc2588291a54eec3327",
+      "dropped_from_split": "train"
+    },
+    {
+      "path": "male/black/fitness-465202_1920.jpg",
+      "normalized_image": "male/black/fitness-465202_1920.jpg",
+      "sha256": "d2090d1b0a02d295adef3f11c2b4a2a3f3ee53fc63a498050d0ceaa76023f595",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "male/caucasian/man-67467_1920.jpg",
+      "normalized_image": "male/caucasian/man-67467_1920.jpg",
+      "sha256": "20741dc6d32104e282cdebcb37cb6512633ed58e03f65380313bac874f1adeaa",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "male/caucasian/man-962563_1920.jpg",
+      "normalized_image": "male/caucasian/man-962563_1920.jpg",
+      "sha256": "978ee60d76fc72d19d995c5a8786aabf8b282f07f3266743d7ae434c593037c1",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "female/black/34.jpg",
+      "normalized_image": "female/black/34.jpg",
+      "sha256": "c703d20eb05a7e1410e14157923b00fe4095fe72ef9170fd072d2ab9560e0e77",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "male/hispanic/oosman-exptal-K2exjqPg3Zs-unsplash.jpg",
+      "normalized_image": "male/hispanic/oosman-exptal-K2exjqPg3Zs-unsplash.jpg",
+      "sha256": "4308d3aa7b8a533b29b7dfa7181fcc88d8562b2fb53ec5419e2fbb0cd9bc6615",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "male/asian/guy13.jpg",
+      "normalized_image": "male/asian/guy13.jpg",
+      "sha256": "0c7efc198dccfda026b9721ca782d97477733aa9b1cec8144fe601901093eaf6",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "male/black/guy6.jpg",
+      "normalized_image": "male/black/guy6.jpg",
+      "sha256": "a5764361a1f476beabf91e0e35712e5e45db21e7818c7244376ca7e5cec163e8",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "female/asian/51.jpg",
+      "normalized_image": "female/asian/51.jpg",
+      "sha256": "1d28d4283db8cf5632e2317f1f807aa9ef86e164b7e84abc3cdbd9818f774537",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "female/black/pexels-ogo-2434049.jpg",
+      "normalized_image": "female/black/pexels-ogo-2434049.jpg",
+      "sha256": "6e4ec9bcea740a9d33fcb61e69444347abeedfbd575dc651444c6e3a0767eb5f",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "female/black/39.jpg",
+      "normalized_image": "female/black/39.jpg",
+      "sha256": "23bf2da3fa353b453feec81504c334ad20fda057ea6f64ec64f26db6dd6ee3fe",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "female/asian/huu-chung-dang-lP02hkcp7H0-unsplash.jpg",
+      "normalized_image": "female/asian/huu-chung-dang-lP02hkcp7H0-unsplash.jpg",
+      "sha256": "594ce51246889b71748b9340983d1b5dc1168157fdd5c9901e9df258337a94a4",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "male/asian/guy4.jpg",
+      "normalized_image": "male/asian/guy4.jpg",
+      "sha256": "fa5991e4ba911962bb66d473c03e36876926ed818eb9f842ce30bdca244dfeae",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "male/caucasian/138.jpg",
+      "normalized_image": "male/caucasian/138.jpg",
+      "sha256": "d30e4e4dafc4a83433890efcea1bafee89a632633da47e8329513012afbb20ef",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "female/indian/f14.jpg",
+      "normalized_image": "female/indian/f14.jpg",
+      "sha256": "60c08ee07a443e34e8eefd6a4ffc9a71df0c6f5d960893014e6f0eaa9feb506d",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "female/indian/woman-3105856_1920.jpg",
+      "normalized_image": "female/indian/woman-3105856_1920.jpg",
+      "sha256": "3e60086bb3d5c19a09e9f292d84d95f4a7e9650dfb44e15f148a644f0aec23b1",
+      "dropped_from_split": "test"
+    },
+    {
+      "path": "male/caucasian/man-1242018_1920.jpg",
+      "normalized_image": "male/caucasian/man-1242018_1920.jpg",
+      "sha256": "b467c1f3d7b153010ad8899eb54c4f988d3458113e67691ff4cec1474e5b0d4e",
+      "dropped_from_split": "test"
+    }
+  ]
+}

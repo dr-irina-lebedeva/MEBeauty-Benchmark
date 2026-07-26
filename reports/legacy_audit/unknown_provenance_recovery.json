@@ -1,0 +1,17 @@
+{
+  "unknown_provenance_images": 101,
+  "images_with_provenance": 2394,
+  "unknown_images_successfully_read": 101,
+  "read_errors": [],
+  "embedded_metadata_hits": [],
+  "embedded_metadata_hit_count": 0,
+  "near_duplicate_threshold": 20,
+  "near_duplicate_matches": [],
+  "near_duplicate_match_count": 0,
+  "closest_distance_distribution": {
+    "min": 60,
+    "median": 92,
+    "max": 104
+  },
+  "conclusion": "Every automated route is exhausted for the unresolved images: no filename signal (by definition), no exact-duplicate inheritance (applied upstream), no embedded metadata, and no perceptual match within the validated threshold. Reverse image search is the only remaining route and requires uploading each file to a search service by hand -- it cannot be automated from this repository."
+}

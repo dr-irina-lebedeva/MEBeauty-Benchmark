@@ -1,0 +1,62 @@
+{
+  "root": "data/legacy_snapshot/original_images",
+  "conflict_count": 8,
+  "conflicts": [
+    {
+      "filename": "huu-chung-dang-lP02hkcp7H0-unsplash.jpg",
+      "label_paths": [
+        "female/asian/huu-chung-dang-lP02hkcp7H0-unsplash.jpg",
+        "female/indian/huu-chung-dang-lP02hkcp7H0-unsplash.jpg"
+      ]
+    },
+    {
+      "filename": "julian-florez-l5rmMuK8070-unsplash.jpg",
+      "label_paths": [
+        "female/hispanic/julian-florez-l5rmMuK8070-unsplash.jpg",
+        "female/mideastern/julian-florez-l5rmMuK8070-unsplash.jpg"
+      ]
+    },
+    {
+      "filename": "kunal-goswami-YHSohAq-PuI-unsplash.jpg",
+      "label_paths": [
+        "female/indian/kunal-goswami-YHSohAq-PuI-unsplash.jpg",
+        "female/mideastern/kunal-goswami-YHSohAq-PuI-unsplash.jpg"
+      ]
+    },
+    {
+      "filename": "pexels-anna-shvets-4971982.jpg",
+      "label_paths": [
+        "female/caucasian/pexels-anna-shvets-4971982.jpg",
+        "male/caucasian/pexels-anna-shvets-4971982.jpg"
+      ]
+    },
+    {
+      "filename": "pexels-moh-mckenzie-3597035.jpg",
+      "label_paths": [
+        "female/black/pexels-moh-mckenzie-3597035.jpg",
+        "male/black/pexels-moh-mckenzie-3597035.jpg"
+      ]
+    },
+    {
+      "filename": "raamin-ka-4lQmQ_DBbNc-unsplash.jpg",
+      "label_paths": [
+        "female/hispanic/raamin-ka-4lQmQ_DBbNc-unsplash.jpg",
+        "female/mideastern/raamin-ka-4lQmQ_DBbNc-unsplash.jpg"
+      ]
+    },
+    {
+      "filename": "shivam-singh-2_X6NMP-E_U-unsplash.jpg",
+      "label_paths": [
+        "male/indian/shivam-singh-2_X6NMP-E_U-unsplash.jpg",
+        "male/mideastern/shivam-singh-2_X6NMP-E_U-unsplash.jpg"
+      ]
+    },
+    {
+      "filename": "tobi-oshinnaike-Z7MKNGFnbOw-unsplash.jpg",
+      "label_paths": [
+        "male/black/tobi-oshinnaike-Z7MKNGFnbOw-unsplash.jpg",
+        "male/caucasian/tobi-oshinnaike-Z7MKNGFnbOw-unsplash.jpg"
+      ]
+    }
+  ]
+}
