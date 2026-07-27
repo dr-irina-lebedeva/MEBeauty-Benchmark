@@ -1017,26 +1017,32 @@ genuinely useful triage, and it is not a detector.
   (byte-identical, correctly collapsed in v3 — they appear twice only because
   the screen runs over the legacy snapshot's 2,547 paths).
 
-**The visual pass was then actually done, ranks 1-480** (contact sheets of
-the aligned ranking, reviewed in five batches). Result:
+**The visual pass was then actually done, ranks 1-672** — 26% of the image
+set, and well past the rank-478 threshold that provably contains every known
+positive. Reviewed as contact sheets in seven batches. Result:
 
 - All three known positives were independently spotted at their predicted
   ranks -- Aditi Rao Hydari at 3, Michelle Obama at 255, Deepika Padukone at
   478. That is end-to-end confirmation the pipeline surfaces real positives,
   not just that the numbers looked plausible.
-- **No additional public figures were recognised** in those 480 images. The
-  remainder read as stock and model photography.
+- **No additional public figures were recognised** in any of the 672 images.
+  Everything else read as stock and model photography. Ranks 481-672, i.e.
+  everything below the last known positive, produced nothing — consistent
+  with the density of public figures falling to zero past the validated
+  threshold, though 672 images is far too small a sample to call that
+  established.
 - One false positive worth noting: ranks 1 and 2 are the same photograph of
   an unidentified male model under two filenames. They are byte-identical and
   already collapsed in v3; they appear twice only because the screen runs
   over the legacy snapshot's 2,547 paths, not v3's 2,495 images.
 
-**This is a real but bounded result.** 480 of 2,546 images were reviewed --
-the range that provably contains all known positives -- and nothing new
-surfaced. What it does *not* establish: the reviewer's recognition skews
-heavily toward internationally famous people, so a regionally prominent
-person would likely pass unnoticed; and 2,066 lower-ranked images were not
-viewed at all.
+**This is a real but bounded result.** 672 of 2,546 images were reviewed and
+nothing new surfaced. What it does *not* establish: the reviewer's
+recognition skews heavily toward internationally famous people, so a
+regionally prominent person would likely pass unnoticed; and 1,874
+lower-ranked images were not viewed at all. Review was stopped at 672 on
+diminishing returns — 194 images past the last known positive yielded
+nothing — not because the remainder was cleared.
 
 **Conclusion**: this replaces "review 2,547 images" with "review the top few
 hundred", which makes a visual pass tractable -- and that pass has now been
@@ -1044,12 +1050,29 @@ run, finding nothing beyond the three already excluded. It does not license a
 claim that the dataset is free of public figures, and no such claim should be
 made. Reports: `reports/legacy_audit/public_figure_screen{,_aligned}.json`.
 
-## Finding 19 — roughly 1.7% of images contain a second face
+## Finding 19 — 25 rated images contain more than one face; 4 contain none
 
-MTCNN with `keep_all=True` over a 300-image random sample found **5 images
-(1.7%, extrapolating to ~43 of 2,547) with two or more faces detected above
-0.95 confidence** — e.g. `female/mideastern/hamid-tajik-QXbJ3yhMNK4-unsplash.jpg`,
-which shows two women together and ranked 4th in Finding 18's screen.
+Counted exactly across all 2,547 images
+(`scripts/data/count_faces_per_image.py`, MTCNN `keep_all=True`, confidence
+> 0.95), replacing an earlier 300-image sample that had over-estimated at
+1.7%:
+
+| Faces detected | Images |
+|---|---|
+| 0 | **4** |
+| 1 | 2,518 |
+| 2 | 24 |
+| 3 | **1** (`male/hispanic/betzy-arosemena-Mx15HMZGQzY-unsplash.jpg`) |
+
+**25 images (0.98%) contain two or more faces, and every one of them is
+rated** — 19 in `train`, 5 in `test`, 1 in `val`. So this is not a curiosity
+about unused files; it affects labels the benchmark is scored on. Example:
+`female/mideastern/hamid-tajik-QXbJ3yhMNK4-unsplash.jpg` shows two women
+together and ranked 4th in Finding 18's screen.
+
+A further **4 images have no face detectable at all** above that threshold,
+despite carrying gender, ethnicity and (where rated) an attractiveness
+score.
 
 This creates an ambiguity the dataset does not record: **when an image
 contains two faces, which one does the rating describe, and which one did the
@@ -1058,10 +1081,12 @@ no record of which detection it chose, so a rating for a two-person photo
 cannot be attributed to a specific face. The gender/ethnicity label has the
 same problem.
 
-Reported, not resolved. Quantifying it exactly (rather than from a 300-image
-sample) and deciding whether such images should be excluded or re-cropped is
-a judgement call, and it interacts with Finding 17: these are already crops,
-so "re-crop the correct face" is not available from the released pixels.
+Reported, not resolved: whether to exclude these 25, or accept the ambiguity
+and document it, is a judgement call about the benchmark's label quality. It
+interacts with Finding 17 — these are already crops, so "re-crop the intended
+face" is not available from the released pixels. The affected image list is
+in `reports/legacy_audit/faces_per_image.json`, so exclusion is a one-line
+filter if that is the decision.
 
 ## Recovery summary
 

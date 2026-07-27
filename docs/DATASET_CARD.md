@@ -40,10 +40,11 @@ No images, embeddings, or annotations have been uploaded anywhere.
 > its validation rests on three examples, and VGGFace2's 8,631 identities are
 > a small, English-media-skewed fraction of all public figures.
 >
-> That visual pass has been run over ranks 1-480 (the range provably
-> containing all three known cases). All three were re-identified at their
-> predicted ranks and **no additional public figures were recognised**. Still
-> not a guarantee: 2,066 lower-ranked images were not reviewed, and
+> That visual pass has been run over ranks 1-672 (26% of images, past the
+> rank-478 threshold containing all three known cases). All three were
+> re-identified at their predicted ranks and **no additional public figures
+> were recognised**. Still not a guarantee: 1,874 lower-ranked images were
+> not reviewed, and
 > recognition skews to internationally famous people. No method available
 > here supports claiming the dataset is free of public figures.
 
@@ -239,6 +240,11 @@ tables.
   down-weighted, for the reasons in Finding 14. An earlier version of this
   check used an "extreme mean" test that both false-positived engaged
   raters and missed the worst offenders; it has been replaced.
+- **25 rated images (0.98%) contain two or more faces**, and 4 contain no
+  detectable face at all (Finding 19). Where two people share a frame,
+  nothing records which face the rating, gender and ethnicity labels
+  describe. Affected images are listed in
+  `reports/legacy_audit/faces_per_image.json`.
 - Image provenance (source platform) is a filename-pattern inference;
   **101 of 2,495 images (4.0%) have no source link at all**.
   Use `inferred_photo_id`, not `inferred_source_url`, as the durable

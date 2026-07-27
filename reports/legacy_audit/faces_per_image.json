@@ -1,0 +1,217 @@
+{
+  "images_scanned": 2547,
+  "unreadable": [],
+  "confidence_threshold": 0.95,
+  "faces_per_image": {
+    "0": 4,
+    "1": 2518,
+    "2": 24,
+    "3": 1
+  },
+  "multi_face_count": 25,
+  "multi_face_fraction": 0.0098,
+  "zero_face_count": 4,
+  "multi_face_images": [
+    {
+      "image": "female/asian/faizfajer-VzmoR9Meu3w-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9998
+      ]
+    },
+    {
+      "image": "female/black/amevi-wisdom-wiUl_NyafcY-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.969
+      ]
+    },
+    {
+      "image": "female/black/mehmet-turgut-kirkgoz-2rVzuyCowLI-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9845
+      ]
+    },
+    {
+      "image": "female/black/national-cancer-institute-duNbFJRhaJQ-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        0.9999,
+        1.0
+      ]
+    },
+    {
+      "image": "female/caucasian/girl-4283996_1920.jpg",
+      "faces": 2,
+      "confidences": [
+        0.9999,
+        0.9833
+      ]
+    },
+    {
+      "image": "female/caucasian/klenova_tati-IvwxEUHpQ5Y-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9895
+      ]
+    },
+    {
+      "image": "female/caucasian/pexels-steven-arenas-620074.jpg",
+      "faces": 2,
+      "confidences": [
+        0.9999,
+        0.9843
+      ]
+    },
+    {
+      "image": "female/hispanic/omar-lopez-0-uzdU3gUYw-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        0.9879,
+        1.0
+      ]
+    },
+    {
+      "image": "female/indian/38.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9986
+      ]
+    },
+    {
+      "image": "female/indian/face-5677905_1920.jpg",
+      "faces": 2,
+      "confidences": [
+        0.9998,
+        0.9691
+      ]
+    },
+    {
+      "image": "female/indian/pexels-shubham-sharma-2912695.jpg",
+      "faces": 2,
+      "confidences": [
+        0.9705,
+        1.0
+      ]
+    },
+    {
+      "image": "female/indian/woman-5576751_1920.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9986
+      ]
+    },
+    {
+      "image": "female/mideastern/gustavo-lanes-neFlyoPfCRM-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "image": "female/mideastern/hamid-tajik-QXbJ3yhMNK4-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        0.9999,
+        1.0
+      ]
+    },
+    {
+      "image": "female/mideastern/joao-paulo-de-souza-oliveira-PK5HVHRWYa8-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9779
+      ]
+    },
+    {
+      "image": "female/mideastern/pexels-marlon-alves-3935356.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "image": "male/asian/people-1731137_1920.jpg",
+      "faces": 2,
+      "confidences": [
+        0.9997,
+        0.9999
+      ]
+    },
+    {
+      "image": "male/black/temitope-olukayode-bNl3lzD0LpU-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9555
+      ]
+    },
+    {
+      "image": "male/caucasian/aiony-haust-ybd0faxFuHE-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9832
+      ]
+    },
+    {
+      "image": "male/caucasian/dima-dallacqua-4c23dXiYPhc-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.982
+      ]
+    },
+    {
+      "image": "male/hispanic/betzy-arosemena-Mx15HMZGQzY-unsplash.jpg",
+      "faces": 3,
+      "confidences": [
+        1.0,
+        1.0,
+        0.9964
+      ]
+    },
+    {
+      "image": "male/hispanic/michele-seghieri-9cRe2YMORtc-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9998
+      ]
+    },
+    {
+      "image": "male/hispanic/national-cancer-institute-NNpo-liY5aU-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9927
+      ]
+    },
+    {
+      "image": "male/mideastern/mhrezaa-iOrq0FnSQTE-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "image": "male/mideastern/zabih-khan-SQWDVRdjp2E-unsplash.jpg",
+      "faces": 2,
+      "confidences": [
+        1.0,
+        0.9657
+      ]
+    }
+  ]
+}
