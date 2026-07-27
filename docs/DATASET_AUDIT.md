@@ -1017,10 +1017,32 @@ genuinely useful triage, and it is not a detector.
   (byte-identical, correctly collapsed in v3 — they appear twice only because
   the screen runs over the legacy snapshot's 2,547 paths).
 
+**The visual pass was then actually done, ranks 1-480** (contact sheets of
+the aligned ranking, reviewed in five batches). Result:
+
+- All three known positives were independently spotted at their predicted
+  ranks -- Aditi Rao Hydari at 3, Michelle Obama at 255, Deepika Padukone at
+  478. That is end-to-end confirmation the pipeline surfaces real positives,
+  not just that the numbers looked plausible.
+- **No additional public figures were recognised** in those 480 images. The
+  remainder read as stock and model photography.
+- One false positive worth noting: ranks 1 and 2 are the same photograph of
+  an unidentified male model under two filenames. They are byte-identical and
+  already collapsed in v3; they appear twice only because the screen runs
+  over the legacy snapshot's 2,547 paths, not v3's 2,495 images.
+
+**This is a real but bounded result.** 480 of 2,546 images were reviewed --
+the range that provably contains all known positives -- and nothing new
+surfaced. What it does *not* establish: the reviewer's recognition skews
+heavily toward internationally famous people, so a regionally prominent
+person would likely pass unnoticed; and 2,066 lower-ranked images were not
+viewed at all.
+
 **Conclusion**: this replaces "review 2,547 images" with "review the top few
-hundred", which makes a visual pass tractable. It does not license a claim
-that the dataset is free of public figures, and no such claim should be made.
-Reports: `reports/legacy_audit/public_figure_screen{,_aligned}.json`.
+hundred", which makes a visual pass tractable -- and that pass has now been
+run, finding nothing beyond the three already excluded. It does not license a
+claim that the dataset is free of public figures, and no such claim should be
+made. Reports: `reports/legacy_audit/public_figure_screen{,_aligned}.json`.
 
 ## Finding 19 — roughly 1.7% of images contain a second face
 

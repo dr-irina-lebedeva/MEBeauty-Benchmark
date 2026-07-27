@@ -38,8 +38,14 @@ No images, embeddings, or annotations have been uploaded anywhere.
 > ranks all three confirmed figures inside the top 19% of images, cutting a
 > visual review ~5x. It is **triage, not a detector** — it identifies nobody,
 > its validation rests on three examples, and VGGFace2's 8,631 identities are
-> a small, English-media-skewed fraction of all public figures. No method
-> available here supports claiming the dataset is free of public figures.
+> a small, English-media-skewed fraction of all public figures.
+>
+> That visual pass has been run over ranks 1-480 (the range provably
+> containing all three known cases). All three were re-identified at their
+> predicted ranks and **no additional public figures were recognised**. Still
+> not a guarantee: 2,066 lower-ranked images were not reviewed, and
+> recognition skews to internationally famous people. No method available
+> here supports claiming the dataset is free of public figures.
 
 ## Dataset summary
 
