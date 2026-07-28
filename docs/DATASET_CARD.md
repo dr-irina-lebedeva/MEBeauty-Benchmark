@@ -230,8 +230,8 @@ difference, not an error in either.
 `ratings/distributions.parquet` gives the **full distribution** of ratings per
 image, not just their mean: how many raters chose each point on the 1–10
 scale, as raw `counts` and as normalized `probabilities`. One row per
-(`image_id`, `rating_type`); 2,486 images have a `generic` distribution and
-2,485 a `date` one, minimum 9 ratings per image.
+(`image_id`, `rating_type`); 2,487 images have a `generic` distribution and
+2,485 a `date` one.
 
 This exists because attractiveness is genuinely contested and a single number
 hides that. The mean per-image rating **standard deviation is ≈2.0 points on a
@@ -340,7 +340,7 @@ tables.
   a content/consent issue. See the warning at the top of this card — the
   screening method has a demonstrated blind spot, this is not a complete
   identity check.
-- **52 of 831 raters (6.9% of ratings) show no discrimination** — their
+- **44 of 860 raters (5.3% of ratings) show no discrimination** — their
   scores are unrelated to (or inverted from) what the rest of the pool sees
   on the same images, including 4 who gave one identical score to every
   image they rated (Finding 14). Measured and shipped in

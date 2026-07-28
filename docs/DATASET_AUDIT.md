@@ -689,11 +689,13 @@ at spread +3.8 to +4.0.
 The obvious next step — exclude non-discriminating raters — was tested and
 rejected on the evidence:
 
-1. **No threshold is principled.** Across the 528 raters with ≥30 ratings,
-   discrimination spread is a smooth continuum from −8.71 to +7.56 (median
-   +2.33) with no bimodal gap. Every cutoff is arbitrary, and the cost swings
-   several-fold across equally defensible ones: spread ≤0 removes 52 raters
-   (6.90% of ratings), ≤0.5 removes 69 (11.76%), ≤1.0 removes 102 (18.82%).
+1. **No threshold is principled.** Across the 557 raters with ≥30 ratings,
+   discrimination spread is a smooth continuum from −8.44 to +7.96 (median
+   +2.38) with no bimodal gap. Every cutoff is arbitrary, and the cost swings
+   several-fold across equally defensible ones: spread ≤0 removes 44 raters
+   (5.34% of ratings), ≤0.5 removes 64 (10.48%), ≤1.0 removes 106 (18.17%).
+   (Figures updated after Finding 21 added the in-house panel; the shape of
+   the distribution — a gapless continuum — is unchanged.)
 2. **The impact is not marginal.** Applied honestly to *all* raters rather
    than only to the previously-flagged few, excluding spread ≤0 moves 576
    images' mean by >0.25 (max 1.10); at ≤1.0 it moves 1,119 images — roughly
@@ -716,7 +718,7 @@ larger non-discriminating raters entirely.
 
 ### What ships instead
 
-- `data/mebeauty_v3/ratings/by_rater/rater_quality.parquet` — all 831 raters
+- `data/mebeauty_v3/ratings/by_rater/rater_quality.parquet` — all 860 raters
   with `n_ratings`, `mean_score`, `std_score`, `n_with_consensus`,
   `discrimination_spread`, `loo_correlation`. Discrimination is null for the
   303 raters under the 30-rating minimum (too few per consensus tercile to
@@ -778,6 +780,11 @@ Their score distributions sit about a full point apart:
 |---|---|---|
 | `public_generic/*.xlsx` + `generic_scores_all.xlsx` | 60,046 | **6.00** |
 | `public_date/*.xlsx` | 63,131 | **5.01** |
+
+> Counts in this finding are as measured when it was written. Finding 21
+> later added the in-house panel: generic is now 68,974 (mean 5.86) and date
+> 72,762 (mean 4.80). The one-point gap between the two tasks — the point of
+> this finding — is unchanged.
 
 `build_ratings_by_rater.py` loaded both, then discarded the `source` column
 and wrote a single undifferentiated `score`. Two consequences:

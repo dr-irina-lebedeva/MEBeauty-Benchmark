@@ -28,8 +28,8 @@ Research Use Agreement's contracting party is unsupported.
 
 **This is new exposure the original release did not have.** The original
 published aggregate scores. v3 additionally ships
-`ratings/by_rater/ratings_by_rater.parquet` — 123,177 individual ratings
-attributable to 831 pseudonymous workers, from which per-worker behavioural
+`ratings/by_rater/ratings_by_rater.parquet` — 141,736 individual ratings
+attributable to 860 pseudonymous raters, from which per-rater behavioural
 patterns (mean, variance, discrimination) are directly derivable, and are in
 fact shipped in `rater_quality.parquet`.
 
@@ -92,9 +92,9 @@ claiming otherwise.
 ### ☐ 1.3 Ship both rating tasks, or generic only?
 
 Found 2026-07-26 (Finding 16). The collection ran **two different
-questions**: *generic* attractiveness (60,046 ratings, mean 6.00) and *date*
-attractiveness (63,131 ratings, mean 5.01). The canonical aggregate
-corresponds to **generic** (bias −0.06, correlation 0.966).
+questions**: *generic* attractiveness (68,974 ratings, mean 5.86) and *date*
+attractiveness (72,762 ratings, mean 4.80). **All aggregate labels are
+computed from `generic` only**; `date` never enters a label.
 
 Decide: ship both with `rating_type` (current state — richest, but users
 must be told to filter), or ship generic only (simpler, discards a genuine

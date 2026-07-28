@@ -33,7 +33,7 @@ and the finding numbers referenced throughout point into that document.
 | Landmarks | 2,459 rows / 2,445 unique images | **2,547** (100%) |
 | Geometric features | 2,459 rows, **all truncated** | **2,547** regenerated |
 | Canonical split | 2,511 rated rows, leaks across splits | **2,490** rows, deduped and existence-checked |
-| Per-rater scores | 11 partly-redundant spreadsheets, raw Worker IDs | **1 table**, 123,177 rows, pseudonymized, `generic`/`date` tasks separated |
+| Per-rater scores | partly-redundant spreadsheets in 4 identifier conventions, raw Worker IDs | **1 table**, 141,736 rows, 860 raters incl. the never-released in-house panel, pseudonymized, `generic`/`date` tasks separated |
 | Labels | Encoded in folder paths | In metadata; images content-addressed |
 
 The single most consequential finding: **the original `FaceNet_512_features`
@@ -171,8 +171,10 @@ the other. Canonical train: 1,746 → **1,751**.
 
 **The most consequential defect found**, and one this repository introduced
 rather than inherited. The collection ran two distinct rating tasks over the
-same images — *generic* attractiveness (60,046 ratings, mean 6.00) and
-*date* attractiveness (63,131 ratings, mean 5.01). The per-rater
+same images — *generic* attractiveness and *date* attractiveness, whose
+means sit about a point apart (currently 68,974 ratings at 5.86 and 72,762
+at 4.80; the counts quoted below are the pre-Finding-21 figures that were
+current when this defect was found). The per-rater
 reconciliation discarded the source label and wrote a single
 undifferentiated `score`, so:
 
@@ -244,9 +246,10 @@ data/mebeauty_v3/
 ├── landmarks.parquet             68-point landmarks, native list<float>
 ├── ratings/
 │   ├── aggregate/{train,val,test}.parquet    1,751 / 222 / 517
+│   ├── distributions.parquet                 4,972 soft labels over the 1-10 scale
 │   └── by_rater/
-│       ├── ratings_by_rater.parquet          123,177 rows, 831 raters, generic+date
-│       └── rater_quality.parquet             831 raters, quality statistics
+│       ├── ratings_by_rater.parquet          141,736 rows, 860 raters, generic+date
+│       └── rater_quality.parquet             860 raters, quality statistics
 ├── croissant.json                schema-validated ML metadata
 └── COVERAGE.json
 ```
@@ -267,14 +270,28 @@ preprocessing choice that should stay the consumer's. See
 ## 5. New artifacts
 
 - **Per-rater ratings** (`ratings/by_rater/ratings_by_rater.parquet`) —
-  123,177 individual scores across 2,486 images and 831 raters, reconciled
-  from 11 overlapping spreadsheets. Raw MTurk Worker IDs are pseudonymized to
-  stable `rater_XXXX` identifiers; the mapping is kept local-only and never
-  committed. Two source files (`date_scores_all.xlsx`,
-  `date_scores_all_2022.xlsx`) were excluded as unusable — their column
-  headers are corrupted (one column is literally named
-  `labelcaucasian_female_29.xlsx`). Three further files were excluded as
-  redundant supersets.
+  141,736 individual scores across 2,487 images and 860 raters, reconciled
+  from overlapping spreadsheets in four different identifier conventions. Raw
+  MTurk Worker IDs are pseudonymized to stable `rater_XXXX` identifiers; the
+  mapping is kept local-only and never committed.
+  **Includes the in-house rater panel (29 members, `panel_XXXX`), which no
+  previous release contained** — their columns are demographic codes rather
+  than Worker IDs, so an earlier prefix filter dropped them silently
+  (Finding 21). An earlier version of this document described
+  `date_scores_all.xlsx` as having "corrupted column headers"; that was
+  wrong — those headers are panel raters. Both `date_scores_all*.xlsx` remain
+  excluded, now as superseded rather than broken, since the panel's own
+  per-rater files are the authoritative source. Redundant supersets and the
+  two `private_date_{female,male}.xlsx` merges are also excluded to avoid
+  double-counting.
+- **Rating distributions** (`ratings/distributions.parquet`) — 4,972 soft
+  labels, one per (image, task), with raw counts and normalized probabilities
+  over the 1-10 scale. Supports label distribution learning, which the
+  original release's single mean score could not.
+- **A reproducible point label** (`score_mean`, in each aggregate split) —
+  the plain unweighted mean of every generic rating, equal to the mean of the
+  shipped distribution. The original `score` is retained unchanged but cannot
+  be recomputed from any released data (Finding 20).
 - **Per-rater quality statistics** (`rater_quality.parquet`) — see §6.
 - **Provenance** (`reports/legacy_audit/image_provenance.csv`) — inferred
   source platform and photo ID per image, so a future consent or takedown
@@ -304,9 +321,9 @@ unweighted mean of every rating**, which keeps it reproducible and
 comparable to the original release. Filtering is left to the consumer, for
 three reasons documented in full under Finding 14:
 
-1. **No threshold is principled** — across 528 raters with ≥30 ratings the
-   spread is a smooth continuum from −8.71 to +7.56 (median +2.33) with no
-   gap. Cutoffs that all sound defensible remove between 6.9% and 18.8% of
+1. **No threshold is principled** — across 557 raters with ≥30 ratings the
+   spread is a smooth continuum from −8.44 to +7.96 (median +2.38) with no
+   gap. Cutoffs that all sound defensible remove between 5.3% and 18.2% of
    ratings.
 2. **The impact is not marginal** — excluding spread ≤0 moves 576 images'
    mean score by >0.25; at ≤1.0 it moves 1,119 images (~45% of the dataset).
