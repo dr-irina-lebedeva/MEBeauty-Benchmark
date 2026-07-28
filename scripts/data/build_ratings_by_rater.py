@@ -53,6 +53,7 @@ from mebeauty_benchmark.legacy.panel import (
     build_roster,
     canonical_panel_id,
 )
+from mebeauty_benchmark.legacy.validity import attach_validity
 
 #: The in-house panel's own per-rater files for the generic task. Never
 #: ingested before: panel identifiers are demographic codes, not `rater_`
@@ -205,6 +206,9 @@ def main() -> None:
 
     out = deduped[["image_id", "rater", "score"]].rename(columns={"rater": "rater_id"})
     out = out.sort_values(["image_id", "rater_id"]).reset_index(drop=True)
+    # Flag rather than drop: every rating ships, and the filter behind the
+    # canonical score stays auditable and reversible.
+    out = attach_validity(out)
     out.to_parquet(output_dir / "ratings_by_rater.parquet", index=False)
 
     # Panel demographics, kept separate from the identifier so the id stays

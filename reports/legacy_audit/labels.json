@@ -1,26 +1,26 @@
 {
-  "method": "plain unweighted mean of all generic ratings; no rater excluded",
+  "method": "unweighted mean over valid raters (behavioural screening only)",
   "reproduce": "ratings_by_rater.groupby(\"image_id\")[\"score\"].mean()",
   "rating_task": "generic",
   "splits": {
     "train": {
       "rows": 1719,
-      "dropped_unscored": 5,
-      "mean_score": 6.0313,
+      "dropped_unscored": 0,
+      "mean_score": 6.0352,
       "min_score": 1.5556,
-      "max_score": 9.3333
+      "max_score": 9.375
     },
     "val": {
       "rows": 218,
       "dropped_unscored": 0,
-      "mean_score": 5.9429,
+      "mean_score": 5.9503,
       "min_score": 1.5556,
       "max_score": 8.75
     },
     "test": {
       "rows": 523,
       "dropped_unscored": 0,
-      "mean_score": 5.9758,
+      "mean_score": 5.9806,
       "min_score": 1.8889,
       "max_score": 8.8889
     }

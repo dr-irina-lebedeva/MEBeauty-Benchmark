@@ -6,10 +6,10 @@ mean/median/std/entropy. This is what makes MEBeauty usable for label
 distribution learning, the dominant paradigm in facial beauty prediction --
 the canonical single `score` alone cannot support it.
 
-Built from `ratings/by_rater/ratings_by_rater.parquet` and **unfiltered**:
-every rater contributes, matching Finding 14's policy. `score` in the split
-files is the mean of this distribution, so the point label and the soft label
-can never disagree -- `build_labels.py` asserts it.
+Built from the **valid** raters in `ratings/by_rater/ratings_by_rater.parquet`
+-- the same rows behind `score`, so the point label and the soft label can
+never disagree; `build_labels.py` asserts it. Validity is behavioural only
+(see `legacy/validity.py`); it never depends on agreeing with anyone.
 
 Run this **before** `build_labels.py`, which verifies against the output.
 
@@ -52,7 +52,13 @@ def main() -> None:
     metadata = pd.read_parquet(v3_dir / "images" / "metadata.parquet")
     print(f"Source: {len(per_rater)} per-rater ratings, {len(metadata)} images")
 
-    distributions = build_distributions(per_rater)
+    # The canonical score is the mean over valid raters, so the distribution
+    # it must equal is built from the same rows.
+    valid = per_rater[per_rater["rater_valid"]]
+    print(
+        f"  valid raters: {valid['rater_id'].nunique()} of {per_rater['rater_id'].nunique()}"
+    )
+    distributions = build_distributions(valid)
 
     # Every distribution must be a real probability distribution, and must
     # account for exactly the ratings it was built from. Checked here rather
@@ -74,11 +80,12 @@ def main() -> None:
         "score_bins": list(SCORE_BINS),
         "max_entropy_bits": round(MAX_ENTROPY_BITS, 5),
         "rows": len(distributions),
-        "unfiltered": True,
+        "rater_screening": "behavioural validity only (see legacy/validity.py)",
         "rating_task": "generic",
         "note": (
-            "Built from all raters, none excluded. `score` in the split files "
-            "is the mean of this distribution, so the two always agree."
+            "Built from valid raters only -- the same rows as `score`, so "
+            "the two always agree. Screening is behavioural, never based on "
+            "agreement with other raters."
         ),
         "images": int(distributions["image_id"].nunique()),
         "ratings": int(distributions["n_ratings"].sum()),

@@ -1,8 +1,9 @@
 """Compute the canonical `score` label for each split, SCUT-FBP5500 style.
 
-`score` is the **plain unweighted mean of every generic rating** an image
-received, with no rater excluded and no reweighting. That choice is
-deliberate, and each part of it was tested rather than assumed:
+`score` is the **plain unweighted mean of every generic rating from a valid
+rater**, with no weighting. Validity is decided from a rater's own behaviour
+alone -- see `legacy/validity.py` -- and never from whether they agreed with
+anyone. Each part of that was tested rather than assumed:
 
 - **Plain mean, not a model.** Model-based aggregation (Dawid-Skene and
   relatives) outperforms a mean mainly when spam dominates the pool; it also
@@ -13,17 +14,19 @@ deliberate, and each part of it was tested rather than assumed:
 - **Not a trimmed or robust mean.** Trimming needs an arbitrary percentage,
   and it breaks the property that `score` equals the mean of the shipped
   distribution.
-- **No rater filtering.** Rater/consensus correlation on this data is a
-  smooth continuum with no natural cutoff, and filtering by
-  agreement-with-consensus is circular for a dataset whose purpose includes
-  studying rater variation. Full cost table: `docs/DATASET_AUDIT.md`,
-  Finding 20.
+- **Validity screening, not agreement screening.** Two rules apply, both
+  behavioural: fewer than 10 ratings, or 2 or fewer distinct scores across
+  10+ ratings. Together they remove 0.9% of ratings and no image loses its
+  label. Filtering on rater/consensus correlation is deliberately *not*
+  applied: it is circular, it is the most expensive rule measured (1.4%),
+  and it deletes the minority aesthetic variation this dataset exists to
+  study. `score_all_raters` ships beside `score` so the effect is visible.
 - **Generic ratings only.** The legacy `date` task asked a different
   question and never enters a label.
 
 The result is reproducible in one line from the ratings this dataset ships:
 
-    ratings.groupby("image_id")["score"].mean()
+    ratings[ratings.rater_valid].groupby("image_id")["score"].mean()
 
 This **replaces** the legacy 2021 label, which could not be recomputed from
 any released file because its cleaning pipeline's inputs no longer exist
@@ -60,12 +63,14 @@ def main() -> None:
     per_rater = pd.read_parquet(
         v3_dir / "ratings" / "by_rater" / "ratings_by_rater.parquet"
     )
-    means = per_rater.groupby("image_id")["score"].mean()
+    valid = per_rater[per_rater["rater_valid"]]
+    means = valid.groupby("image_id")["score"].mean()
+    means_all = per_rater.groupby("image_id")["score"].mean()
     print(f"Labels from {len(per_rater)} ratings over {len(means)} images")
 
     ratings_dir = v3_dir / "ratings" / "aggregate"
     report: dict[str, object] = {
-        "method": "plain unweighted mean of all generic ratings; no rater excluded",
+        "method": "unweighted mean over valid raters (behavioural screening only)",
         "reproduce": 'ratings_by_rater.groupby("image_id")["score"].mean()',
         "rating_task": "generic",
         "splits": {},
@@ -74,6 +79,9 @@ def main() -> None:
         path = ratings_dir / f"{split}.parquet"
         rows = pd.read_parquet(path)[["image_id"]].copy()
         rows["score"] = rows["image_id"].map(means)
+        # The unfiltered mean, so the effect of the validity filter stays
+        # visible and the pre-filter label remains recoverable.
+        rows["score_all_raters"] = rows["image_id"].map(means_all)
 
         # An image in a split with no surviving rating cannot be scored, and a
         # silent NaN label would train quietly and wrongly.

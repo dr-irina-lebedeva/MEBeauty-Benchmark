@@ -279,7 +279,13 @@ def main() -> None:
     written = {}
     for split in SPLITS:
         path = v3_dir / "ratings" / "aggregate" / f"{split}.parquet"
-        frame = pd.read_parquet(path)[["image_id", "score"]]
+        # Keep whatever build_labels.py wrote (notably `score_all_raters`) and
+        # drop only this script's own columns, so re-running is idempotent
+        # without silently discarding an upstream column.
+        frame = pd.read_parquet(path)
+        frame = frame.drop(
+            columns=[c for c in adjusted.columns if c != "image_id"], errors="ignore"
+        )
         merged = frame.merge(adjusted, on="image_id", how="left")
         merged.to_parquet(path, index=False)
         written[split] = len(merged)

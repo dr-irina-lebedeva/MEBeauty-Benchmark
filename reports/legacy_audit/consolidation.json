@@ -296,15 +296,15 @@
       "to": "train"
     },
     {
-      "image_id": "ae1791d3be23c7d11b1b3f86f5e925c1a1b958573ac1a35344bd0652cae4eb85",
-      "legacy_path": "female/indian/model-5576796_1920.jpg",
-      "from": "test",
-      "to": "train"
-    },
-    {
       "image_id": "9c76d43e6cdbe55988f6e78db387392fc4048c151d6a8753921fc5de105dc264",
       "legacy_path": "female/indian/model-5576784_1920.jpg",
       "from": "val",
+      "to": "train"
+    },
+    {
+      "image_id": "ae1791d3be23c7d11b1b3f86f5e925c1a1b958573ac1a35344bd0652cae4eb85",
+      "legacy_path": "female/indian/model-5576796_1920.jpg",
+      "from": "test",
       "to": "train"
     },
     {
