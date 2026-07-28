@@ -1,7 +1,7 @@
 {
   "policy": "REPORT ONLY -- no rater is excluded from the canonical aggregate on the basis of these statistics. See docs/DATASET_AUDIT.md Finding 14.",
   "total_raters": 593,
-  "total_ratings": 68953,
+  "total_ratings": 68944,
   "raters_with_discrimination_measured": 373,
   "min_ratings_for_discrimination": 30,
   "discrimination_spread_distribution": {
@@ -98,19 +98,19 @@
     {
       "spread_threshold": 0.5,
       "raters_excluded": 20,
-      "ratings_excluded": 4692,
+      "ratings_excluded": 4691,
       "ratings_excluded_fraction": 0.068
     },
     {
       "spread_threshold": 0.75,
       "raters_excluded": 33,
-      "ratings_excluded": 6371,
+      "ratings_excluded": 6370,
       "ratings_excluded_fraction": 0.0924
     },
     {
       "spread_threshold": 1.0,
       "raters_excluded": 51,
-      "ratings_excluded": 10136,
+      "ratings_excluded": 10135,
       "ratings_excluded_fraction": 0.147
     }
   ],
@@ -180,11 +180,11 @@
     },
     {
       "rater_id": "rater_0788",
-      "n_ratings": 1053,
-      "mean_score": 5.714150047483381,
-      "std_score": 1.7486983655456607,
-      "discrimination_spread": 0.3129426129426127,
-      "loo_correlation": 0.08929041143676686
+      "n_ratings": 1052,
+      "mean_score": 5.714828897338403,
+      "std_score": 1.7493912681116581,
+      "discrimination_spread": 0.31579161579161585,
+      "loo_correlation": 0.08906324641026533
     },
     {
       "rater_id": "panel_0010",

@@ -75,6 +75,30 @@ DEFAULT_MARGIN = 0.25
 #: where they agree it runs up to 217x. 1.5 sits in that gap.
 AMBIGUOUS_AREA_RATIO = 1.5
 
+#: Maintainer decisions for images where the heuristic was guessing between
+#: two comparably sized faces (reviewed 2026-07-28). Keyed by legacy path;
+#: the value is the intended face's horizontal centre as a fraction of image
+#: width, and the detected face nearest that point is selected.
+#:
+#: Recorded as a position rather than a detection index deliberately: an
+#: index is meaningless if the detector, its version or its threshold ever
+#: reorders results, and would then silently pin the *wrong* person. A
+#: position stays meaningful against the image itself.
+FACE_SELECTION_OVERRIDES = {
+    "female/black/steward-masweneng-Ws4YEqBafus-unsplash.jpg": (
+        0.538,
+        "woman on the right",
+    ),
+    "female/black/national-cancer-institute-duNbFJRhaJQ-unsplash.jpg": (
+        0.480,
+        "woman in the middle",
+    ),
+    "female/mideastern/hamid-tajik-QXbJ3yhMNK4-unsplash.jpg": (
+        0.440,
+        "woman on the right",
+    ),
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -237,6 +261,22 @@ def main() -> None:
             index, selection = select_primary_face(
                 faces, image.shape[1], image.shape[0]
             )
+            override = FACE_SELECTION_OVERRIDES.get(row.legacy_path)
+            if override is not None:
+                target_x, description = override
+                wanted = target_x * image.shape[1]
+                index = min(
+                    range(len(faces)),
+                    key=lambda i: abs(
+                        (faces[i].bbox[0] + faces[i].bbox[2]) / 2 - wanted
+                    ),
+                )
+                selection = {
+                    **selection,
+                    "chosen_index": index,
+                    "ambiguous": False,
+                    "maintainer_override": description,
+                }
             multi_face.append(
                 {
                     "image_id": row.image_id,

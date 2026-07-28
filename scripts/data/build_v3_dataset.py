@@ -69,6 +69,10 @@ EXCLUDED_LEGACY_PATHS = {
     # (male/hispanic/betzy-arosemena-Mx15HMZGQzY-unsplash.jpg).
     "male/hispanic/michele-seghieri-9cRe2YMORtc-unsplash.jpg": "Finding 19: two faces, intended subject ambiguous (maintainer review)",
     "female/indian/pexels-shubham-sharma-2912695.jpg": "Finding 19: two faces, intended subject ambiguous (maintainer review)",
+    # Surfaced by the SCRFD pass (Finding 22), which detects second faces the
+    # 2021 MTCNN run missed. Two girls side by side at near-identical scale --
+    # no signal in the image says which one the rating describes.
+    "female/indian/eyes-5938203_1920.jpg": "Finding 22: two faces of equal prominence, intended subject ambiguous (maintainer review)",
 }
 
 # Finding 8 (docs/DATASET_AUDIT.md): 8 images are filed under two conflicting
