@@ -387,3 +387,72 @@ croissant (0 validation errors). Docs updated: Findings 15/16 added to
 Still open and unchanged: licensing/RUA text (deferred to end of session by
 user), redistribution rights, GDPR classification, identity-screening depth,
 historical split identification, score-disparity interpretation.
+
+### 2026-07-28
+
+Branch `feat/label-provenance`. Tests: `make check` clean, 67/67 passing.
+
+Independent review of the built `data/mebeauty_v3/` (not of the docs) found
+five issues the audit did not cover. **Finding 20 — the canonical labels are
+not recomputable from the released ratings — was solved this session; the
+other four are recorded but untouched.**
+
+- **Finding 20 added and solved.** Averaging the per-rater table reproduces
+  only 11.6% of canonical labels. Root cause found by reading the 2021
+  notebooks in `data/legacy_snapshot/MEBeauty_creation_cleaning/`: the labels
+  are the output of a **five-step rater-cleaning pipeline** (drop <50-rating
+  raters; mask per-image >2σ scores; average; drop raters with
+  `abs(corr) < 0.10`; drop a rater's ratings for one gender if they scored
+  >90% of it at the floor), not a plain mean. Verified
+  `generic_scores_all_2022.xlsx` is already the post-cleaning matrix —
+  re-applying the 2σ step degrades the match (mad 0.012 → 0.067). The
+  pipeline's inputs (`pers.xlsx`, `/home/ubuntu/ECUST_FBP/scores/*.xlsx`)
+  are gone, so labels are explicable but permanently unrecomputable.
+  **Resolution: keep the labels byte-identical, ship the evidence.**
+  `scripts/data/enrich_label_provenance.py` +
+  `src/mebeauty_benchmark/legacy/label_provenance.py` (8 tests) add
+  `n_ratings`, `score_std`, `recomputed_score`, `score_delta`,
+  `label_discrepancy` to `ratings/aggregate/*.parquet`. 17 images flagged
+  (16 train, 1 test; worst 3.10). Canonical `score`/`image_id` verified
+  byte-identical against pre-enrichment copies for all three splits.
+- **"Historical protocol identification" open item CLOSED — as unanswerable.**
+  The 2021 code calls `train_test_split()` with no `random_state` on a
+  shuffled frame. No seed exists; the published split cannot be regenerated
+  by anyone. Finding 2's separate composition mismatch stays open.
+- **Root cause found for Finding 6's duplicate split rows**: the same cell
+  writes with `to_csv(..., mode='a')` (append), so re-running it duplicates
+  rows. Documented but previously unexplained.
+- Corrected a now-false claim in `DATASET_CARD.md` that the canonical score
+  is "the unweighted mean of every rating — no rater is excluded." True of
+  `ratings/by_rater/`; false of the canonical labels, which inherit 2021's
+  exclusions. Both now stated together, in tension, deliberately.
+- `build_croissant_metadata.py` extended to describe the five new columns
+  (it hardcoded `image_id`/`score` and would have under-described the
+  release). Regenerated: 0 validation errors. `load_dataset()` re-verified
+  for both configs: 2,495 rows at 400×400 and 256×256, no phantom splits.
+
+**Four issues found and recorded but NOT addressed** (see the agent memory
+note and the list below):
+
+1. `scores/private_generic/` (10 files), `scores/private_date/` (25 files)
+   and `private_generic_all.xlsx` are **never read by any script** — `grep -rl
+   private scripts/ src/` returns nothing. Finding 9's "43 files" does not
+   mention they exist. Their raters are demographically coded (`cf41` =
+   caucasian female 41), i.e. rater age/gender/ethnicity — directly relevant
+   to the personalization goal.
+2. Pseudonymization misses non-MTurk IDs: `data/pseudonymized_scores/
+   generic_scores_all.xlsx` still contains literal `cm39, cf41, af48, hm23,
+   cf34_2, cf34, cm17, cf25, af18, cm37`, and the script's "no unmapped
+   worker ID remains" assertion passes anyway. Confined to a gitignored local
+   intermediate (not in shipped `ratings_by_rater.parquet`), so low severity —
+   but those 10 raters are silently absent from the shipped per-rater table.
+3. Finding 19's 25 multi-face + 4 no-face rated images have **no flag in
+   `images/metadata.parquet`** — the list lives only in `reports/`, which is
+   not part of an HF release. `has_out_of_bounds_landmarks` is likewise
+   absent despite Finding 17 claiming it ships.
+4. Generic ratings per image range 9–78 (median 21); 444 images have <10.
+   Label reliability varies ~8x. Now partly visible via Finding 20's
+   `n_ratings` on the aggregate tables, but not in `metadata.parquet`.
+
+Next action: decide on the four above (1 and 3 are the ones that matter for
+a credible release), then licensing — still the actual blocker.

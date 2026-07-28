@@ -1088,6 +1088,122 @@ face" is not available from the released pixels. The affected image list is
 in `reports/legacy_audit/faces_per_image.json`, so exclusion is a one-line
 filter if that is the decision.
 
+## Finding 20 — the canonical labels are a *cleaned* mean, and the cleaning recipe was recovered from the 2021 notebooks
+
+**This resolves a defect that would have looked like a bug in the released
+dataset**: anyone who downloads MEBeauty, averages the per-rater ratings and
+compares against the shipped labels gets different numbers, for most images.
+
+Measured against `ratings/aggregate/*.parquet` (2026-07-26 build):
+
+| Recomputation source | Exact matches | Mean abs. diff | Images off by >0.25 |
+|---|---|---|---|
+| `ratings_by_rater.parquet`, `rating_type=="generic"` | 289 / 2,490 (11.6%) | 0.267 | — |
+| `generic_scores_all_2022.xlsx` (raw mean) | 625 / 2,482 (25.2%) | **0.012** | **17** |
+
+### Why a plain mean was never going to reproduce it
+
+The legacy pipeline in `MEBeauty_creation_cleaning/` applies **five**
+rater-cleaning steps before averaging. The labels are the output of that
+pipeline, not of `mean()`:
+
+1. **Drop low-volume raters** — raters with fewer than 50 ratings are removed
+   (`dataset_cleaning_analysis.ipynb` cell 0).
+2. **Drop per-image outlier scores** — any score more than 2σ from that
+   image's own mean is masked (`dataset_cleaning_analysis.ipynb` cell 3).
+3. **Average the survivors** — this becomes the `mean` column.
+4. **Drop raters who don't track consensus** — raters with
+   `abs(corr(rater, average)) < 0.10` are dropped
+   (`clean_data_from_bad_raters.ipynb` cell 1).
+5. **Drop gender-biased floor ratings** — if a rater gave the minimum score
+   of 1 to more than 90% of one gender's images, *all* of that rater's
+   ratings for that gender are set to `NaN`
+   (`clean_data_from_bad_raters.ipynb` cell 9).
+
+Note this is a substantively different policy from Finding 14's, which
+measured rater quality and deliberately excluded nobody. Steps 1, 4 and 5
+are exactly the kind of consensus-based filtering Finding 14 argued against
+— and they are already baked irreversibly into the canonical labels. Both
+statements are true and should be read together: the *per-rater table*
+excludes nobody; the *canonical labels* inherit 2021's exclusions and cannot
+be un-inherited.
+
+Step 5 deserves particular care in any write-up. Discarding a rater's
+ratings for one gender when they rate that gender at the floor is a
+defensible anti-troll measure, but on a multi-ethnic *beauty* dataset it
+also removes a category of genuine strong negative preference. It is a
+judgment call made in 2021, not a neutral cleaning step.
+
+### `generic_scores_all_2022.xlsx` is already the post-cleaning matrix
+
+Verified rather than assumed. Re-applying step 2 (the only step reproducible
+from surviving files) to that workbook makes the match **worse**, which is
+what you'd expect if the outliers were already removed:
+
+| Applied to `generic_scores_all_2022.xlsx` | Mean abs. diff | Images off by >0.25 |
+|---|---|---|
+| nothing (raw mean) | **0.012** | **17** |
+| 2σ per-image masking | 0.067 | 191 |
+| 2.5σ | 0.015 | 19 |
+| 3σ | 0.012 | 17 |
+
+So the workbook is the cleaned rater matrix, and the residual 0.012 is not
+another cleaning pass — it is that the split files were written from
+`pers.xlsx`, an intermediate that is not in the repository.
+
+### Why it cannot be recomputed exactly, and never will be
+
+Every input those notebooks read lived on a machine that no longer exists:
+`pers.xlsx`, `/home/ubuntu/ECUST_FBP/scores/generic_all_path.xlsx`, and
+`/home/ubuntu/ECUST_FBP/scores/generic_all_pure.xlsx`. **The algorithm
+survived; the intermediate data did not.** The canonical labels can
+therefore be *explained* but not *regenerated*, and that is a permanent
+property of this dataset, not a gap awaiting more work.
+
+### Two side findings from the same code
+
+- **The published splits are irreproducible by construction.**
+  `clean_data_from_bad_raters.ipynb` cell 7 calls `train_test_split()` with
+  **no `random_state`**, on a `df.sample(frac=1)`-shuffled frame. There is no
+  seed to recover. This closes the long-standing "historical protocol
+  identification" open item below: it is **unanswerable**, not merely
+  unfound, and no amount of correspondence or paper-text retrieval will
+  change that.
+- **Root cause of Finding 6's duplicate split rows.** The same cell writes
+  with `to_csv(..., mode='a')` — append, not overwrite. Re-running it appends
+  a second copy of the rows, which is exactly the observed
+  `asian-girl-4819726_1920.jpg`-twice-in-`train_2022.txt` pattern that
+  Finding 6 documented but could not explain.
+
+### What ships: the evidence, not a rewrite
+
+The canonical `score` is **passed through byte-identical** — verified
+column-for-column against the pre-enrichment files for all three splits.
+Recomputing would discard the 2021 rater cleaning and produce a *worse*
+label, so it is reported alongside, never substituted.
+`scripts/data/enrich_label_provenance.py` adds five columns to
+`ratings/aggregate/{train,val,test}.parquet`:
+
+| Column | Meaning |
+|---|---|
+| `n_ratings` | ratings backing this label in the surviving matrix (median 25, range 5–51) |
+| `score_std` | how much those raters disagreed |
+| `recomputed_score` | plain mean of them — for comparison only |
+| `score_delta` | `score - recomputed_score` |
+| `label_discrepancy` | `abs(score_delta) > 0.25` |
+
+**17 images are flagged** (16 `train`, 1 `test`; worst delta 3.10). 6 `train`
+rows have no surviving matrix row at all and keep null support rather than
+being dropped. Report:
+`reports/legacy_audit/label_provenance.json`. Logic and threshold rationale:
+`src/mebeauty_benchmark/legacy/label_provenance.py` (8 unit tests).
+
+```
+uv run python scripts/data/enrich_label_provenance.py \
+    --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 \
+    --report-out reports/legacy_audit/label_provenance.json
+```
+
 ## Recovery summary
 
 After the recovery work in Findings 3–4, coverage across the full 2,547
@@ -1297,15 +1413,18 @@ draft in `docs/DATASET_CARD.md`.
 - **Benchmark performance claims.** No literature review or cross-dataset
   experiment has been run; no plateau or degradation numbers should be
   cited until one has.
-- **Historical protocol identification.** Which of the three split
-  generations (see Finding 6) actually produced the published paper's
-  results is still unverified. Now further complicated by Finding 2: the
-  paper's own stated composition (1,250 male / 1,300 female) doesn't match
-  any current gender breakdown in this snapshot, so even finding a split
-  generation whose *count* matches 2,550 would not prove it matches the
-  paper's actual image set. Resolving this needs the paper's full
-  methodology section (not just its abstract) and possibly correspondence
-  with the original authors about what changed since publication.
+- ~~**Historical protocol identification.**~~ **Closed by Finding 20, 2026-07-28
+  — the answer is that there is no answer.** The splits were produced by
+  `train_test_split()` with no `random_state`, on a randomly shuffled frame
+  (`clean_data_from_bad_raters.ipynb` cell 7). No seed was ever set, so the
+  exact published split cannot be regenerated by anyone, including the
+  original authors. Correspondence and the paper's full methodology section
+  would not change this. Finding 2's separate composition mismatch (the
+  paper's 1,250 male / 1,300 female vs. this snapshot's 1,196 / 1,351)
+  remains open and unexplained — that is a question about *which images*
+  were in the dataset, not which split was used, and is unaffected by this
+  closure. Practical consequence: `benchmark-v1` is the forward protocol;
+  the historical one is not recoverable and should not be claimed.
 - **Repo layout for release, once gating is actually implemented.**
   Planned, not built: keep public benchmark code (this repo) physically
   separate from gated data, e.g. `MEBeauty-Benchmark` (public, Apache-2.0
@@ -1400,6 +1519,12 @@ uv run --with facenet-pytorch python scripts/data/verify_crop_reproduction.py \
     --legacy-copy data/legacy_snapshot --v2-crops data/mebeauty_v2/crops/mtcnn \
     --crop-recovery-report reports/legacy_audit/crop_recovery_report.json \
     --output reports/legacy_audit/crop_reproduction_verification.json
+
+# Finding 20: per-label rater support (must run after build_v3_dataset.py;
+# canonical scores are passed through unchanged, never recomputed)
+uv run python scripts/data/enrich_label_provenance.py \
+    --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 \
+    --report-out reports/legacy_audit/label_provenance.json
 
 # Croissant metadata (local generation + validation, no HF upload)
 uv run --with mlcroissant python scripts/data/build_croissant_metadata.py \

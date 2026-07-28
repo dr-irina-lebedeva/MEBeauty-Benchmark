@@ -434,7 +434,10 @@ licensed, not committed to git.
 - `landmarks.parquet` -- image_id, landmarks (native `list<float>`, 136
   values = 68 points, not a string -- queryable/usable without re-parsing).
 - `ratings/aggregate/{{train,val,test}}.parquet` -- canonical split, keyed
-  by image_id.
+  by image_id. Run `scripts/data/enrich_label_provenance.py` afterwards to
+  add the per-label rater support columns (`n_ratings`, `score_std`,
+  `recomputed_score`, `score_delta`, `label_discrepancy`); this build writes
+  `image_id`/`score` only. See Finding 20.
 - `ratings/by_rater/ratings_by_rater.parquet` -- individual pseudonymized
   rater scores (run `scripts/data/build_ratings_by_rater.py` separately;
   see `reconciliation_report.json` alongside it for source selection and

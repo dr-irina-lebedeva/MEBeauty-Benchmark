@@ -1,0 +1,34 @@
+{
+  "source_workbook": "scores/generic_scores_all_2022.xlsx",
+  "discrepancy_threshold": 0.25,
+  "images_in_workbook": 2604,
+  "splits": {
+    "train": {
+      "rows": 1751,
+      "with_support": 1745,
+      "without_support": 6,
+      "flagged_discrepancy": 16,
+      "mean_abs_delta": 0.01338,
+      "max_abs_delta": 1.83273,
+      "median_n_ratings": 25.0
+    },
+    "val": {
+      "rows": 222,
+      "with_support": 222,
+      "without_support": 0,
+      "flagged_discrepancy": 0,
+      "mean_abs_delta": 0.0045,
+      "max_abs_delta": 0.07937,
+      "median_n_ratings": 21.0
+    },
+    "test": {
+      "rows": 517,
+      "with_support": 516,
+      "without_support": 1,
+      "flagged_discrepancy": 1,
+      "mean_abs_delta": 0.01104,
+      "max_abs_delta": 3.09838,
+      "median_n_ratings": 25.0
+    }
+  }
+}

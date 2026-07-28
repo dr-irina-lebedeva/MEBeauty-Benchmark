@@ -24,6 +24,45 @@ from pathlib import Path
 
 import mlcroissant as mlc
 
+#: Per-label rater support added by `enrich_label_provenance.py` (Finding 20).
+#: Describes the canonical `score`; never replaces it.
+LABEL_PROVENANCE_FIELDS = [
+    (
+        "n_ratings",
+        mlc.DataType.INTEGER,
+        (
+            "Ratings backing this label in the surviving post-cleaning rater "
+            "matrix. Null where the image has no row in that matrix."
+        ),
+    ),
+    (
+        "score_std",
+        mlc.DataType.FLOAT,
+        "Standard deviation of those ratings -- how much the raters disagreed.",
+    ),
+    (
+        "recomputed_score",
+        mlc.DataType.FLOAT,
+        (
+            "Plain unweighted mean of the surviving ratings, for comparison "
+            "only. Discards the 2021 rater cleaning and is the worse label."
+        ),
+    ),
+    (
+        "score_delta",
+        mlc.DataType.FLOAT,
+        "score - recomputed_score.",
+    ),
+    (
+        "label_discrepancy",
+        mlc.DataType.BOOL,
+        (
+            "True where abs(score_delta) > 0.25: the label materially "
+            "disagrees with every surviving rater matrix. 17 images in total."
+        ),
+    ),
+]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -223,12 +262,31 @@ def main() -> None:
                 mlc.Field(
                     id=f"ratings-{split}/score",
                     name="score",
+                    description=(
+                        "Canonical attractiveness label, inherited from the legacy "
+                        "release. NOT recomputable from ratings_by_rater -- it is the "
+                        "output of a 2021 rater-cleaning pipeline whose intermediate "
+                        "inputs are lost (Finding 20). Use this, not recomputed_score."
+                    ),
                     data_types=[mlc.DataType.FLOAT],
                     source=mlc.Source(
                         file_object=f"ratings-{split}-parquet",
                         extract=mlc.Extract(column="score"),
                     ),
                 ),
+                *[
+                    mlc.Field(
+                        id=f"ratings-{split}/{column}",
+                        name=column,
+                        description=description,
+                        data_types=[data_type],
+                        source=mlc.Source(
+                            file_object=f"ratings-{split}-parquet",
+                            extract=mlc.Extract(column=column),
+                        ),
+                    )
+                    for column, data_type, description in LABEL_PROVENANCE_FIELDS
+                ],
             ],
         )
         for split in ["train", "val", "test"]
