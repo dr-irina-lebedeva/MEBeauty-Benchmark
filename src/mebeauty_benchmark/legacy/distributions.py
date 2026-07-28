@@ -18,8 +18,9 @@ chose each point on the 1-10 scale. Three properties are deliberate:
 - **Lossless.** Raw `counts` ship next to normalized `probabilities`, so a
   consumer can re-derive any statistic, re-weight, or re-bin without needing
   the per-rater table.
-- **Task-separated.** `generic` and `date` are different questions (means
-  6.00 vs 5.01, Finding 16) and never share a distribution.
+- **One task.** Only `generic` attractiveness ships, so there is exactly one
+  distribution per image. The legacy `date` task was a different question
+  (Finding 16) and is no longer released.
 
 Nothing here replaces the canonical label. It is an additional view, keyed by
 the same `image_id`.
@@ -120,24 +121,22 @@ def rating_distribution(scores: Sequence[float]) -> RatingDistribution:
 
 
 def build_distributions(ratings_df: pd.DataFrame) -> pd.DataFrame:
-    """Build one distribution per (image_id, rating_type) from a per-rater table.
+    """Build one distribution per image from a per-rater table.
 
     Expects the columns of `ratings/by_rater/ratings_by_rater.parquet`:
-    `image_id`, `rating_type`, `score`.
+    `image_id` and `score`. Only the `generic` task ships, so there is one
+    distribution per image and no task column to key on.
     """
-    missing = {"image_id", "rating_type", "score"} - set(ratings_df.columns)
+    missing = {"image_id", "score"} - set(ratings_df.columns)
     if missing:
         raise ValueError(f"Per-rater table is missing columns: {sorted(missing)}")
 
     rows = []
-    for (image_id, rating_type), group in ratings_df.groupby(
-        ["image_id", "rating_type"], sort=True
-    ):
+    for image_id, group in ratings_df.groupby("image_id", sort=True):
         distribution = rating_distribution(group["score"].tolist())
         rows.append(
             {
                 "image_id": image_id,
-                "rating_type": rating_type,
                 "n_ratings": distribution.n_ratings,
                 "counts": list(distribution.counts),
                 "probabilities": list(distribution.probabilities),

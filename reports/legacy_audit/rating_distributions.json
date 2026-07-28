@@ -12,51 +12,22 @@
     10
   ],
   "max_entropy_bits": 3.32193,
-  "rows": 4972,
+  "rows": 2487,
   "unfiltered": true,
-  "note": "Built from all raters, none excluded. The canonical `score` inherits the 2021 pipeline's consensus-based rater filtering (Finding 20), so these means differ from it by design.",
-  "by_rating_type": {
-    "date": {
-      "images": 2485,
-      "ratings": 72762,
-      "min_ratings_per_image": 9,
-      "median_ratings_per_image": 36.0,
-      "max_ratings_per_image": 76,
-      "mean_entropy_bits": 2.61526,
-      "images_with_single_rating": 0
-    },
-    "generic": {
-      "images": 2487,
-      "ratings": 68974,
-      "min_ratings_per_image": 8,
-      "median_ratings_per_image": 28.0,
-      "max_ratings_per_image": 87,
-      "mean_entropy_bits": 2.65003,
-      "images_with_single_rating": 0
-    }
-  },
-  "canonical_vs_unfiltered_generic": {
-    "canonical_rows": 2490,
-    "with_distribution": 2484,
-    "without_distribution": 6,
-    "mean_abs_delta": 0.20346,
-    "max_abs_delta": 1.625,
-    "correlation": 0.98408
-  },
+  "rating_task": "generic",
+  "note": "Built from all raters, none excluded. `score` in the split files is the mean of this distribution, so the two always agree.",
+  "images": 2487,
+  "ratings": 68974,
+  "min_ratings_per_image": 8,
+  "median_ratings_per_image": 28.0,
+  "max_ratings_per_image": 87,
+  "mean_entropy_bits": 2.65003,
+  "images_with_single_rating": 0,
   "disagreement_measure_bias": {
     "note": "Correlation of each disagreement measure with n_ratings. entropy_bits is biased upward by sample size (an image with 9 ratings cannot fill 10 bins); use std to compare images.",
-    "by_rating_type": {
-      "date": {
-        "entropy_bits_vs_n_ratings": 0.6223,
-        "std_vs_n_ratings": -0.0333,
-        "mean_std": 2.6649
-      },
-      "generic": {
-        "entropy_bits_vs_n_ratings": 0.6559,
-        "std_vs_n_ratings": 0.0781,
-        "mean_std": 2.0777
-      }
-    }
+    "entropy_bits_vs_n_ratings": 0.6559,
+    "std_vs_n_ratings": 0.0781,
+    "mean_std": 2.0777
   },
   "image_coverage": {
     "images_with_any_distribution": 2487,

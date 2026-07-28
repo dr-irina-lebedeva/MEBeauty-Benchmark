@@ -1,16 +1,17 @@
 """Build per-image rating distributions (soft labels) for the v3 dataset.
 
-Writes `ratings/distributions.parquet`: one row per (image_id, rating_type)
+Writes `ratings/distributions.parquet`: one row per image
 with raw `counts` and normalized `probabilities` over the 1-10 scale, plus
 mean/median/std/entropy. This is what makes MEBeauty usable for label
 distribution learning, the dominant paradigm in facial beauty prediction --
 the canonical single `score` alone cannot support it.
 
-The distributions are built from `ratings/by_rater/ratings_by_rater.parquet`
-and are **unfiltered**: every rater contributes, matching Finding 14's policy
-and deliberately unlike the canonical `score`, which inherits the 2021
-pipeline's consensus-based rater filtering (Finding 20). The report records
-how far apart the two end up.
+Built from `ratings/by_rater/ratings_by_rater.parquet` and **unfiltered**:
+every rater contributes, matching Finding 14's policy. `score` in the split
+files is the mean of this distribution, so the point label and the soft label
+can never disagree -- `build_labels.py` asserts it.
+
+Run this **before** `build_labels.py`, which verifies against the output.
 
     uv run python scripts/data/build_rating_distributions.py \\
         --v3 data/mebeauty_v3 \\
@@ -74,45 +75,18 @@ def main() -> None:
         "max_entropy_bits": round(MAX_ENTROPY_BITS, 5),
         "rows": len(distributions),
         "unfiltered": True,
+        "rating_task": "generic",
         "note": (
-            "Built from all raters, none excluded. The canonical `score` "
-            "inherits the 2021 pipeline's consensus-based rater filtering "
-            "(Finding 20), so these means differ from it by design."
+            "Built from all raters, none excluded. `score` in the split files "
+            "is the mean of this distribution, so the two always agree."
         ),
-        "by_rating_type": {},
-    }
-    for rating_type, group in distributions.groupby("rating_type"):
-        report["by_rating_type"][rating_type] = {
-            "images": int(group["image_id"].nunique()),
-            "ratings": int(group["n_ratings"].sum()),
-            "min_ratings_per_image": int(group["n_ratings"].min()),
-            "median_ratings_per_image": float(group["n_ratings"].median()),
-            "max_ratings_per_image": int(group["n_ratings"].max()),
-            "mean_entropy_bits": round(float(group["entropy_bits"].mean()), 5),
-            "images_with_single_rating": int((group["n_ratings"] == 1).sum()),
-        }
-
-    # How far the unfiltered soft label sits from the canonical hard label.
-    canonical = pd.concat(
-        [
-            pd.read_parquet(v3_dir / "ratings" / "aggregate" / f"{split}.parquet")[
-                ["image_id", "score"]
-            ]
-            for split in SPLITS
-        ]
-    )
-    generic = distributions[distributions["rating_type"] == "generic"]
-    merged = canonical.merge(
-        generic[["image_id", "mean", "n_ratings"]], on="image_id", how="left"
-    )
-    delta = (merged["score"] - merged["mean"]).abs()
-    report["canonical_vs_unfiltered_generic"] = {
-        "canonical_rows": len(merged),
-        "with_distribution": int(merged["mean"].notna().sum()),
-        "without_distribution": int(merged["mean"].isna().sum()),
-        "mean_abs_delta": round(float(delta.mean()), 5),
-        "max_abs_delta": round(float(delta.max()), 5),
-        "correlation": round(float(merged["score"].corr(merged["mean"])), 5),
+        "images": int(distributions["image_id"].nunique()),
+        "ratings": int(distributions["n_ratings"].sum()),
+        "min_ratings_per_image": int(distributions["n_ratings"].min()),
+        "median_ratings_per_image": float(distributions["n_ratings"].median()),
+        "max_ratings_per_image": int(distributions["n_ratings"].max()),
+        "mean_entropy_bits": round(float(distributions["entropy_bits"].mean()), 5),
+        "images_with_single_rating": int((distributions["n_ratings"] == 1).sum()),
     }
 
     # entropy_bits is sample-size dependent and must not be used to rank
@@ -124,18 +98,13 @@ def main() -> None:
             "entropy_bits is biased upward by sample size (an image with 9 "
             "ratings cannot fill 10 bins); use std to compare images."
         ),
-        "by_rating_type": {
-            str(rating_type): {
-                "entropy_bits_vs_n_ratings": round(
-                    float(group["entropy_bits"].corr(group["n_ratings"])), 4
-                ),
-                "std_vs_n_ratings": round(
-                    float(group["std"].corr(group["n_ratings"])), 4
-                ),
-                "mean_std": round(float(group["std"].mean()), 4),
-            }
-            for rating_type, group in distributions.groupby("rating_type")
-        },
+        "entropy_bits_vs_n_ratings": round(
+            float(distributions["entropy_bits"].corr(distributions["n_ratings"])), 4
+        ),
+        "std_vs_n_ratings": round(
+            float(distributions["std"].corr(distributions["n_ratings"])), 4
+        ),
+        "mean_std": round(float(distributions["std"].mean()), 4),
     }
 
     coverage = distributions["image_id"].nunique()

@@ -24,69 +24,14 @@ from pathlib import Path
 
 import mlcroissant as mlc
 
-#: Per-label rater support added by `enrich_label_provenance.py` (Finding 20).
-#: Describes the canonical `score`; never replaces it.
-LABEL_PROVENANCE_FIELDS = [
-    (
-        "n_ratings",
-        mlc.DataType.INTEGER,
-        (
-            "Generic ratings backing this image in the per-rater layer. Null "
-            "where the image has no generic rating at all."
-        ),
-    ),
-    (
-        "score_std",
-        mlc.DataType.FLOAT,
-        "Standard deviation of those ratings -- how much the raters disagreed.",
-    ),
-    (
-        "score_mean",
-        mlc.DataType.FLOAT,
-        (
-            "SCUT-FBP5500-style label: the plain unweighted mean of every "
-            "generic rating, no rater excluded. Reproducible in one line from "
-            "ratings_by_rater, and equal to the mean of the shipped "
-            "distribution. Use this when reproducibility matters; use `score` "
-            "for comparability with the published paper."
-        ),
-    ),
-    (
-        "score_delta",
-        mlc.DataType.FLOAT,
-        (
-            "score - score_mean. Systematically nonzero because `score` is "
-            "consensus-filtered and `score_mean` is not; not an error term."
-        ),
-    ),
-    (
-        "diverges_from_score_mean",
-        mlc.DataType.BOOL,
-        (
-            "True where abs(score_delta) > 0.5, i.e. the two labels differ "
-            "enough to change how the image ranks. Flags where the choice "
-            "between them matters, not where either is wrong."
-        ),
-    ),
-]
-
-
 #: Soft-label columns in `ratings/distributions.parquet`, built by
 #: `build_rating_distributions.py`.
 DISTRIBUTION_FIELDS = [
     ("image_id", mlc.DataType.TEXT, "Content-addressed image identifier."),
     (
-        "rating_type",
-        mlc.DataType.TEXT,
-        (
-            "'generic' or 'date' -- two different questions, never pooled "
-            "into one distribution."
-        ),
-    ),
-    (
         "n_ratings",
         mlc.DataType.INTEGER,
-        "Ratings backing this distribution (minimum 9).",
+        "Ratings backing this distribution.",
     ),
     (
         "counts",
@@ -142,6 +87,7 @@ def main() -> None:
         "ratings/aggregate/test.parquet",
         "ratings/distributions.parquet",
         "ratings/by_rater/ratings_by_rater.parquet",
+        "ratings/by_rater/rater_demographics.parquet",
         "standardized_256/images/metadata.parquet",
         "standardized_256/landmarks.parquet",
     ]
@@ -194,8 +140,8 @@ def main() -> None:
         name="ratings/distributions.parquet",
         description=(
             "Per-image rating distribution (soft label) over the 1-10 scale, "
-            "one row per (image_id, rating_type). Unfiltered: every rater "
-            "contributes. Supports label distribution learning."
+            "one row per image. Unfiltered: every rater contributes. "
+            "`score` in the split files is the mean of this distribution."
         ),
         content_url="ratings/distributions.parquet",
         encoding_formats=["application/vnd.apache.parquet"],
@@ -205,14 +151,50 @@ def main() -> None:
         id="ratings-by-rater-parquet",
         name="ratings/by_rater/ratings_by_rater.parquet",
         description=(
-            "Individual pseudonymized rater scores. Carries `rating_type`: the "
-            "collection ran two distinct tasks, `generic` attractiveness "
-            "(mean 6.00) and `date` attractiveness (mean 5.01). The canonical "
-            "aggregate corresponds to `generic` -- see DATASET_AUDIT.md Finding 16."
+            "Individual pseudonymized rater scores for the generic "
+            "attractiveness task. 583 crowd raters (`rater_XXXX`) and 10 "
+            "in-house panel raters (`panel_XXXX`); `score` is the plain mean "
+            "of these, so every label is reproducible from this file."
         ),
         content_url="ratings/by_rater/ratings_by_rater.parquet",
         encoding_formats=["application/vnd.apache.parquet"],
         sha256="unset-local-file",
+    )
+
+    demographics_file = mlc.FileObject(
+        id="rater-demographics-parquet",
+        name="ratings/by_rater/rater_demographics.parquet",
+        description=(
+            "Self-reported ethnicity, gender and age for the 10 in-house panel "
+            "raters. Kept separate from the rater id so the id stays opaque. "
+            "Crowd raters have no demographic data and are absent here."
+        ),
+        content_url="ratings/by_rater/rater_demographics.parquet",
+        encoding_formats=["application/vnd.apache.parquet"],
+        sha256="unset-local-file",
+    )
+    demographics_record_set = mlc.RecordSet(
+        id="rater-demographics",
+        name="rater_demographics",
+        description="One row per in-house panel rater.",
+        fields=[
+            mlc.Field(
+                id=f"rater-demographics/{column}",
+                name=column,
+                description=description,
+                data_types=[data_type],
+                source=mlc.Source(
+                    file_object="rater-demographics-parquet",
+                    extract=mlc.Extract(column=column),
+                ),
+            )
+            for column, data_type, description in [
+                ("rater_id", mlc.DataType.TEXT, "Opaque panel id (`panel_XXXX`)."),
+                ("ethnicity", mlc.DataType.TEXT, "Self-reported ethnicity."),
+                ("gender", mlc.DataType.TEXT, "Self-reported gender."),
+                ("age", mlc.DataType.INTEGER, "Age at time of rating."),
+            ]
+        ],
     )
 
     # The second image configuration (docs/DATASET_AUDIT.md, Finding 17): the
@@ -345,19 +327,6 @@ def main() -> None:
                         extract=mlc.Extract(column="score"),
                     ),
                 ),
-                *[
-                    mlc.Field(
-                        id=f"ratings-{split}/{column}",
-                        name=column,
-                        description=description,
-                        data_types=[data_type],
-                        source=mlc.Source(
-                            file_object=f"ratings-{split}-parquet",
-                            extract=mlc.Extract(column=column),
-                        ),
-                    )
-                    for column, data_type, description in LABEL_PROVENANCE_FIELDS
-                ],
             ],
         )
         for split in ["train", "val", "test"]
@@ -367,9 +336,8 @@ def main() -> None:
         id="ratings-distributions",
         name="ratings_distributions",
         description=(
-            "Per-image rating distribution (soft label), one row per "
-            "(image_id, rating_type). Built from every rater with none "
-            "excluded, unlike the canonical score."
+            "Per-image rating distribution (soft label), one row per image, "
+            "built from every rater with none excluded."
         ),
         fields=[
             mlc.Field(
@@ -408,20 +376,6 @@ def main() -> None:
                 source=mlc.Source(
                     file_object="ratings-by-rater-parquet",
                     extract=mlc.Extract(column="rater_id"),
-                ),
-            ),
-            mlc.Field(
-                id="ratings-by-rater/rating_type",
-                name="rating_type",
-                description=(
-                    "`generic` or `date` -- two different questions, about a "
-                    "point apart in mean. Filter to `generic` for the per-rater "
-                    "equivalent of the canonical aggregate."
-                ),
-                data_types=[mlc.DataType.TEXT],
-                source=mlc.Source(
-                    file_object="ratings-by-rater-parquet",
-                    extract=mlc.Extract(column="rating_type"),
                 ),
             ),
             mlc.Field(
@@ -518,6 +472,7 @@ def main() -> None:
             *ratings_files,
             distributions_file,
             by_rater_file,
+            demographics_file,
             standardized_fileset,
             standardized_metadata_file,
             standardized_landmarks_file,
@@ -527,6 +482,7 @@ def main() -> None:
             *ratings_record_sets,
             distributions_record_set,
             by_rater_record_set,
+            demographics_record_set,
             standardized_record_set,
         ],
     )

@@ -9,28 +9,32 @@ only 1 basename in the whole dataset is genuinely ambiguous
 case already documented) -- so basename joining is safe here, with that one
 exception dropped explicitly rather than guessed at.
 
-Source selection, after checking for overlap/redundancy between files:
+**Only the `generic` attractiveness task ships.** The legacy collection also
+ran a `date` task ("would you date this person"), a different question whose
+mean sits about a point lower. It never enters a label, so carrying it in the
+released table only invited the pooling mistake Finding 16 already caught
+once. Its raw files remain in the legacy repository for anyone who wants them.
 
-- `public_generic/*.xlsx`, `public_date/*.xlsx` (long format: image, rater,
-  label) -- used. These are the most complete source: `public_generic_all.xlsx`
-  (the corresponding wide-format aggregate) turned out to be a near-total
-  subset of the long-format files (61,300 of 61,372 rows overlap; the long
-  format has 76,617), so using both would double-count. `public_generic_all.xlsx`
-  / `public_date_all.xlsx` are therefore skipped.
-- `generic_scores_all.xlsx` (wide format) -- used; a distinct rating batch,
-  not redundant with `public_generic/*`. `generic_scores_all_2022.xlsx` is
-  skipped: confirmed to be a 100% subset of it (53,895 of 53,895 rows
-  overlap).
-- `date_scores_all.xlsx` / `date_scores_all_2022.xlsx` -- **skipped
-  entirely**. Both have corrupted column headers (e.g. a column literally
-  named `labelcaucasian_female_29.xlsx`, not a rater ID) -- a legacy data
-  problem, not a parsing bug here. `public_date/*.xlsx` already covers
-  "date"-context ratings cleanly, so this is a loss of one redundant,
-  broken source, not a coverage gap.
+Two sources, chosen after measuring overlap rather than assuming it:
+
+- `public_generic/*.xlsx` (long format: image, rater, label) -- the crowd
+  pool. `public_generic_all.xlsx` is a near-total subset of these and is
+  skipped, as is `generic_scores_all.xlsx`: 56,751 of its 56,816 image-rater
+  pairs already appear here and **no rater is unique to it**, so it adds 65
+  ratings and a second identifier convention.
+- `private_generic/*.xlsx` -- the in-house panel, one file per rater, read
+  from the legacy snapshot. Their identifiers are demographic codes, which is
+  exactly why earlier builds' `rater_`-prefix filter dropped them silently.
+  `private_generic_all.xlsx` is a wide merge of these and is skipped.
+
+Outputs `ratings_by_rater.parquet` (image_id, rater_id, score) and
+`rater_demographics.parquet` (panel members only -- crowd workers have no
+demographic data).
 
     uv run python scripts/data/build_ratings_by_rater.py \\
         --pseudonymized data/pseudonymized_scores \\
-        --v3-metadata data/mebeauty_v3/metadata.parquet \\
+        --v3-metadata data/mebeauty_v3/images/metadata.parquet \\
+        --legacy-copy data/legacy_snapshot \\
         --output data/mebeauty_v3/ratings/by_rater
 """
 
@@ -50,10 +54,10 @@ from mebeauty_benchmark.legacy.panel import (
     canonical_panel_id,
 )
 
-#: The in-house panel's own per-rater files, keyed by rating task. These were
-#: never ingested before: their columns are demographic codes, not `rater_`
-#: pseudonyms, so the wide-format loader's prefix filter silently skipped them.
-PANEL_DIRS = {"private_generic": "generic", "private_date": "date"}
+#: The in-house panel's own per-rater files for the generic task. Never
+#: ingested before: panel identifiers are demographic codes, not `rater_`
+#: pseudonyms, so the previous prefix filter skipped them silently.
+PANEL_DIR = "private_generic"
 
 
 def parse_args() -> argparse.Namespace:
@@ -160,17 +164,6 @@ def resolve_stems_to_filenames(
     return images.map(resolve)
 
 
-def load_wide_format(path: Path, source_label: str) -> pd.DataFrame:
-    wide = pd.read_excel(path)
-    rater_cols = [c for c in wide.columns if str(c).startswith("rater_")]
-    melted = wide.melt(
-        id_vars=["image"], value_vars=rater_cols, var_name="rater", value_name="score"
-    )
-    melted = melted.dropna(subset=["score"])
-    melted["source"] = source_label
-    return melted
-
-
 def main() -> None:
     args = parse_args()
     pseudonymized_dir = Path(args.pseudonymized).expanduser().resolve()
@@ -181,23 +174,14 @@ def main() -> None:
     basename_to_image_id = build_basename_lookup(metadata_df)
 
     legacy_root = Path(args.legacy_copy).expanduser().resolve()
-    panel_roots = {name: legacy_root / "scores" / name for name in PANEL_DIRS}
-    roster = build_roster(
-        [path.name for root in panel_roots.values() for path in root.glob("*.xlsx")]
-    )
+    panel_root = legacy_root / "scores" / PANEL_DIR
+    roster = build_roster([path.name for path in panel_root.glob("*.xlsx")])
     pseudonyms = assign_pseudonyms(roster)
-    print(f"In-house panel: {len(roster)} members across {len(panel_roots)} tasks")
+    print(f"In-house panel: {len(roster)} members")
 
     frames = [
         load_long_format(pseudonymized_dir / "public_generic", "public_generic"),
-        load_long_format(pseudonymized_dir / "public_date", "public_date"),
-        load_wide_format(
-            pseudonymized_dir / "generic_scores_all.xlsx", "generic_scores_all"
-        ),
-        *[
-            load_panel_long_format(panel_roots[name], name, roster, pseudonyms)
-            for name in PANEL_DIRS
-        ],
+        load_panel_long_format(panel_root, PANEL_DIR, roster, pseudonyms),
     ]
     combined = pd.concat(frames, ignore_index=True)
     combined["image"] = combined["image"].astype(str).str.lower()
@@ -206,25 +190,6 @@ def main() -> None:
     )
     print(f"Raw rows from selected sources: {len(combined)}")
 
-    # The legacy collection ran TWO distinct rating tasks over the same images,
-    # and their score distributions differ by about a full point (generic mean
-    # 5.99, date mean 5.02). Pooling them into one undifferentiated `score`
-    # column would silently mix two different questions -- see
-    # docs/DATASET_AUDIT.md Finding 16.
-    combined["rating_type"] = combined["source"].map(
-        {
-            "public_generic": "generic",
-            "generic_scores_all": "generic",
-            "public_date": "date",
-            **PANEL_DIRS,
-        }
-    )
-    unmapped_sources = combined.loc[combined["rating_type"].isna(), "source"].unique()
-    if len(unmapped_sources):
-        raise ValueError(
-            f"source with no rating_type mapping: {list(unmapped_sources)}"
-        )
-
     combined["image_id"] = combined["image"].map(basename_to_image_id)
     not_found = combined[~combined["image"].isin(basename_to_image_id)]
     ambiguous = combined[
@@ -232,20 +197,33 @@ def main() -> None:
     ]
     resolved = combined.dropna(subset=["image_id"])
 
-    # Dedupe within a rating task, not across tasks: one rater answering both
-    # the generic and the date question about the same image gave two distinct
-    # answers, not a duplicate. Keying on (image_id, rater) alone -- as this
-    # previously did -- discarded whichever task came second in `frames` order,
-    # silently keeping a generic-vs-date mixture that depended on load order.
-    deduped = resolved.drop_duplicates(
-        subset=["image_id", "rater", "rating_type"], keep="first"
-    )
+    # One rating per (image, rater). Only the generic task is ingested, so
+    # unlike the earlier generic+date build there is no second answer from the
+    # same rater to preserve -- a repeat here is a genuine duplicate.
+    deduped = resolved.drop_duplicates(subset=["image_id", "rater"], keep="first")
     dupes_dropped = len(resolved) - len(deduped)
 
-    out = deduped[["image_id", "rater", "rating_type", "score"]].rename(
-        columns={"rater": "rater_id"}
-    )
+    out = deduped[["image_id", "rater", "score"]].rename(columns={"rater": "rater_id"})
+    out = out.sort_values(["image_id", "rater_id"]).reset_index(drop=True)
     out.to_parquet(output_dir / "ratings_by_rater.parquet", index=False)
+
+    # Panel demographics, kept separate from the identifier so the id stays
+    # opaque. MTurk raters have no demographic data of any kind, so they are
+    # absent here rather than carrying null columns.
+    demographics = pd.DataFrame(
+        [
+            {
+                "rater_id": pseudonyms[canonical],
+                "ethnicity": rater.ethnicity,
+                "gender": rater.gender,
+                "age": rater.age,
+            }
+            for canonical, rater in sorted(roster.items())
+            if pseudonyms[canonical] in set(out["rater_id"])
+        ]
+    ).sort_values("rater_id")
+    demographics.to_parquet(output_dir / "rater_demographics.parquet", index=False)
+    print(f"Panel demographics: {len(demographics)} raters")
 
     summary = {
         "raw_rows": len(combined),
@@ -255,41 +233,38 @@ def main() -> None:
         "final_rows": len(out),
         "unique_images": int(out["image_id"].nunique()),
         "unique_raters": int(out["rater_id"].nunique()),
-        "by_rating_type": {
-            str(k): {
-                "rows": len(g),
-                "images": int(g["image_id"].nunique()),
-                "raters": int(g["rater_id"].nunique()),
-                "mean_score": round(float(g["score"].mean()), 4),
-            }
-            for k, g in out.groupby("rating_type")
-        },
+        "rating_task": "generic",
+        "mean_score": round(float(out["score"].mean()), 4),
+        "crowd_raters": int(
+            out.loc[out["rater_id"].str.startswith("rater_"), "rater_id"].nunique()
+        ),
+        "panel_raters": int(
+            out.loc[out["rater_id"].str.startswith("panel_"), "rater_id"].nunique()
+        ),
         "in_house_panel": {
             "members": len(roster),
             "pseudonym_prefix": "panel_",
+            "demographics": "rater_demographics.parquet (ethnicity, gender, age)",
             "note": (
-                "Previously never ingested: panel columns are demographic "
-                "codes, not `rater_` pseudonyms, so the wide-format loader's "
-                "prefix filter skipped them silently."
+                "Not present in any earlier release: panel identifiers are "
+                "demographic codes, not `rater_` pseudonyms, so the previous "
+                "wide-format loader's prefix filter skipped them silently."
             ),
         },
         "excluded_sources": [
             (
-                "date_scores_all.xlsx / date_scores_all_2022.xlsx -- superseded, "
-                "not corrupted. Their non-MTurk headers (e.g. "
-                "`labelcaucasian_female_29.xlsx`) are in-house panel raters, now "
-                "ingested from private_date/*.xlsx directly. Those files also mix "
-                "in precomputed aggregate columns (mean_gen, mean_pr_f, mean_pr_m, "
-                "mean_date) that a naive rater-column parse would ingest as raters."
+                "Every `date` source (public_date/, private_date/, "
+                "date_scores_all*.xlsx) -- the date task is a different question "
+                "and no longer ships. The raw files remain in the legacy "
+                "repository for anyone who wants them."
             ),
-            "generic_scores_all_2022.xlsx (100% subset of generic_scores_all.xlsx)",
-            "public_generic_all.xlsx (near-total subset of public_generic/*.xlsx)",
-            "public_date_all.xlsx (near-total subset of public_date/*.xlsx)",
             (
-                "private_date_female.xlsx / private_date_male.xlsx -- wide merges "
-                "of the individual private_date/*.xlsx files; ingesting both would "
-                "double-count."
+                "generic_scores_all.xlsx / generic_scores_all_2022.xlsx -- "
+                "99.9% redundant with public_generic/*.xlsx (56,751 of 56,816 "
+                "image-rater pairs overlap, 0 raters unique to it)."
             ),
+            "public_generic_all.xlsx (near-total subset of public_generic/*.xlsx)",
+            "private_generic_all.xlsx (wide merge of private_generic/*.xlsx)",
         ],
     }
     (output_dir / "reconciliation_report.json").write_text(

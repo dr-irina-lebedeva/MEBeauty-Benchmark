@@ -61,28 +61,26 @@ def test_empty_ratings_are_rejected():
         rating_distribution([])
 
 
-def test_build_separates_rating_types_for_the_same_image():
+def test_build_makes_one_distribution_per_image():
     ratings = pd.DataFrame(
         {
-            "image_id": ["img1", "img1", "img1", "img1"],
-            "rating_type": ["generic", "generic", "date", "date"],
+            "image_id": ["img1", "img1", "img2", "img2"],
             "score": [8, 8, 2, 4],
         }
     )
 
-    out = build_distributions(ratings).set_index("rating_type")
+    out = build_distributions(ratings).set_index("image_id")
 
     assert len(out) == 2
-    assert out.loc["generic", "mean"] == 8.0
-    assert out.loc["date", "mean"] == 3.0
-    # A shared image must never pool two different questions into one label.
-    assert out.loc["generic", "n_ratings"] == 2
-    assert out.loc["date", "n_ratings"] == 2
+    assert out.loc["img1", "mean"] == 8.0
+    assert out.loc["img1", "n_ratings"] == 2
+    assert out.loc["img2", "mean"] == 3.0
+    assert out.loc["img2", "n_ratings"] == 2
 
 
 def test_build_rejects_a_table_missing_required_columns():
     with pytest.raises(ValueError, match="missing columns"):
-        build_distributions(pd.DataFrame({"image_id": ["a"], "score": [5]}))
+        build_distributions(pd.DataFrame({"image_id": ["a"], "rating": [5]}))
 
 
 def test_distribution_mean_matches_a_plain_mean_of_the_ratings():

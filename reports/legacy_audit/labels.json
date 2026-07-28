@@ -1,0 +1,29 @@
+{
+  "method": "plain unweighted mean of all generic ratings; no rater excluded",
+  "reproduce": "ratings_by_rater.groupby(\"image_id\")[\"score\"].mean()",
+  "rating_task": "generic",
+  "splits": {
+    "train": {
+      "rows": 1745,
+      "dropped_unscored": 0,
+      "mean_score": 6.0381,
+      "min_score": 1.5556,
+      "max_score": 9.3333
+    },
+    "val": {
+      "rows": 222,
+      "dropped_unscored": 0,
+      "mean_score": 5.974,
+      "min_score": 1.5556,
+      "max_score": 8.75
+    },
+    "test": {
+      "rows": 517,
+      "dropped_unscored": 0,
+      "mean_score": 5.9703,
+      "min_score": 1.8889,
+      "max_score": 8.8889
+    }
+  },
+  "consistent_with_distribution": true
+}
