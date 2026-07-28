@@ -4,23 +4,23 @@
   "rating_task": "generic",
   "splits": {
     "train": {
-      "rows": 1743,
-      "dropped_unscored": 6,
-      "mean_score": 6.0376,
+      "rows": 1719,
+      "dropped_unscored": 5,
+      "mean_score": 6.0313,
       "min_score": 1.5556,
       "max_score": 9.3333
     },
     "val": {
-      "rows": 222,
+      "rows": 218,
       "dropped_unscored": 0,
-      "mean_score": 5.974,
+      "mean_score": 5.9429,
       "min_score": 1.5556,
       "max_score": 8.75
     },
     "test": {
-      "rows": 516,
+      "rows": 523,
       "dropped_unscored": 0,
-      "mean_score": 5.9707,
+      "mean_score": 5.9758,
       "min_score": 1.8889,
       "max_score": 8.8889
     }

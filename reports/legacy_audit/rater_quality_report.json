@@ -5,10 +5,10 @@
   "raters_with_discrimination_measured": 373,
   "min_ratings_for_discrimination": 30,
   "discrimination_spread_distribution": {
-    "min": -1.423,
+    "min": -1.3944,
     "p25": 1.4424,
-    "median": 2.2274,
-    "p75": 2.8857,
+    "median": 2.2174,
+    "p75": 2.9048,
     "max": 5.5,
     "note": "Smooth continuum with no bimodal gap -- this is why no exclusion threshold is applied: every cutoff is arbitrary, and the amount of data it removes swings several-fold across equally defensible values."
   },
@@ -35,25 +35,25 @@
       "rater_id": "rater_0357",
       "n_ratings": 106,
       "mean_score": 6.462264150943396,
-      "std_score": 2.276900685045298,
-      "discrimination_spread": -1.4230158730158733,
-      "loo_correlation": -0.28789494091186724
-    },
-    {
-      "rater_id": "rater_0193",
-      "n_ratings": 545,
-      "mean_score": 5.03302752293578,
-      "std_score": 1.8497841212414432,
-      "discrimination_spread": -0.20879120879120894,
-      "loo_correlation": -0.016277384147311138
+      "std_score": 2.2769006850452986,
+      "discrimination_spread": -1.3944444444444448,
+      "loo_correlation": -0.2884466467535209
     },
     {
       "rater_id": "rater_0449",
       "n_ratings": 92,
       "mean_score": 6.5,
       "std_score": 1.05351322245623,
-      "discrimination_spread": -0.1935483870967749,
-      "loo_correlation": 0.019289138168874325
+      "discrimination_spread": -0.2258064516129039,
+      "loo_correlation": 0.0077022693605370285
+    },
+    {
+      "rater_id": "rater_0193",
+      "n_ratings": 545,
+      "mean_score": 5.03302752293578,
+      "std_score": 1.8497841212414434,
+      "discrimination_spread": -0.20329670329670346,
+      "loo_correlation": -0.01657287802841869
     },
     {
       "rater_id": "rater_0586",
@@ -67,9 +67,9 @@
       "rater_id": "rater_0549",
       "n_ratings": 39,
       "mean_score": 9.692307692307692,
-      "std_score": 1.4717309206624718,
+      "std_score": 1.471730920662472,
       "discrimination_spread": 0.0,
-      "loo_correlation": 0.07540808815390596
+      "loo_correlation": 0.06797820128750931
     },
     {
       "rater_id": "rater_0606",
@@ -103,38 +103,38 @@
     },
     {
       "spread_threshold": 0.75,
-      "raters_excluded": 33,
-      "ratings_excluded": 6370,
-      "ratings_excluded_fraction": 0.0924
+      "raters_excluded": 32,
+      "ratings_excluded": 6320,
+      "ratings_excluded_fraction": 0.0917
     },
     {
       "spread_threshold": 1.0,
-      "raters_excluded": 51,
-      "ratings_excluded": 10135,
-      "ratings_excluded_fraction": 0.147
+      "raters_excluded": 50,
+      "ratings_excluded": 10059,
+      "ratings_excluded_fraction": 0.1459
     }
   ],
   "aggregate_impact_if_excluded": [
     {
       "spread_threshold": 0.0,
       "images_losing_all_ratings": 0,
-      "mean_abs_shift": 0.0243,
+      "mean_abs_shift": 0.0241,
       "max_abs_shift": 0.75,
       "images_shifting_over_0.25": 35
     },
     {
       "spread_threshold": 0.5,
       "images_losing_all_ratings": 0,
-      "mean_abs_shift": 0.0777,
+      "mean_abs_shift": 0.0775,
       "max_abs_shift": 0.7778,
-      "images_shifting_over_0.25": 146
+      "images_shifting_over_0.25": 143
     },
     {
       "spread_threshold": 1.0,
       "images_losing_all_ratings": 0,
-      "mean_abs_shift": 0.1603,
+      "mean_abs_shift": 0.1586,
       "max_abs_shift": 1.8,
-      "images_shifting_over_0.25": 574
+      "images_shifting_over_0.25": 557
     }
   ],
   "top_10_raters_by_volume_for_context": [
@@ -142,81 +142,81 @@
       "rater_id": "rater_0588",
       "n_ratings": 1137,
       "mean_score": 6.633245382585752,
-      "std_score": 1.9938424852800243,
-      "discrimination_spread": 1.9406472058187099,
-      "loo_correlation": 0.4215396460019297
+      "std_score": 1.9938424852800232,
+      "discrimination_spread": 1.9287598944591027,
+      "loo_correlation": 0.4206485016113226
     },
     {
       "rater_id": "panel_0003",
       "n_ratings": 1108,
       "mean_score": 3.9774368231046933,
-      "std_score": 2.4202614923967816,
-      "discrimination_spread": 2.611272247857614,
-      "loo_correlation": 0.4797016498772643
+      "std_score": 2.42026149239678,
+      "discrimination_spread": 2.588831594984179,
+      "loo_correlation": 0.4763890815616457
     },
     {
       "rater_id": "panel_0004",
       "n_ratings": 1108,
       "mean_score": 6.129963898916968,
-      "std_score": 2.0916846593458307,
-      "discrimination_spread": 2.3414266725742134,
-      "loo_correlation": 0.5377876356645681
+      "std_score": 2.091684659345831,
+      "discrimination_spread": 2.3459829461577444,
+      "loo_correlation": 0.5335210428172412
     },
     {
       "rater_id": "panel_0006",
       "n_ratings": 1105,
       "mean_score": 6.103167420814479,
-      "std_score": 1.3687237900432616,
-      "discrimination_spread": 0.44225472434566093,
-      "loo_correlation": 0.10164564077321353
+      "std_score": 1.3687237900432605,
+      "discrimination_spread": 0.44939928963322284,
+      "loo_correlation": 0.10053200831279221
     },
     {
       "rater_id": "rater_0071",
       "n_ratings": 1080,
       "mean_score": 8.687962962962963,
-      "std_score": 1.4637553486125234,
-      "discrimination_spread": 1.5583333333333336,
-      "loo_correlation": 0.5275791885756685
+      "std_score": 1.4637553486125225,
+      "discrimination_spread": 1.552777777777778,
+      "loo_correlation": 0.5280652183773138
     },
     {
       "rater_id": "rater_0788",
       "n_ratings": 1052,
       "mean_score": 5.714828897338403,
-      "std_score": 1.7493912681116581,
-      "discrimination_spread": 0.31579161579161585,
-      "loo_correlation": 0.08906324641026533
+      "std_score": 1.749391268111657,
+      "discrimination_spread": 0.3300773300773301,
+      "loo_correlation": 0.09237810013930674
     },
     {
       "rater_id": "panel_0010",
       "n_ratings": 980,
       "mean_score": 5.696938775510204,
-      "std_score": 2.2305774607264484,
-      "discrimination_spread": 2.944954128440367,
-      "loo_correlation": 0.5988774945982333
+      "std_score": 2.2305774607264492,
+      "discrimination_spread": 2.9605081157374737,
+      "loo_correlation": 0.6001335973698478
     },
     {
       "rater_id": "panel_0008",
       "n_ratings": 979,
       "mean_score": 5.103166496424923,
-      "std_score": 1.1531854095569434,
-      "discrimination_spread": 1.0583864915572239,
-      "loo_correlation": 0.3828463338332859
+      "std_score": 1.1531854095569425,
+      "discrimination_spread": 1.0664340256280376,
+      "loo_correlation": 0.383128592232933
     },
     {
       "rater_id": "panel_0002",
       "n_ratings": 978,
       "mean_score": 3.957055214723926,
-      "std_score": 1.7270786710353252,
-      "discrimination_spread": 2.5621236432279377,
-      "loo_correlation": 0.6545675873948228
+      "std_score": 1.727078671035324,
+      "discrimination_spread": 2.558282208588957,
+      "loo_correlation": 0.6540880231484717
     },
     {
       "rater_id": "panel_0001",
       "n_ratings": 977,
       "mean_score": 4.18014329580348,
-      "std_score": 1.4222668568985795,
-      "discrimination_spread": 2.108929151615924,
-      "loo_correlation": 0.6385242795999025
+      "std_score": 1.422266856898577,
+      "discrimination_spread": 2.114792865690353,
+      "loo_correlation": 0.6386126609003107
     }
   ]
 }
