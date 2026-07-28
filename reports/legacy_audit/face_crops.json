@@ -10,176 +10,286 @@
   "alignment": "5-point ArcFace similarity transform, margin-expanded",
   "border_mode": "replicate (never black -- see aligned_crop docstring)",
   "images_considered": 2493,
-  "cropped": 2475,
+  "cropped": 2493,
   "no_face_count": 0,
   "multi_face_count": 18,
+  "multi_face_ambiguous_count": 4,
+  "multi_face_rule": "primary face = max(area / (1 + centre_distance / image_diagonal)); largest and most-central reported separately, and disagreement between comparably sized faces is flagged ambiguous",
   "unreadable": [],
   "no_face_images": [],
   "multi_face_images": [
     {
       "image_id": "061a06630932f2e5ed0d451c264c04291046e44071ff9f8696e6523a2f3e85f6",
       "legacy_path": "female/black/amevi-wisdom-wiUl_NyafcY-unsplash.jpg",
-      "faces": 3,
       "scores": [
         0.7832,
         0.752,
         0.6562
-      ]
+      ],
+      "faces": 3,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 6.789,
+      "ambiguous": false
     },
     {
       "image_id": "2274963c17ee28e7fe6861c1ecbea2497dddf92f3223dbbc000a30cb05d677fd",
       "legacy_path": "female/hispanic/marisol-casben-PbwKSCq9aVo-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.7848,
         0.7698
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 3.807,
+      "ambiguous": false
     },
     {
       "image_id": "36f5f8169d0e3e3f62775e0f231b32dfef99bba31556d7156810b08b4a1546c2",
       "legacy_path": "female/indian/eyes-5938203_1920.jpg",
-      "faces": 2,
       "scores": [
         0.7949,
         0.6587
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 1,
+      "most_central_index": 0,
+      "rules_agree": false,
+      "area_ratio": 1.082,
+      "ambiguous": true
     },
     {
       "image_id": "4a99c8e7e71d200301221d5f8c1f49d127da66f498c1d87becbf4ebe33b2e6e8",
       "legacy_path": "male/mideastern/mhrezaa-iOrq0FnSQTE-unsplash.jpg",
-      "faces": 3,
       "scores": [
         0.8006,
         0.7124,
         0.6237
-      ]
+      ],
+      "faces": 3,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 2.786,
+      "ambiguous": false
     },
     {
       "image_id": "5d7a999f186eecd054ce210f1c0fa9ca2aa8ecea629d60dfc4cbc816e6395e9f",
       "legacy_path": "female/indian/gift-habeshaw-XvqeCMXHwzQ-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.8156,
         0.6632
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 1,
+      "largest_index": 1,
+      "most_central_index": 0,
+      "rules_agree": false,
+      "area_ratio": 1.804,
+      "ambiguous": false
     },
     {
       "image_id": "88f401672f919ee8c85fe8dc6662590ad9b3682dcfdc31d8ea929f13a9119280",
       "legacy_path": "male/hispanic/betzy-arosemena-Mx15HMZGQzY-unsplash.jpg",
-      "faces": 3,
       "scores": [
         0.8643,
         0.8386,
         0.756
-      ]
+      ],
+      "faces": 3,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 25.86,
+      "ambiguous": false
     },
     {
       "image_id": "892dcca4ba77366d5f6daecbb5bf17854d71a53f9fa5afb33c6001dbc8b43877",
       "legacy_path": "female/black/steward-masweneng-Ws4YEqBafus-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.8112,
         0.6379
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 1,
+      "most_central_index": 0,
+      "rules_agree": false,
+      "area_ratio": 1.039,
+      "ambiguous": true
     },
     {
       "image_id": "8b76f9d33e9204ff3cb437757c4b22a0227b3532f08fbce000c0f7f14e22268c",
       "legacy_path": "female/indian/38.jpg",
-      "faces": 2,
       "scores": [
         0.8382,
         0.7476
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 4.42,
+      "ambiguous": false
     },
     {
       "image_id": "95e42a9c332b8d91aa40bef181f4787e218bc3b73ac342b17b5bd188810bc7a6",
       "legacy_path": "female/black/national-cancer-institute-duNbFJRhaJQ-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.7966,
         0.7232
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 1,
+      "most_central_index": 0,
+      "rules_agree": false,
+      "area_ratio": 1.02,
+      "ambiguous": true
     },
     {
       "image_id": "b11e84f6be336b6e30fc3e37026b8af015c68b0fe8acc6f5d56bb37e0a963b55",
       "legacy_path": "female/hispanic/omar-lopez-0-uzdU3gUYw-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.8876,
         0.8109
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 1.026,
+      "ambiguous": false
     },
     {
       "image_id": "b8fda3948d60395bf1768d587cbeae34f26e8707209fb4aefe222d7a92928e83",
       "legacy_path": "male/mideastern/hannah-cook-dqa2LjshmWY-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.8523,
         0.6945
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 1.665,
+      "ambiguous": false
     },
     {
       "image_id": "c11d19b418392a87c060ffeccada8a2157758de33a366ccd7b2a28750c894932",
       "legacy_path": "female/mideastern/pexels-marlon-alves-3935356.jpg",
-      "faces": 2,
       "scores": [
         0.8629,
         0.8291
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 1.254,
+      "ambiguous": false
     },
     {
       "image_id": "c1911707e1c34431ce3e28eb12ac589fed7069f6e7020c507275926eddd206e8",
       "legacy_path": "female/mideastern/hamid-tajik-QXbJ3yhMNK4-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.7564,
         0.6554
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 1,
+      "most_central_index": 0,
+      "rules_agree": false,
+      "area_ratio": 1.152,
+      "ambiguous": true
     },
     {
       "image_id": "d1a103b139291c91ce39a0829ccff7668235239df276ba7594a18ba0ec368acd",
       "legacy_path": "female/asian/faizfajer-VzmoR9Meu3w-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.7808,
         0.7776
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 1,
+      "largest_index": 1,
+      "most_central_index": 1,
+      "rules_agree": true,
+      "area_ratio": 1.408,
+      "ambiguous": false
     },
     {
       "image_id": "dbe857f4b1944b8eb9a9877eb237316a73b114313a41e06779960a06a8171179",
       "legacy_path": "male/hispanic/suzana-sousa-IC1_YWQn6so-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.8542,
         0.7986
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 1.32,
+      "ambiguous": false
     },
     {
       "image_id": "e42962ff8276746e6d234abbcc9bcd88240f2719d8953e9b9f3e7c73225d9dc5",
       "legacy_path": "male/asian/people-1731137_1920.jpg",
-      "faces": 2,
       "scores": [
         0.8576,
         0.8248
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 1,
+      "largest_index": 1,
+      "most_central_index": 1,
+      "rules_agree": true,
+      "area_ratio": 2.03,
+      "ambiguous": false
     },
     {
       "image_id": "f60ac644fabfa582ac1c7388613a18739f8bf76085ed411fb2e0ec174841deb4",
       "legacy_path": "female/mideastern/gustavo-lanes-neFlyoPfCRM-unsplash.jpg",
-      "faces": 2,
       "scores": [
         0.8074,
         0.7693
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 1.079,
+      "ambiguous": false
     },
     {
       "image_id": "f8e58498663495507de97aa8209c38e87e785ca856b8f2a5f956ea7b51a16cf2",
       "legacy_path": "female/black/march-for-peace-1727917_1920.jpg",
-      "faces": 2,
       "scores": [
         0.8743,
         0.6766
-      ]
+      ],
+      "faces": 2,
+      "chosen_index": 0,
+      "largest_index": 0,
+      "most_central_index": 0,
+      "rules_agree": true,
+      "area_ratio": 216.563,
+      "ambiguous": false
     }
   ],
   "note": "Sources are already 400-600px crops (Finding 17), so these are crops of crops -- consistent alignment, not recovered detail."

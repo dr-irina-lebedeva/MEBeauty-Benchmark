@@ -25,10 +25,12 @@ comparable across a benchmark. `--margin` widens the standard ArcFace
 template, which is tighter than facial-attractiveness work usually wants
 (hair and jawline carry signal here, unlike in recognition).
 
-Images with **no detected face**, or with **more than one**, are not cropped.
-Both are listed in the report for review rather than resolved silently: a
-zero-face image may be a genuine detector failure, and on a two-face image
-nothing records which face the rating describes.
+Images with **more than one** detected face are still cropped: the primary
+face is chosen by `select_primary_face`, combining size and centrality. Every
+such image is listed in the report with both signals, and the cases where
+they disagree between comparably sized faces are flagged `ambiguous` so a
+human can overrule the heuristic. Images with **no** detected face are not
+cropped and are listed; on this corpus there are none.
 
     uv run --with insightface --with onnxruntime --with opencv-python-headless \\
         python scripts/data/build_face_crops.py \\
@@ -66,6 +68,12 @@ TARGET_SIZE = 256
 #: template crops tight to the face; attractiveness ratings respond to hair,
 #: jawline and head shape, so some context is kept.
 DEFAULT_MARGIN = 0.25
+
+#: Area ratio below which two faces count as "comparably sized", so picking
+#: the larger is close to arbitrary. Measured on this corpus: where the
+#: largest and the most central face disagree, the ratio is 1.02-1.80x;
+#: where they agree it runs up to 217x. 1.5 sits in that gap.
+AMBIGUOUS_AREA_RATIO = 1.5
 
 
 def parse_args() -> argparse.Namespace:
@@ -136,6 +144,53 @@ def aligned_crop(
     return crop, float((covered == 0).mean())
 
 
+def select_primary_face(faces: list, width: int, height: int) -> tuple[int, dict]:
+    """Choose which detected face the image's single label describes.
+
+    The sources are already crops the 2021 pipeline centred on its intended
+    subject, so *both* size and centrality are real evidence about who that
+    subject was. They are combined as `area / (1 + centre_distance)`, which
+    favours a large face but penalises one off to the side.
+
+    The two signals are also reported separately, because they do not always
+    agree: on this corpus they pick the same face for 13 of 18 multi-face
+    images, and every disagreement is between two comparably sized faces
+    (area ratio 1.02-1.80x) where "largest" is close to arbitrary. Those
+    cases are marked `ambiguous` so a human can overrule the heuristic
+    instead of trusting it blindly.
+    """
+    import numpy as np
+
+    centre_x, centre_y = width / 2, height / 2
+    areas, distances = [], []
+    for face in faces:
+        x1, y1, x2, y2 = face.bbox
+        areas.append(float((x2 - x1) * (y2 - y1)))
+        distances.append(
+            float(np.hypot((x1 + x2) / 2 - centre_x, (y1 + y2) / 2 - centre_y))
+        )
+
+    diagonal = float(np.hypot(width, height))
+    scores = [a / (1.0 + d / diagonal) for a, d in zip(areas, distances)]
+    chosen = int(np.argmax(scores))
+    largest = int(np.argmax(areas))
+    most_central = int(np.argmin(distances))
+    ranked = sorted(areas, reverse=True)
+    area_ratio = (
+        ranked[0] / ranked[1] if len(ranked) > 1 and ranked[1] else float("inf")
+    )
+
+    return chosen, {
+        "faces": len(faces),
+        "chosen_index": chosen,
+        "largest_index": largest,
+        "most_central_index": most_central,
+        "rules_agree": largest == most_central,
+        "area_ratio": round(area_ratio, 3),
+        "ambiguous": largest != most_central and area_ratio < AMBIGUOUS_AREA_RATIO,
+    }
+
+
 def main() -> None:
     args = parse_args()
     import cv2
@@ -177,16 +232,20 @@ def main() -> None:
         if len(faces) == 0:
             no_face.append(row.legacy_path)
             continue
+        selection = None
         if len(faces) > 1:
+            index, selection = select_primary_face(
+                faces, image.shape[1], image.shape[0]
+            )
             multi_face.append(
                 {
                     "image_id": row.image_id,
                     "legacy_path": row.legacy_path,
-                    "faces": len(faces),
                     "scores": [round(float(f.det_score), 4) for f in faces],
+                    **selection,
                 }
             )
-            continue
+            faces = [faces[index]]
 
         face = faces[0]
         crop, edge_fill = aligned_crop(
@@ -202,6 +261,10 @@ def main() -> None:
                 "file_name": f"images/{row.image_id}.jpg",
                 "det_score": round(float(face.det_score), 4),
                 "edge_fill_fraction": round(edge_fill, 4),
+                "n_faces_detected": 1 if selection is None else selection["faces"],
+                "face_choice_ambiguous": bool(
+                    selection is not None and selection["ambiguous"]
+                ),
                 "bbox_x1": box[0],
                 "bbox_y1": box[1],
                 "bbox_x2": box[2],
@@ -238,6 +301,12 @@ def main() -> None:
         "cropped": len(crops),
         "no_face_count": len(no_face),
         "multi_face_count": len(multi_face),
+        "multi_face_ambiguous_count": sum(1 for x in multi_face if x["ambiguous"]),
+        "multi_face_rule": (
+            "primary face = max(area / (1 + centre_distance / image_diagonal)); "
+            "largest and most-central reported separately, and disagreement "
+            "between comparably sized faces is flagged ambiguous"
+        ),
         "unreadable": unreadable,
         "no_face_images": no_face,
         "multi_face_images": multi_face,
