@@ -1213,44 +1213,40 @@ property of this dataset, not a gap awaiting more work.
   `asian-girl-4819726_1920.jpg`-twice-in-`train_2022.txt` pattern that
   Finding 6 documented but could not explain.
 
-### What ships: the evidence, not a rewrite
+### What ships: one reproducible label
 
-The canonical `score` is **passed through byte-identical** — verified
-column-for-column against the pre-enrichment files for all three splits.
-Recomputing would discard the 2021 rater cleaning and produce a *worse*
-label, so it is reported alongside, never substituted.
-`scripts/data/enrich_label_provenance.py` adds five columns to
-`ratings/aggregate/{train,val,test}.parquet`:
+The 2021 label is **replaced**, not annotated. `scripts/data/build_labels.py`
+writes `ratings/aggregate/{train,val,test}.parquet` as `image_id` + `score`,
+where `score` is the **plain unweighted mean of every generic rating**, no
+rater excluded:
 
-| Column | Meaning |
-|---|---|
-| `n_ratings` | generic ratings backing this image in the per-rater layer |
-| `score_std` | how much those raters disagreed |
-| `score_mean` | **SCUT-style label** — plain unweighted mean, no rater excluded |
-| `score_delta` | `score - score_mean` |
-| `diverges_from_score_mean` | `abs(score_delta) > 0.5` |
-
-**`score_mean` is the SCUT-FBP5500-style label.** SCUT's `All_labels.txt` is a
-plain mean of its released per-rater ratings; that reproducibility is what
-makes a benchmark auditable, and it is the one property the legacy `score`
-cannot have. The two differ **systematically** — `score` is consensus-filtered,
-`score_mean` is not — so `score_delta` measures a design difference, not an
-error. Mean absolute delta 0.20; **200 of 2,490 images (8%) exceed 0.5**, the
-threshold at which the choice between labels changes how an image ranks.
-
-`score_mean` is also exactly the mean of `ratings/distributions.parquet`, so
-point label, soft label and raw ratings are mutually consistent.
-
-Report: `reports/legacy_audit/label_provenance.json`. Logic and threshold
-rationale: `src/mebeauty_benchmark/legacy/label_provenance.py` (8 unit tests).
-
-```
-uv run python scripts/data/enrich_label_provenance.py \
-    --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 --from-raw \
-    --report-out reports/legacy_audit/label_provenance.json
+```python
+ratings_by_rater.groupby("image_id")["score"].mean()
 ```
 
-### Which raters are filtered out of `score_mean`: none, and why
+This follows SCUT-FBP5500, whose `All_labels.txt` is likewise a plain mean of
+its released per-rater ratings. Alternatives were considered and rejected:
+model-based aggregation (Dawid-Skene and relatives) beats a mean mainly when
+spam dominates the pool, bakes a modelling assumption into data, and yields a
+number nobody can reproduce without rerunning the model; a trimmed mean needs
+an arbitrary percentage and breaks the identity below.
+
+The build **asserts `score` equals the mean of `ratings/distributions.parquet`**
+(currently exact, 0.0e+00), so the point label, the soft label and the raw
+ratings can never disagree. Six `train` rows whose image has no surviving
+generic rating are dropped rather than carrying a silent NaN label: train
+1,751 → 1,745.
+
+The legacy values remain in git history and in the legacy snapshot for anyone
+reproducing pre-2026 results, but are no longer part of the release. Results
+computed on `score` are therefore **not** comparable with the published paper.
+
+```
+uv run python scripts/data/build_labels.py \
+    --v3 data/mebeauty_v3 --report-out reports/legacy_audit/labels.json
+```
+
+### Which raters are filtered out of `score`: none, and why
 
 Tested rather than argued. Each candidate rule was applied to all 593 generic
 raters and its effect measured:
@@ -1267,7 +1263,7 @@ raters and its effect measured:
 Leave-one-out rater/consensus correlation is a **smooth continuum** (median
 0.55, min −0.98, max 1.00, no bimodal gap), so every threshold is arbitrary
 and the cost swings from 0.2% to 8.8% of ratings across equally defensible
-ones. Four reasons `score_mean` filters nothing:
+ones. Four reasons `score` filters nothing:
 
 1. **Reproducibility.** `groupby("image_id").score.mean()` reproduces it
    exactly. Any filter is another rule a user must replicate to verify.
@@ -1331,9 +1327,24 @@ useful for personalization research, but a free-text demographic string is a
 far more identifying label than a pseudonym for a panel this small, so the
 identity and the demographics are kept separate.
 
-Result: **141,736 ratings (from 123,177), 860 raters (from 831)** — generic
-+8,928, date +9,631. The two wide merges `private_date_{female,male}.xlsx` are
-excluded as merges of the individual files; ingesting both would double-count.
+Result: the panel's **8,928 generic ratings from 10 raters** enter the
+released data for the first time. They are markedly harsher than the crowd
+(mean 4.94 vs 6.00) and rated 1,114 of 2,487 images, so they move **572
+images' label by more than 0.25**, one by 1.41 — and one image would have no
+label at all without them.
+
+Their demographics ship separately in `rater_demographics.parquet`
+(ethnicity, gender, age), kept apart from the opaque `panel_XXXX` id: a
+free-text demographic string is far more identifying than a pseudonym for a
+panel this small. Crowd raters have no demographic data and are absent from
+that table rather than carrying null columns.
+
+**Scope note.** Only the `generic` task ships (Finding 16), so only
+`private_generic/` is ingested; the 23 panel members who rated `date` are not
+in the release. `generic_scores_all.xlsx` is also dropped — 56,751 of its
+56,816 image-rater pairs already appear in `public_generic/` and no rater is
+unique to it, so it contributed 65 ratings and a second identifier
+convention.
 
 ## Recovery summary
 
@@ -1651,11 +1662,10 @@ uv run --with facenet-pytorch python scripts/data/verify_crop_reproduction.py \
     --crop-recovery-report reports/legacy_audit/crop_recovery_report.json \
     --output reports/legacy_audit/crop_reproduction_verification.json
 
-# Finding 20: score_mean + rater support (run after build_rating_distributions.py;
-# the legacy `score` is passed through unchanged, never recomputed)
-uv run python scripts/data/enrich_label_provenance.py \
-    --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 --from-raw \
-    --report-out reports/legacy_audit/label_provenance.json
+# Finding 20: the canonical label (run after build_rating_distributions.py,
+# which it verifies against)
+uv run python scripts/data/build_labels.py \
+    --v3 data/mebeauty_v3 --report-out reports/legacy_audit/labels.json
 
 # Soft labels / rating distributions (must run after build_ratings_by_rater.py)
 uv run python scripts/data/build_rating_distributions.py \

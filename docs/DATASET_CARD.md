@@ -122,10 +122,11 @@ locally, license field is a placeholder pending the real decision).
 |---|---|---|
 | `images/metadata.parquet` | 2,495 | image_id (SHA-256), file_name, legacy_filename/path, gender, ethnicity, **width/height/megapixels/crop_batch/is_preprocessed_crop**, label-collision flag, near-duplicate flag, inferred provenance |
 | `landmarks.parquet` | 2,495 | image_id, 68-point landmarks (native `list<float>`, 136 values) |
-| `ratings/aggregate/{train,val,test}.parquet` | 1,751 / 222 / 517 | Canonical split ratings (generic attractiveness). `score` (legacy) + `score_mean` (**SCUT-style, reproducible**), with `n_ratings`, `score_std`, `score_delta`, `diverges_from_score_mean` |
-| `ratings/distributions.parquet` | 4,971 | **Soft labels** — per-image rating distribution over the 1–10 scale, one row per (`image_id`, `rating_type`): raw `counts`, normalized `probabilities`, `mean`, `median`, `std`, `entropy_bits` (see the caveat on `entropy_bits` below). Unfiltered (every rater counts). For label distribution learning |
-| `ratings/by_rater/ratings_by_rater.parquet` | 141,736 | Individual pseudonymized rater scores with `rating_type` (`generic` 68,974 / `date` 72,762), 2,487 images, 860 raters (831 crowd `rater_XXXX` + 29 in-house `panel_XXXX`) |
-| `ratings/by_rater/rater_quality.parquet` | 831 | Per-rater quality statistics (volume, mean, std, discrimination spread) — for consumer-side filtering; no filtering is applied to the canonical score |
+| `ratings/aggregate/{train,val,test}.parquet` | 1,745 / 222 / 517 | Canonical labels: `image_id`, `score`. `score` is the plain unweighted mean of every generic rating — reproducible in one line |
+| `ratings/distributions.parquet` | 2,487 | **Soft labels** — per-image rating distribution over the 1–10 scale: raw `counts`, normalized `probabilities`, `mean`, `median`, `std`, `entropy_bits` (see the caveat below). For label distribution learning |
+| `ratings/by_rater/ratings_by_rater.parquet` | 68,974 | Individual pseudonymized rater scores, 2,487 images, 593 raters (583 crowd `rater_XXXX` + 10 in-house `panel_XXXX`) |
+| `ratings/by_rater/rater_demographics.parquet` | 10 | Ethnicity, gender and age for the in-house panel raters. Crowd raters have no demographic data |
+| `ratings/by_rater/rater_quality.parquet` | 593 | Per-rater quality statistics (volume, mean, std, discrimination spread) — for consumer-side filtering; no filtering is applied to the canonical score |
 
 No pixel data or rater identifiers in any of these beyond the pseudonymous
 `rater_XXXX` id. (`reports/legacy_audit/canonical_dataset/` has the
@@ -140,7 +141,7 @@ excluded — see Finding 6):
 
 | Split | Rows |
 |---|---|
-| train | 1,751 |
+| train | 1,745 |
 | val | 222 |
 | test | 517 |
 
@@ -179,59 +180,53 @@ Ratings come from **two rater populations**, both shipped in
 Individual (not just averaged) rater scores are available for personalization
 research.
 
-> **⚠ Two different rating tasks — check `rating_type` before use.** The
-> collection ran a *generic* attractiveness question (68,974 ratings, mean
-> 5.86) and a *date* attractiveness question (72,762 ratings, mean 4.80)
-> over the same images. These are different questions and sit about a full
-> point apart. **All aggregate labels are computed from `generic` only.**
-> The `date` ratings are a genuine second annotation layer — no comparable
-> dataset has one — and are shipped in `ratings/by_rater/` for personalization
-> research, but they never enter a label. Filter `rating_type == "generic"`
-> to reproduce the labels. See Finding 16.
+### The score, and how it is computed
 
-### Which score to use
+`score` is the **plain unweighted mean of every generic rating an image
+received**, with no rater excluded and no reweighting. It is reproducible in
+one line from the ratings shipped here:
 
-Two point labels ship per image, and the difference matters:
+```python
+ratings.groupby("image_id")["score"].mean()
+```
 
-| Column | What it is | Use it when |
-|---|---|---|
-| `score` | The legacy 2021 label. Consensus-filtered, **not reproducible** | You need comparability with the published paper or the original release |
-| `score_mean` | Plain unweighted mean of every generic rating, **no rater excluded** | You need a label you can verify — this is the SCUT-FBP5500 convention |
+This follows SCUT-FBP5500, whose `All_labels.txt` is likewise a plain mean of
+its released per-rater ratings. It also equals the mean of
+`ratings/distributions.parquet` exactly, so the point label, the soft label
+and the raw ratings can never disagree — the build asserts it.
 
-`score_mean` is reproducible in one line from the ratings this dataset ships,
-and equals the mean of `ratings/distributions.parquet`, so the point label,
-the soft label and the raw ratings are mutually consistent.
+**Why a plain mean, and not something cleverer.** Model-based aggregation
+(Dawid-Skene and relatives) outperforms a mean mainly when spam dominates the
+pool; it also bakes a modelling assumption into what is meant to be data, and
+yields a number nobody can reproduce without rerunning the model. A trimmed
+mean needs an arbitrary trim percentage and breaks the identity above.
 
-They differ **systematically**, because one is filtered and the other is not —
-mean absolute difference 0.20, and **200 of 2,490 images (8%) differ by more
-than 0.5**, flagged as `diverges_from_score_mean`. That is a design
-difference, not an error in either.
+**No rater is excluded.** Every candidate filter was applied to all 593 raters
+and its cost measured (full table: Finding 20). Rater/consensus correlation is
+a smooth continuum with no natural cutoff, so every threshold is arbitrary;
+and filtering by agreement-with-consensus is circular for a dataset whose
+stated purpose includes studying rater variation. `rater_quality.parquet`
+ships the statistics so you can apply your own rule in one line.
 
-> **⚠ `score` cannot be recomputed from the per-rater table, by design.**
-> The 2021 pipeline applied rater cleaning before averaging. Two steps are
-> confirmed to have taken effect — per-image outlier masking (scores >2σ from
-> that image's mean) and dropping raters whose scores barely correlate with
-> the pooled average (`abs(corr) < 0.10`) — plus a minimum-ratings floor at
-> 30. Two further steps appear in the notebooks but are **verified not to
-> have run**, including one that silently no-ops; see Finding 20 for which,
-> and how each verdict was tested. The pipeline's intermediate inputs are
-> lost, so `score` is distributed **as-is rather than recomputed**. That is
-> precisely why `score_mean` ships beside it.
->
-> **No rater is excluded from `score_mean`.** Every candidate filter was
-> tested and measured; rater/consensus correlation is a smooth continuum with
-> no natural cutoff, and filtering by agreement-with-consensus is circular for
-> a dataset whose purpose includes studying rater variation. The statistics
-> ship in `rater_quality.parquet` so you can apply your own rule. Full table
-> of what each filter would cost: Finding 20.
+> **⚠ This replaces the legacy 2021 label.** The original score was the output
+> of a rater-cleaning pipeline whose intermediate inputs no longer exist, so it
+> could not be recomputed from any released file (Finding 20). It is preserved
+> in git history and in the legacy snapshot for anyone reproducing pre-2026
+> results, but it is **not** what this release ships. Results computed here are
+> therefore not directly comparable to the published paper's numbers.
+
+> **Only the `generic` attractiveness task ships.** The legacy collection also
+> ran a *date* task ("would you date this person"), a different question whose
+> mean sits about a point lower. It never entered a label and is no longer
+> released; its raw files remain in the legacy repository. See Finding 16.
 
 ### Soft labels (rating distributions)
 
 `ratings/distributions.parquet` gives the **full distribution** of ratings per
 image, not just their mean: how many raters chose each point on the 1–10
 scale, as raw `counts` and as normalized `probabilities`. One row per
-(`image_id`, `rating_type`); 2,487 images have a `generic` distribution and
-2,485 a `date` one.
+one row per image, covering 2,487 of the 2,495 images (8 have no surviving
+rating). Between 8 and 87 ratings per image, median 28.
 
 This exists because attractiveness is genuinely contested and a single number
 hides that. The mean per-image rating **standard deviation is ≈2.0 points on a
@@ -239,14 +234,14 @@ hides that. The mean per-image rating **standard deviation is ≈2.0 points on a
 most contested image in the set has 41 raters spread almost uniformly across
 all ten points, with a mean of 5.85 that describes essentially none of them.
 
-> **⚠ Do not use `entropy_bits` to compare images.** It correlates **+0.63
+> **⚠ Do not use `entropy_bits` to compare images.** It correlates **+0.66
 > with `n_ratings`**: an image rated 9 times can occupy at most 9 of the 10
-> bins and averages 2.27 bits, while images with 41+ ratings average 2.91 —
-> a gap that is largely sample size, not consensus. Plug-in entropy is
+> bins, so its entropy is capped below an image rated 40 times regardless of
+> what the raters thought — the gap is largely sample size, not consensus. Plug-in entropy is
 > downward-biased at small samples and a Miller-Madow correction only brings
 > the correlation to +0.50, because no estimator recovers bins the sample
 > could never fill. **Use `std` for cross-image comparison** (correlation with
-> `n_ratings` just +0.11, flat across rating-count bands). `entropy_bits`
+> `n_ratings` just +0.08, flat across rating-count bands). `entropy_bits`
 > still honestly describes the observed distribution — which is what LDL
 > consumes — so it ships, with this caveat.
 
@@ -285,11 +280,11 @@ tables.
 
 ## Known data issues (see `docs/DATASET_AUDIT.md` for full detail and repro commands)
 
-- **The legacy `score` cannot be recomputed from the released ratings.** It is
-  the output of a 2021 rater-cleaning pipeline whose intermediate inputs no
-  longer exist. `score_mean` ships beside it as a fully reproducible
-  alternative; the two differ by more than 0.5 on **200 of 2,490 images (8%)**,
-  flagged per row as `diverges_from_score_mean`. See Finding 20.
+- **The labels are not the ones in the published paper.** The 2021 label was
+  the output of a rater-cleaning pipeline whose intermediate inputs no longer
+  exist, so it could not be recomputed or verified. `score` is now a plain
+  reproducible mean instead. Do not claim comparability with the paper's
+  reported numbers. See Finding 20.
 - **The original paper's train/val/test split is permanently unrecoverable** —
   generated without a random seed (Finding 20). Use `benchmark-v1`; do not
   claim comparability with the paper's reported numbers.
@@ -340,7 +335,7 @@ tables.
   a content/consent issue. See the warning at the top of this card — the
   screening method has a demonstrated blind spot, this is not a complete
   identity check.
-- **44 of 860 raters (5.3% of ratings) show no discrimination** — their
+- **6 of 593 raters (1.4% of ratings) show no discrimination** — their
   scores are unrelated to (or inverted from) what the rest of the pool sees
   on the same images, including 4 who gave one identical score to every
   image they rated (Finding 14). Measured and shipped in
