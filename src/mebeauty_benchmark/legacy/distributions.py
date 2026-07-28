@@ -40,12 +40,31 @@ SCORE_BINS: tuple[int, ...] = tuple(range(1, 11))
 
 #: Maximum possible entropy, in bits, for `SCORE_BINS` -- log2(10). A label
 #: at this value had its ratings spread perfectly evenly across the scale.
+#:
+#: WARNING: only reachable with at least 10 ratings. An image rated 9 times
+#: can occupy at most 9 bins and so is capped at log2(9) = 3.170, whatever
+#: the raters actually thought. See `entropy_bits` on `RatingDistribution`.
 MAX_ENTROPY_BITS = math.log2(len(SCORE_BINS))
 
 
 @dataclass(frozen=True)
 class RatingDistribution:
-    """One image's ratings for one task, as a distribution over `SCORE_BINS`."""
+    """One image's ratings for one task, as a distribution over `SCORE_BINS`.
+
+    `entropy_bits` is **not comparable across images with different
+    `n_ratings`**, and must not be used to rank images by how contested they
+    are. Plug-in entropy is downward-biased at small samples, and the bins
+    impose a hard ceiling on top of that: measured on this dataset it
+    correlates +0.63 with `n_ratings` (images with 9-11 ratings average 2.27
+    bits, those with 41+ average 2.91, a gap that is largely sample size
+    rather than consensus). A Miller-Madow correction only reduces this to
+    +0.50, because no estimator can recover bins the sample could never fill.
+
+    Use `std` for cross-image comparison: it correlates just +0.11 with
+    `n_ratings` and is flat across rating-count bands. `entropy_bits` remains
+    an honest description of the *observed* distribution, which is what label
+    distribution learning consumes, so it ships -- with this caveat attached.
+    """
 
     counts: tuple[int, ...]
     mean: float

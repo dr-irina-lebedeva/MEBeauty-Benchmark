@@ -115,6 +115,29 @@ def main() -> None:
         "correlation": round(float(merged["score"].corr(merged["mean"])), 5),
     }
 
+    # entropy_bits is sample-size dependent and must not be used to rank
+    # images by disagreement; std is. Measured every build rather than
+    # asserted once in prose, so a future rebuild cannot quietly drift.
+    report["disagreement_measure_bias"] = {
+        "note": (
+            "Correlation of each disagreement measure with n_ratings. "
+            "entropy_bits is biased upward by sample size (an image with 9 "
+            "ratings cannot fill 10 bins); use std to compare images."
+        ),
+        "by_rating_type": {
+            str(rating_type): {
+                "entropy_bits_vs_n_ratings": round(
+                    float(group["entropy_bits"].corr(group["n_ratings"])), 4
+                ),
+                "std_vs_n_ratings": round(
+                    float(group["std"].corr(group["n_ratings"])), 4
+                ),
+                "mean_std": round(float(group["std"].mean()), 4),
+            }
+            for rating_type, group in distributions.groupby("rating_type")
+        },
+    }
+
     coverage = distributions["image_id"].nunique()
     report["image_coverage"] = {
         "images_with_any_distribution": int(coverage),

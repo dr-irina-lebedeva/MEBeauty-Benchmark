@@ -123,7 +123,7 @@ locally, license field is a placeholder pending the real decision).
 | `images/metadata.parquet` | 2,495 | image_id (SHA-256), file_name, legacy_filename/path, gender, ethnicity, **width/height/megapixels/crop_batch/is_preprocessed_crop**, label-collision flag, near-duplicate flag, inferred provenance |
 | `landmarks.parquet` | 2,495 | image_id, 68-point landmarks (native `list<float>`, 136 values) |
 | `ratings/aggregate/{train,val,test}.parquet` | 1,751 / 222 / 517 | Canonical split ratings (generic attractiveness), plus per-label rater support: `n_ratings`, `score_std`, `recomputed_score`, `score_delta`, `label_discrepancy` |
-| `ratings/distributions.parquet` | 4,971 | **Soft labels** — per-image rating distribution over the 1–10 scale, one row per (`image_id`, `rating_type`): raw `counts`, normalized `probabilities`, `mean`, `median`, `std`, `entropy_bits`. Unfiltered (every rater counts). For label distribution learning |
+| `ratings/distributions.parquet` | 4,971 | **Soft labels** — per-image rating distribution over the 1–10 scale, one row per (`image_id`, `rating_type`): raw `counts`, normalized `probabilities`, `mean`, `median`, `std`, `entropy_bits` (see the caveat on `entropy_bits` below). Unfiltered (every rater counts). For label distribution learning |
 | `ratings/by_rater/ratings_by_rater.parquet` | 123,177 | Individual pseudonymized rater scores with `rating_type` (`generic` 60,046 / `date` 63,131), 2,486 images, 831 raters |
 | `ratings/by_rater/rater_quality.parquet` | 831 | Per-rater quality statistics (volume, mean, std, discrimination spread) — for consumer-side filtering; no filtering is applied to the canonical score |
 
@@ -204,10 +204,21 @@ scale, as raw `counts` and as normalized `probabilities`. One row per
 2,485 a `date` one, minimum 9 ratings per image.
 
 This exists because attractiveness is genuinely contested and a single number
-hides that. **Mean entropy is 2.60 bits out of a possible 3.32** — rater
-disagreement here is the norm, not the exception. The most contested image in
-the set has 41 raters spread almost uniformly across all ten points, with a
-mean of 5.85 that describes essentially none of them.
+hides that. The mean per-image rating **standard deviation is ≈2.0 points on a
+10-point scale** — rater disagreement here is the norm, not the exception. The
+most contested image in the set has 41 raters spread almost uniformly across
+all ten points, with a mean of 5.85 that describes essentially none of them.
+
+> **⚠ Do not use `entropy_bits` to compare images.** It correlates **+0.63
+> with `n_ratings`**: an image rated 9 times can occupy at most 9 of the 10
+> bins and averages 2.27 bits, while images with 41+ ratings average 2.91 —
+> a gap that is largely sample size, not consensus. Plug-in entropy is
+> downward-biased at small samples and a Miller-Madow correction only brings
+> the correlation to +0.50, because no estimator recovers bins the sample
+> could never fill. **Use `std` for cross-image comparison** (correlation with
+> `n_ratings` just +0.11, flat across rating-count bands). `entropy_bits`
+> still honestly describes the observed distribution — which is what LDL
+> consumes — so it ships, with this caveat.
 
 Two properties worth knowing:
 
