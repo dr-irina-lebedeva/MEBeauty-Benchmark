@@ -31,9 +31,9 @@ def test_support_counts_only_actual_ratings():
     support = {item.filename: item for item in compute_label_support(_workbook())}
 
     assert support["a.jpg"].n_ratings == 2
-    assert support["a.jpg"].recomputed_score == 4.0
+    assert support["a.jpg"].score_mean == 4.0
     assert support["b.jpg"].n_ratings == 3
-    assert support["b.jpg"].recomputed_score == 8.0
+    assert support["b.jpg"].score_mean == 8.0
 
 
 def test_single_rating_has_no_spread_rather_than_zero():
@@ -54,7 +54,7 @@ def test_ratings_are_pooled_across_duplicate_image_rows():
     (support,) = compute_label_support(workbook)
 
     assert support.n_ratings == 3
-    assert support.recomputed_score == 4.0
+    assert support.score_mean == 4.0
 
 
 def test_workbook_without_rater_columns_is_rejected():
@@ -77,8 +77,8 @@ def test_attach_preserves_canonical_score_and_flags_discrepancy():
     assert out["score"].tolist() == [4.0, 6.0]
     assert "legacy_filename" not in out.columns
     # a.jpg matches its raters exactly; b.jpg is canonical 6.0 vs recomputed 8.0.
-    assert not out.loc[0, "label_discrepancy"]
-    assert out.loc[1, "label_discrepancy"]
+    assert not out.loc[0, "diverges_from_score_mean"]
+    assert out.loc[1, "diverges_from_score_mean"]
     assert out.loc[1, "score_delta"] == -2.0
 
 
@@ -105,4 +105,4 @@ def test_images_missing_from_the_rater_matrix_keep_null_support():
     assert out["score"].tolist() == [5.0]
     assert pd.isna(out.loc[0, "n_ratings"])
     # An unmeasurable delta must not be flagged as a discrepancy.
-    assert not out.loc[0, "label_discrepancy"]
+    assert not out.loc[0, "diverges_from_score_mean"]

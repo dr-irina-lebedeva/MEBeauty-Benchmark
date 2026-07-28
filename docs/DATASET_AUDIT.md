@@ -1217,23 +1217,116 @@ label, so it is reported alongside, never substituted.
 
 | Column | Meaning |
 |---|---|
-| `n_ratings` | ratings backing this label in the surviving matrix (median 25, range 5–51) |
+| `n_ratings` | generic ratings backing this image in the per-rater layer |
 | `score_std` | how much those raters disagreed |
-| `recomputed_score` | plain mean of them — for comparison only |
-| `score_delta` | `score - recomputed_score` |
-| `label_discrepancy` | `abs(score_delta) > 0.25` |
+| `score_mean` | **SCUT-style label** — plain unweighted mean, no rater excluded |
+| `score_delta` | `score - score_mean` |
+| `diverges_from_score_mean` | `abs(score_delta) > 0.5` |
 
-**17 images are flagged** (16 `train`, 1 `test`; worst delta 3.10). 6 `train`
-rows have no surviving matrix row at all and keep null support rather than
-being dropped. Report:
-`reports/legacy_audit/label_provenance.json`. Logic and threshold rationale:
-`src/mebeauty_benchmark/legacy/label_provenance.py` (8 unit tests).
+**`score_mean` is the SCUT-FBP5500-style label.** SCUT's `All_labels.txt` is a
+plain mean of its released per-rater ratings; that reproducibility is what
+makes a benchmark auditable, and it is the one property the legacy `score`
+cannot have. The two differ **systematically** — `score` is consensus-filtered,
+`score_mean` is not — so `score_delta` measures a design difference, not an
+error. Mean absolute delta 0.20; **200 of 2,490 images (8%) exceed 0.5**, the
+threshold at which the choice between labels changes how an image ranks.
+
+`score_mean` is also exactly the mean of `ratings/distributions.parquet`, so
+point label, soft label and raw ratings are mutually consistent.
+
+Report: `reports/legacy_audit/label_provenance.json`. Logic and threshold
+rationale: `src/mebeauty_benchmark/legacy/label_provenance.py` (8 unit tests).
 
 ```
 uv run python scripts/data/enrich_label_provenance.py \
-    --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 \
+    --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 --from-raw \
     --report-out reports/legacy_audit/label_provenance.json
 ```
+
+### Which raters are filtered out of `score_mean`: none, and why
+
+Tested rather than argued. Each candidate rule was applied to all 593 generic
+raters and its effect measured:
+
+| Filter | Raters dropped | Ratings lost | Images moved >0.25 |
+|---|---|---|---|
+| **none (shipped)** | 0 | 0% | 0 |
+| straight-liners (`std == 0`) | 4 | 0.2% | 28 |
+| fewer than 5 ratings | 67 | 0.2% | 2 |
+| inverted (`loo_corr < 0`) | 19 | 1.2% | 13 |
+| the 2021 rule (`loo_corr < 0.10`) | 31 | 3.9% | 73 |
+| `loo_corr < 0.20` | 53 | 8.8% | 207 |
+
+Leave-one-out rater/consensus correlation is a **smooth continuum** (median
+0.55, min −0.98, max 1.00, no bimodal gap), so every threshold is arbitrary
+and the cost swings from 0.2% to 8.8% of ratings across equally defensible
+ones. Four reasons `score_mean` filters nothing:
+
+1. **Reproducibility.** `groupby("image_id").score.mean()` reproduces it
+   exactly. Any filter is another rule a user must replicate to verify.
+2. **Internal consistency.** It equals the mean of the shipped distribution.
+   Filtering one and not the other would make them disagree.
+3. **Non-circularity.** Filtering by agreement-with-consensus defines a good
+   rater as one who agrees with the majority, inflates apparent reliability,
+   and deletes minority aesthetic viewpoints — the exact signal a
+   multi-ethnic beauty dataset exists to study. Finding 14's argument, and
+   the current annotation literature agrees.
+4. **Reversibility.** Excluding is destructive; flagging is not.
+   `ratings/by_rater/rater_quality.parquet` ships the statistics, so any row
+   of the table above is one line of user code away.
+
+The one rule with a *non*-circular justification is straight-lining: a rater
+who gave the identical score to every image carries no information by
+construction, judged without reference to the majority. 4 raters, 0.2% of
+ratings — flagged, not applied.
+
+## Finding 21 — the in-house rater panel was never ingested; 18,559 ratings recovered
+
+`build_ratings_by_rater.py` selected wide-format rater columns with
+`str(c).startswith("rater_")`. The in-house panel's columns are demographic
+codes (`cf41`, `cm39`, `af48`), which fail that test, so **every panel rating
+was silently dropped** — the same silent-filter pattern as Findings 3, 4 and
+20's step 5.
+
+Two things compounded it:
+
+- `pseudonymize_raters.py` deliberately leaves panel identifiers alone,
+  documented as "already anonymous" — a defensible call, but it is what left
+  them without the `rater_` prefix the loader keyed on.
+- `date_scores_all.xlsx` was skipped entirely as having "corrupted column
+  headers (e.g. `labelcaucasian_female_29.xlsx`, not a rater ID)". **Those
+  headers are not corrupted — they are panel raters.** The file does carry a
+  real hazard, but a different one: precomputed aggregate columns
+  (`mean_gen`, `mean_pr_f`, `mean_pr_m`, `mean_date`) that a naive
+  rater-column parse would ingest as if they were raters.
+
+**The same panel member appears under four spellings**, which is why they were
+never reconciled:
+
+| Shape | Example | Where |
+|---|---|---|
+| full | `caucasian_female_29` | `private_*/` filenames |
+| label- | `labelcaucasian_female_29.xlsx` | `date_scores_all.xlsx` |
+| short | `cf29` | `generic_scores_all.xlsx` |
+| gender-prefixed short | `femalecf29` | `generic_scores_all_2022.xlsx` |
+
+`src/mebeauty_benchmark/legacy/panel.py` (9 unit tests) resolves all four
+against a roster built from the authoritative `private_*/` filenames. Short
+forms are resolved by **lookup, never by expanding initials**, and an
+ambiguous or unknown short form resolves to nothing rather than being guessed
+— guessing would attribute real ratings to the wrong person. Verified against
+the real files: 29 panel members, all 10 short forms and all 10
+gender-prefixed forms resolve, 23 of 27 `label-` columns resolve, and the 4
+that do not are exactly the aggregate columns above.
+
+Panel members get opaque `panel_XXXX` ids. Their demographics are genuinely
+useful for personalization research, but a free-text demographic string is a
+far more identifying label than a pseudonym for a panel this small, so the
+identity and the demographics are kept separate.
+
+Result: **141,736 ratings (from 123,177), 860 raters (from 831)** — generic
++8,928, date +9,631. The two wide merges `private_date_{female,male}.xlsx` are
+excluded as merges of the individual files; ingesting both would double-count.
 
 ## Recovery summary
 
@@ -1521,7 +1614,7 @@ uv run python scripts/data/build_v3_dataset.py \
     --near-duplicates reports/legacy_audit/near_duplicate_images.json --output data/mebeauty_v3
 uv run python scripts/data/build_ratings_by_rater.py \
     --pseudonymized data/pseudonymized_scores --v3-metadata data/mebeauty_v3/images/metadata.parquet \
-    --output data/mebeauty_v3/ratings/by_rater
+    --legacy-copy data/legacy_snapshot --output data/mebeauty_v3/ratings/by_rater
 ```
 
 Plus everything from the "do the remaining improvements" pass (Findings 13
@@ -1551,10 +1644,10 @@ uv run --with facenet-pytorch python scripts/data/verify_crop_reproduction.py \
     --crop-recovery-report reports/legacy_audit/crop_recovery_report.json \
     --output reports/legacy_audit/crop_reproduction_verification.json
 
-# Finding 20: per-label rater support (must run after build_v3_dataset.py;
-# canonical scores are passed through unchanged, never recomputed)
+# Finding 20: score_mean + rater support (run after build_rating_distributions.py;
+# the legacy `score` is passed through unchanged, never recomputed)
 uv run python scripts/data/enrich_label_provenance.py \
-    --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 \
+    --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 --from-raw \
     --report-out reports/legacy_audit/label_provenance.json
 
 # Soft labels / rating distributions (must run after build_ratings_by_rater.py)

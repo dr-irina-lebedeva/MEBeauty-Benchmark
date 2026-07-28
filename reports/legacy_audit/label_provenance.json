@@ -1,34 +1,36 @@
 {
-  "source_workbook": "scores/generic_scores_all_2022.xlsx",
-  "discrepancy_threshold": 0.25,
-  "images_in_workbook": 2604,
+  "support_source": "ratings/by_rater/ratings_by_rater.parquet (generic, unfiltered)",
+  "score_mean_is_filtered": false,
+  "divergence_threshold": 0.5,
+  "images_with_support": 2487,
+  "note": "`score` is the legacy consensus-filtered label; `score_mean` is a plain unweighted mean with no rater excluded. They differ systematically by construction -- score_delta measures that, it is not an error term.",
   "splits": {
     "train": {
       "rows": 1751,
       "with_support": 1745,
       "without_support": 6,
-      "flagged_discrepancy": 16,
-      "mean_abs_delta": 0.01338,
-      "max_abs_delta": 1.83273,
-      "median_n_ratings": 25.0
+      "diverging_from_score_mean": 144,
+      "mean_abs_delta": 0.2004,
+      "max_abs_delta": 1.625,
+      "median_n_ratings": 28.0
     },
     "val": {
       "rows": 222,
       "with_support": 222,
       "without_support": 0,
-      "flagged_discrepancy": 0,
-      "mean_abs_delta": 0.0045,
-      "max_abs_delta": 0.07937,
-      "median_n_ratings": 21.0
+      "diverging_from_score_mean": 18,
+      "mean_abs_delta": 0.2031,
+      "max_abs_delta": 0.88021,
+      "median_n_ratings": 25.5
     },
     "test": {
       "rows": 517,
-      "with_support": 516,
-      "without_support": 1,
-      "flagged_discrepancy": 1,
-      "mean_abs_delta": 0.01104,
-      "max_abs_delta": 3.09838,
-      "median_n_ratings": 25.0
+      "with_support": 517,
+      "without_support": 0,
+      "diverging_from_score_mean": 38,
+      "mean_abs_delta": 0.21394,
+      "max_abs_delta": 1.38897,
+      "median_n_ratings": 28.0
     }
   }
 }

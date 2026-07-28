@@ -43,6 +43,18 @@ from pathlib import Path
 
 import pandas as pd
 
+from mebeauty_benchmark.legacy.panel import (
+    PanelRater,
+    assign_pseudonyms,
+    build_roster,
+    canonical_panel_id,
+)
+
+#: The in-house panel's own per-rater files, keyed by rating task. These were
+#: never ingested before: their columns are demographic codes, not `rater_`
+#: pseudonyms, so the wide-format loader's prefix filter silently skipped them.
+PANEL_DIRS = {"private_generic": "generic", "private_date": "date"}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -53,6 +65,11 @@ def parse_args() -> argparse.Namespace:
         "--v3-metadata", required=True, help="Path to v3 metadata.parquet"
     )
     parser.add_argument("--output", required=True, help="Output directory")
+    parser.add_argument(
+        "--legacy-copy",
+        required=True,
+        help="data/legacy_snapshot -- source of the in-house panel's own files",
+    )
     return parser.parse_args()
 
 
@@ -87,6 +104,62 @@ def load_long_format(directory: Path, source_label: str) -> pd.DataFrame:
     return result
 
 
+def load_panel_long_format(
+    directory: Path,
+    source_label: str,
+    roster: dict[str, PanelRater],
+    pseudonyms: dict[str, str],
+) -> pd.DataFrame:
+    """Load the in-house panel's per-rater files, where the *filename* is the rater.
+
+    Only the individual per-rater files are read. `private_date_female.xlsx`
+    and `private_date_male.xlsx` are wide merges of those same files and would
+    double-count every rating in them.
+    """
+    frames = []
+    for path in sorted(directory.glob("*.xlsx")):
+        canonical = canonical_panel_id(path.name, roster)
+        if canonical is None:
+            print(f"  skipping non-panel file {path.name}")
+            continue
+        df = pd.read_excel(path)
+        if not {"image", "label"} <= set(df.columns):
+            raise ValueError(f"{path.name}: expected long-format image/label columns")
+        df = df[["image", "label"]].rename(columns={"label": "score"}).dropna()
+        df["rater"] = pseudonyms[canonical]
+        frames.append(df)
+    result = (
+        pd.concat(frames, ignore_index=True)
+        if frames
+        else pd.DataFrame(columns=["image", "rater", "score"])
+    )
+    result["source"] = source_label
+    return result
+
+
+def resolve_stems_to_filenames(
+    images: pd.Series, basename_lookup: dict[str, str | None]
+) -> pd.Series:
+    """Map extension-less image stems onto the basenames the lookup expects.
+
+    The panel files store `girl-1763686_1920`, the lookup is keyed by
+    `girl-1763686_1920.jpg`. Bare numeric stems like `0` are real filenames in
+    this dataset (`0.jpg`), not row indices -- see Finding 17.
+    """
+    known = set(basename_lookup)
+
+    def resolve(stem: str) -> str:
+        if stem in known:
+            return stem
+        for extension in (".jpg", ".png", ".jpeg"):
+            candidate = f"{stem}{extension}"
+            if candidate in known:
+                return candidate
+        return stem
+
+    return images.map(resolve)
+
+
 def load_wide_format(path: Path, source_label: str) -> pd.DataFrame:
     wide = pd.read_excel(path)
     rater_cols = [c for c in wide.columns if str(c).startswith("rater_")]
@@ -107,15 +180,30 @@ def main() -> None:
     metadata_df = pd.read_parquet(args.v3_metadata)
     basename_to_image_id = build_basename_lookup(metadata_df)
 
+    legacy_root = Path(args.legacy_copy).expanduser().resolve()
+    panel_roots = {name: legacy_root / "scores" / name for name in PANEL_DIRS}
+    roster = build_roster(
+        [path.name for root in panel_roots.values() for path in root.glob("*.xlsx")]
+    )
+    pseudonyms = assign_pseudonyms(roster)
+    print(f"In-house panel: {len(roster)} members across {len(panel_roots)} tasks")
+
     frames = [
         load_long_format(pseudonymized_dir / "public_generic", "public_generic"),
         load_long_format(pseudonymized_dir / "public_date", "public_date"),
         load_wide_format(
             pseudonymized_dir / "generic_scores_all.xlsx", "generic_scores_all"
         ),
+        *[
+            load_panel_long_format(panel_roots[name], name, roster, pseudonyms)
+            for name in PANEL_DIRS
+        ],
     ]
     combined = pd.concat(frames, ignore_index=True)
-    combined["image"] = combined["image"].str.lower()
+    combined["image"] = combined["image"].astype(str).str.lower()
+    combined["image"] = resolve_stems_to_filenames(
+        combined["image"], basename_to_image_id
+    )
     print(f"Raw rows from selected sources: {len(combined)}")
 
     # The legacy collection ran TWO distinct rating tasks over the same images,
@@ -128,6 +216,7 @@ def main() -> None:
             "public_generic": "generic",
             "generic_scores_all": "generic",
             "public_date": "date",
+            **PANEL_DIRS,
         }
     )
     unmapped_sources = combined.loc[combined["rating_type"].isna(), "source"].unique()
@@ -175,12 +264,32 @@ def main() -> None:
             }
             for k, g in out.groupby("rating_type")
         },
+        "in_house_panel": {
+            "members": len(roster),
+            "pseudonym_prefix": "panel_",
+            "note": (
+                "Previously never ingested: panel columns are demographic "
+                "codes, not `rater_` pseudonyms, so the wide-format loader's "
+                "prefix filter skipped them silently."
+            ),
+        },
         "excluded_sources": [
-            "date_scores_all.xlsx (corrupted column headers)",
-            "date_scores_all_2022.xlsx (corrupted column headers)",
+            (
+                "date_scores_all.xlsx / date_scores_all_2022.xlsx -- superseded, "
+                "not corrupted. Their non-MTurk headers (e.g. "
+                "`labelcaucasian_female_29.xlsx`) are in-house panel raters, now "
+                "ingested from private_date/*.xlsx directly. Those files also mix "
+                "in precomputed aggregate columns (mean_gen, mean_pr_f, mean_pr_m, "
+                "mean_date) that a naive rater-column parse would ingest as raters."
+            ),
             "generic_scores_all_2022.xlsx (100% subset of generic_scores_all.xlsx)",
             "public_generic_all.xlsx (near-total subset of public_generic/*.xlsx)",
             "public_date_all.xlsx (near-total subset of public_date/*.xlsx)",
+            (
+                "private_date_female.xlsx / private_date_male.xlsx -- wide merges "
+                "of the individual private_date/*.xlsx files; ingesting both would "
+                "double-count."
+            ),
         ],
     }
     (output_dir / "reconciliation_report.json").write_text(

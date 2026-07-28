@@ -464,3 +464,50 @@ note and the list below):
 
 Next action: decide on the four above (1 and 3 are the ones that matter for
 a credible release), then licensing — still the actual blocker.
+
+### 2026-07-28 (labels pass)
+
+Branch `feat/label-provenance`. Tests: `make check` clean, 86/86 passing.
+
+Maintainer decisions this pass: keep **all** raw labels in the dataset; make
+the main labels follow SCUT-FBP5500; compute the mean from **generic only**,
+never date; and decide rater filtering deliberately rather than by default.
+
+- **Finding 21 — the in-house panel was never ingested.** `build_ratings_by_rater.py`
+  selected rater columns with `startswith("rater_")`; panel columns are
+  demographic codes (`cf41`, `cm39`), so every panel rating was dropped
+  silently. `date_scores_all.xlsx` had additionally been skipped as having
+  "corrupted column headers" — those headers are panel raters, not
+  corruption. New `legacy/panel.py` (9 tests) reconciles the **four**
+  spellings the same person appears under, resolving short forms by roster
+  lookup and refusing ambiguous ones rather than guessing. Verified on the
+  real files: 29 members, all short and gender-prefixed forms resolve, and
+  the 4 unresolvable `label-` columns are exactly the precomputed aggregates
+  (`mean_gen`, `mean_pr_f`, `mean_pr_m`, `mean_date`) that a naive parse
+  would have ingested as raters. **141,736 ratings (from 123,177), 860 raters
+  (from 831)**; generic +8,928, date +9,631.
+- **SCUT-style labels.** `score_mean` (plain unweighted mean of all generic
+  ratings, no rater excluded) now ships beside the legacy `score`, which stays
+  byte-identical. `score_mean` is reproducible in one line and equals the mean
+  of `ratings/distributions.parquet`, so point label, soft label and raw
+  ratings are mutually consistent — the property SCUT's `All_labels.txt` has
+  and the legacy label cannot.
+- **Rater filtering: none, decided on measurement.** Six candidate rules were
+  applied to all 593 generic raters and their cost measured (table in Finding
+  20). Rater/consensus correlation is a smooth continuum (median 0.55, no
+  gap), so every threshold is arbitrary; filtering by agreement-with-consensus
+  is circular; and flagging is reversible where excluding is not. Straight-
+  lining is the one non-circular rule (4 raters, 0.2%) and is flagged, not
+  applied.
+- Renamed `recomputed_score`→`score_mean` and `label_discrepancy`→
+  `diverges_from_score_mean`, and raised the threshold 0.25→0.5. Against the
+  full raw layer the old threshold flagged 32% of images, which made it read
+  as an anomaly detector for what is a *systematic* filtered-vs-unfiltered
+  difference. At 0.5 it flags 200 of 2,490 (8%) — where the choice of label
+  actually changes an image's rank.
+- Croissant regenerated (0 errors, 9 files, all new columns described);
+  `load_dataset()` re-verified for both configs.
+
+Still open: the three remaining issues from the review pass (multi-face flag
+absent from shipped metadata; `has_out_of_bounds_landmarks` absent; label
+reliability spread), plus licensing.

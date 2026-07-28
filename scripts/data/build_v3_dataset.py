@@ -436,7 +436,7 @@ licensed, not committed to git.
 - `ratings/aggregate/{{train,val,test}}.parquet` -- canonical split, keyed
   by image_id. Run `scripts/data/enrich_label_provenance.py` afterwards to
   add the per-label rater support columns (`n_ratings`, `score_std`,
-  `recomputed_score`, `score_delta`, `label_discrepancy`); this build writes
+  `score_mean`, `score_delta`, `diverges_from_score_mean`); this build writes
   `image_id`/`score` only. See Finding 20.
 - `ratings/distributions.parquet` -- per-image soft labels over the 1-10
   scale, for label distribution learning (run

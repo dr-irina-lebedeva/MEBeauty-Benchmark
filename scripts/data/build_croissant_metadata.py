@@ -31,8 +31,8 @@ LABEL_PROVENANCE_FIELDS = [
         "n_ratings",
         mlc.DataType.INTEGER,
         (
-            "Ratings backing this label in the surviving post-cleaning rater "
-            "matrix. Null where the image has no row in that matrix."
+            "Generic ratings backing this image in the per-rater layer. Null "
+            "where the image has no generic rating at all."
         ),
     ),
     (
@@ -41,24 +41,31 @@ LABEL_PROVENANCE_FIELDS = [
         "Standard deviation of those ratings -- how much the raters disagreed.",
     ),
     (
-        "recomputed_score",
+        "score_mean",
         mlc.DataType.FLOAT,
         (
-            "Plain unweighted mean of the surviving ratings, for comparison "
-            "only. Discards the 2021 rater cleaning and is the worse label."
+            "SCUT-FBP5500-style label: the plain unweighted mean of every "
+            "generic rating, no rater excluded. Reproducible in one line from "
+            "ratings_by_rater, and equal to the mean of the shipped "
+            "distribution. Use this when reproducibility matters; use `score` "
+            "for comparability with the published paper."
         ),
     ),
     (
         "score_delta",
         mlc.DataType.FLOAT,
-        "score - recomputed_score.",
+        (
+            "score - score_mean. Systematically nonzero because `score` is "
+            "consensus-filtered and `score_mean` is not; not an error term."
+        ),
     ),
     (
-        "label_discrepancy",
+        "diverges_from_score_mean",
         mlc.DataType.BOOL,
         (
-            "True where abs(score_delta) > 0.25: the label materially "
-            "disagrees with every surviving rater matrix. 17 images in total."
+            "True where abs(score_delta) > 0.5, i.e. the two labels differ "
+            "enough to change how the image ranks. Flags where the choice "
+            "between them matters, not where either is wrong."
         ),
     ),
 ]
@@ -330,7 +337,7 @@ def main() -> None:
                         "Canonical attractiveness label, inherited from the legacy "
                         "release. NOT recomputable from ratings_by_rater -- it is the "
                         "output of a 2021 rater-cleaning pipeline whose intermediate "
-                        "inputs are lost (Finding 20). Use this, not recomputed_score."
+                        "inputs are lost (Finding 20). Use this, not score_mean."
                     ),
                     data_types=[mlc.DataType.FLOAT],
                     source=mlc.Source(
