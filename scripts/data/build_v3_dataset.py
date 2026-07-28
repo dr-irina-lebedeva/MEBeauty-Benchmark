@@ -438,6 +438,9 @@ licensed, not committed to git.
   add the per-label rater support columns (`n_ratings`, `score_std`,
   `recomputed_score`, `score_delta`, `label_discrepancy`); this build writes
   `image_id`/`score` only. See Finding 20.
+- `ratings/distributions.parquet` -- per-image soft labels over the 1-10
+  scale, for label distribution learning (run
+  `scripts/data/build_rating_distributions.py` after the by-rater table).
 - `ratings/by_rater/ratings_by_rater.parquet` -- individual pseudonymized
   rater scores (run `scripts/data/build_ratings_by_rater.py` separately;
   see `reconciliation_report.json` alongside it for source selection and

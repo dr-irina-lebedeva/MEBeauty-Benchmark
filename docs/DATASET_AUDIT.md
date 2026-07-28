@@ -1557,6 +1557,11 @@ uv run python scripts/data/enrich_label_provenance.py \
     --legacy-copy data/legacy_snapshot --v3 data/mebeauty_v3 \
     --report-out reports/legacy_audit/label_provenance.json
 
+# Soft labels / rating distributions (must run after build_ratings_by_rater.py)
+uv run python scripts/data/build_rating_distributions.py \
+    --v3 data/mebeauty_v3 \
+    --report-out reports/legacy_audit/rating_distributions.json
+
 # Croissant metadata (local generation + validation, no HF upload)
 uv run --with mlcroissant python scripts/data/build_croissant_metadata.py \
     --v3 data/mebeauty_v3 --output data/mebeauty_v3/croissant.json

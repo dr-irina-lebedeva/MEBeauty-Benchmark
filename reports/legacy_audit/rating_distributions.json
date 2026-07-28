@@ -1,0 +1,51 @@
+{
+  "score_bins": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "max_entropy_bits": 3.32193,
+  "rows": 4971,
+  "unfiltered": true,
+  "note": "Built from all raters, none excluded. The canonical `score` inherits the 2021 pipeline's consensus-based rater filtering (Finding 20), so these means differ from it by design.",
+  "by_rating_type": {
+    "date": {
+      "images": 2485,
+      "ratings": 63131,
+      "min_ratings_per_image": 9,
+      "median_ratings_per_image": 32.0,
+      "max_ratings_per_image": 65,
+      "mean_entropy_bits": 2.59079,
+      "images_with_single_rating": 0
+    },
+    "generic": {
+      "images": 2486,
+      "ratings": 60046,
+      "min_ratings_per_image": 9,
+      "median_ratings_per_image": 21.0,
+      "max_ratings_per_image": 78,
+      "mean_entropy_bits": 2.60169,
+      "images_with_single_rating": 0
+    }
+  },
+  "canonical_vs_unfiltered_generic": {
+    "canonical_rows": 2490,
+    "with_distribution": 2483,
+    "without_distribution": 7,
+    "mean_abs_delta": 0.26722,
+    "max_abs_delta": 1.79397,
+    "correlation": 0.9662
+  },
+  "image_coverage": {
+    "images_with_any_distribution": 2486,
+    "images_in_dataset": 2495,
+    "images_with_no_ratings": 9
+  }
+}

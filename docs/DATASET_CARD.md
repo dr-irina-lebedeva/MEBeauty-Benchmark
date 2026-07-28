@@ -123,6 +123,7 @@ locally, license field is a placeholder pending the real decision).
 | `images/metadata.parquet` | 2,495 | image_id (SHA-256), file_name, legacy_filename/path, gender, ethnicity, **width/height/megapixels/crop_batch/is_preprocessed_crop**, label-collision flag, near-duplicate flag, inferred provenance |
 | `landmarks.parquet` | 2,495 | image_id, 68-point landmarks (native `list<float>`, 136 values) |
 | `ratings/aggregate/{train,val,test}.parquet` | 1,751 / 222 / 517 | Canonical split ratings (generic attractiveness), plus per-label rater support: `n_ratings`, `score_std`, `recomputed_score`, `score_delta`, `label_discrepancy` |
+| `ratings/distributions.parquet` | 4,971 | **Soft labels** — per-image rating distribution over the 1–10 scale, one row per (`image_id`, `rating_type`): raw `counts`, normalized `probabilities`, `mean`, `median`, `std`, `entropy_bits`. Unfiltered (every rater counts). For label distribution learning |
 | `ratings/by_rater/ratings_by_rater.parquet` | 123,177 | Individual pseudonymized rater scores with `rating_type` (`generic` 60,046 / `date` 63,131), 2,486 images, 831 raters |
 | `ratings/by_rater/rater_quality.parquet` | 831 | Per-rater quality statistics (volume, mean, std, discrimination spread) — for consumer-side filtering; no filtering is applied to the canonical score |
 
@@ -193,6 +194,34 @@ are now available in `ratings/by_rater/` for personalization research.
 > visible per image. **17 images (16 train, 1 test) disagree by more than
 > 0.25**, worst case 3.10 — consider excluding them for label-sensitive work.
 > See Finding 20.
+
+### Soft labels (rating distributions)
+
+`ratings/distributions.parquet` gives the **full distribution** of ratings per
+image, not just their mean: how many raters chose each point on the 1–10
+scale, as raw `counts` and as normalized `probabilities`. One row per
+(`image_id`, `rating_type`); 2,486 images have a `generic` distribution and
+2,485 a `date` one, minimum 9 ratings per image.
+
+This exists because attractiveness is genuinely contested and a single number
+hides that. **Mean entropy is 2.60 bits out of a possible 3.32** — rater
+disagreement here is the norm, not the exception. The most contested image in
+the set has 41 raters spread almost uniformly across all ten points, with a
+mean of 5.85 that describes essentially none of them.
+
+Two properties worth knowing:
+
+- **Unfiltered.** Every rater contributes; none is excluded or down-weighted.
+  This deliberately differs from the canonical `score`, which inherits the
+  2021 pipeline's consensus-based rater filtering (Finding 20). Against the
+  canonical label the unfiltered generic mean sits at correlation 0.966,
+  mean absolute difference 0.267 — close, but not the same number, by design.
+- **Lossless.** `counts` are raw, so any other statistic can be re-derived
+  without going back to the per-rater table.
+
+Use `probabilities` for label distribution learning, `score` for
+regression comparable with prior work, and `entropy_bits` to weight or filter
+by how contested a label is.
 
 **No rater is excluded from `ratings/by_rater/` — but the canonical labels
 inherit 2021's rater exclusions and cannot be un-inherited.** These two facts

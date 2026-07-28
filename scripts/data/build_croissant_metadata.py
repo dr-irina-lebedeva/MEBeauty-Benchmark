@@ -64,6 +64,57 @@ LABEL_PROVENANCE_FIELDS = [
 ]
 
 
+#: Soft-label columns in `ratings/distributions.parquet`, built by
+#: `build_rating_distributions.py`.
+DISTRIBUTION_FIELDS = [
+    ("image_id", mlc.DataType.TEXT, "Content-addressed image identifier."),
+    (
+        "rating_type",
+        mlc.DataType.TEXT,
+        (
+            "'generic' or 'date' -- two different questions, never pooled "
+            "into one distribution."
+        ),
+    ),
+    (
+        "n_ratings",
+        mlc.DataType.INTEGER,
+        "Ratings backing this distribution (minimum 9).",
+    ),
+    (
+        "counts",
+        mlc.DataType.INTEGER,
+        (
+            "Raw rater counts per score, as a 10-element list for scores "
+            "1..10. Lossless: any other statistic can be re-derived from it."
+        ),
+    ),
+    (
+        "probabilities",
+        mlc.DataType.FLOAT,
+        (
+            "counts normalized to sum to 1 -- the soft label consumed "
+            "directly by label distribution learning."
+        ),
+    ),
+    ("mean", mlc.DataType.FLOAT, "Unfiltered mean of the ratings."),
+    ("median", mlc.DataType.FLOAT, "Median of the ratings."),
+    (
+        "std",
+        mlc.DataType.FLOAT,
+        "Sample standard deviation; null for a single rating.",
+    ),
+    (
+        "entropy_bits",
+        mlc.DataType.FLOAT,
+        (
+            "Shannon entropy of the distribution, 0 (unanimous) to 3.322 "
+            "(evenly split). A direct measure of how contested the label is."
+        ),
+    ),
+]
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--v3", required=True, help="Path to data/mebeauty_v3")
@@ -82,6 +133,7 @@ def main() -> None:
         "ratings/aggregate/train.parquet",
         "ratings/aggregate/val.parquet",
         "ratings/aggregate/test.parquet",
+        "ratings/distributions.parquet",
         "ratings/by_rater/ratings_by_rater.parquet",
         "standardized_256/images/metadata.parquet",
         "standardized_256/landmarks.parquet",
@@ -130,6 +182,18 @@ def main() -> None:
         )
         for split in ["train", "val", "test"]
     ]
+    distributions_file = mlc.FileObject(
+        id="ratings-distributions-parquet",
+        name="ratings/distributions.parquet",
+        description=(
+            "Per-image rating distribution (soft label) over the 1-10 scale, "
+            "one row per (image_id, rating_type). Unfiltered: every rater "
+            "contributes. Supports label distribution learning."
+        ),
+        content_url="ratings/distributions.parquet",
+        encoding_formats=["application/vnd.apache.parquet"],
+        sha256="unset-local-file",
+    )
     by_rater_file = mlc.FileObject(
         id="ratings-by-rater-parquet",
         name="ratings/by_rater/ratings_by_rater.parquet",
@@ -292,6 +356,29 @@ def main() -> None:
         for split in ["train", "val", "test"]
     ]
 
+    distributions_record_set = mlc.RecordSet(
+        id="ratings-distributions",
+        name="ratings_distributions",
+        description=(
+            "Per-image rating distribution (soft label), one row per "
+            "(image_id, rating_type). Built from every rater with none "
+            "excluded, unlike the canonical score."
+        ),
+        fields=[
+            mlc.Field(
+                id=f"ratings-distributions/{column}",
+                name=column,
+                description=description,
+                data_types=[data_type],
+                source=mlc.Source(
+                    file_object="ratings-distributions-parquet",
+                    extract=mlc.Extract(column=column),
+                ),
+            )
+            for column, data_type, description in DISTRIBUTION_FIELDS
+        ],
+    )
+
     by_rater_record_set = mlc.RecordSet(
         id="ratings-by-rater",
         name="ratings_by_rater",
@@ -422,6 +509,7 @@ def main() -> None:
             metadata_file,
             landmarks_file,
             *ratings_files,
+            distributions_file,
             by_rater_file,
             standardized_fileset,
             standardized_metadata_file,
@@ -430,6 +518,7 @@ def main() -> None:
         record_sets=[
             images_record_set,
             *ratings_record_sets,
+            distributions_record_set,
             by_rater_record_set,
             standardized_record_set,
         ],
