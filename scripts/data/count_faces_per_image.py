@@ -64,6 +64,7 @@ def main() -> None:
     detector = MTCNN(keep_all=True, device="cpu")
     counts: Counter[int] = Counter()
     multi_face: list[dict] = []
+    zero_face: list[str] = []
     unreadable: list[str] = []
 
     with torch.no_grad():
@@ -84,6 +85,11 @@ def main() -> None:
                 else int(sum(1 for p in probabilities if p and p > args.confidence))
             )
             counts[faces] += 1
+            if faces == 0:
+                # Recorded by path, not just counted: an image with no
+                # detectable face still carries labels, so a reviewer needs to
+                # know which files to look at.
+                zero_face.append(relative)
             if faces >= 2:
                 multi_face.append(
                     {
@@ -108,6 +114,7 @@ def main() -> None:
         "multi_face_count": len(multi_face),
         "multi_face_fraction": round(len(multi_face) / scanned, 4) if scanned else None,
         "zero_face_count": counts.get(0, 0),
+        "zero_face_images": zero_face,
         "multi_face_images": multi_face,
     }
     output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")

@@ -4,9 +4,9 @@
   "rating_task": "generic",
   "splits": {
     "train": {
-      "rows": 1745,
-      "dropped_unscored": 0,
-      "mean_score": 6.0381,
+      "rows": 1744,
+      "dropped_unscored": 6,
+      "mean_score": 6.037,
       "min_score": 1.5556,
       "max_score": 9.3333
     },
@@ -18,9 +18,9 @@
       "max_score": 8.75
     },
     "test": {
-      "rows": 517,
+      "rows": 516,
       "dropped_unscored": 0,
-      "mean_score": 5.9703,
+      "mean_score": 5.9707,
       "min_score": 1.8889,
       "max_score": 8.8889
     }

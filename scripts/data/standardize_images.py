@@ -128,6 +128,21 @@ def main() -> None:
     print(f"{len(metadata)} images -> {output_images}")
     print(f"  {version}")
 
+    # Same reason as build_v3_dataset.copy_images: a rebuild after an image is
+    # excluded must remove the stale output, or the withdrawn image keeps
+    # shipping in this configuration.
+    expected = {f"{image_id}.jpg" for image_id in metadata["image_id"]}
+    for stale in output_images.iterdir():
+        # Images only -- metadata.parquet lives in this directory too, and
+        # deleting it would silently break the standardized config.
+        if (
+            stale.is_file()
+            and stale.suffix.lower() in {".jpg", ".jpeg", ".png"}
+            and stale.name not in expected
+        ):
+            print(f"  Removing orphaned standardized image: {stale.name}")
+            stale.unlink()
+
     rows, landmark_rows = [], []
     for count, row in enumerate(metadata.itertuples(), start=1):
         source = native_images / row.file_name

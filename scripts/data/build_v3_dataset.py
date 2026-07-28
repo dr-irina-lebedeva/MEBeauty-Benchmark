@@ -61,6 +61,14 @@ EXCLUDED_LEGACY_PATHS = {
     "(found on a second, broader filename pass -- the first pass's regex only matched two-word "
     "names and missed this three-word one; treat this as evidence the screen is still incomplete, "
     "not as confirmation it's now thorough)",
+    # Finding 19: 24 images contain more than one face, so it is unrecorded
+    # which face the rating, gender and ethnicity labels describe. The
+    # maintainer reviewed all 24 on 2026-07-28 and judged the intended subject
+    # unambiguous in every case but these two. The rest are kept deliberately,
+    # including the only three-face image
+    # (male/hispanic/betzy-arosemena-Mx15HMZGQzY-unsplash.jpg).
+    "male/hispanic/michele-seghieri-9cRe2YMORtc-unsplash.jpg": "Finding 19: two faces, intended subject ambiguous (maintainer review)",
+    "female/indian/pexels-shubham-sharma-2912695.jpg": "Finding 19: two faces, intended subject ambiguous (maintainer review)",
 }
 
 # Finding 8 (docs/DATASET_AUDIT.md): 8 images are filed under two conflicting
@@ -212,11 +220,29 @@ def copy_images(metadata_df: pd.DataFrame, legacy_root: Path, output_dir: Path) 
     images_root = legacy_root / "original_images"
     dest_dir = output_dir / "images"
     dest_dir.mkdir(parents=True, exist_ok=True)
+    expected = set()
     for row in metadata_df.itertuples():
         source = images_root / row.legacy_path
         dest = dest_dir / f"{row.image_id}{row.extension}"
+        expected.add(dest.name)
         if not dest.exists():
             shutil.copy2(source, dest)
+
+    # Rebuilding into an existing directory must also *remove* images that are
+    # no longer in the metadata. Without this, growing EXCLUDED_LEGACY_PATHS
+    # leaves the excluded file physically present and still loadable by
+    # ImageFolder -- which for a public-figure or consent removal means the
+    # image is not actually withdrawn.
+    orphans = [
+        path
+        for path in dest_dir.iterdir()
+        if path.is_file()
+        and path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+        and path.name not in expected
+    ]
+    for path in orphans:
+        print(f"  Removing orphaned image no longer in metadata: {path.name}")
+        path.unlink()
 
 
 # The three sizes that dominate the legacy tree (2,472 of 2,495 images).

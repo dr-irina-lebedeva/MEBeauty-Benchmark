@@ -11,6 +11,12 @@
   "multi_face_count": 25,
   "multi_face_fraction": 0.0098,
   "zero_face_count": 4,
+  "zero_face_images": [
+    "female/asian/john-mark-ramos-SGINHNM-vhk-unsplash.jpg",
+    "male/caucasian/vicky-hladynets-NnmUHZ6tpSs-unsplash.jpg",
+    "male/hispanic/posing-996232_1920.jpg",
+    "male/indian/pexels-anna-tarazevich-5119607.jpg"
+  ],
   "multi_face_images": [
     {
       "image": "female/asian/faizfajer-VzmoR9Meu3w-unsplash.jpg",

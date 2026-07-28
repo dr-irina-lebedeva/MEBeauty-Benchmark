@@ -1,12 +1,12 @@
 {
   "policy": "REPORT ONLY -- no rater is excluded from the canonical aggregate on the basis of these statistics. See docs/DATASET_AUDIT.md Finding 14.",
   "total_raters": 593,
-  "total_ratings": 68974,
+  "total_ratings": 68953,
   "raters_with_discrimination_measured": 373,
   "min_ratings_for_discrimination": 30,
   "discrimination_spread_distribution": {
     "min": -1.423,
-    "p25": 1.4545,
+    "p25": 1.4424,
     "median": 2.2274,
     "p75": 2.8857,
     "max": 5.5,
@@ -98,19 +98,19 @@
     {
       "spread_threshold": 0.5,
       "raters_excluded": 20,
-      "ratings_excluded": 4693,
+      "ratings_excluded": 4692,
       "ratings_excluded_fraction": 0.068
     },
     {
       "spread_threshold": 0.75,
       "raters_excluded": 33,
-      "ratings_excluded": 6372,
+      "ratings_excluded": 6371,
       "ratings_excluded_fraction": 0.0924
     },
     {
       "spread_threshold": 1.0,
       "raters_excluded": 51,
-      "ratings_excluded": 10137,
+      "ratings_excluded": 10136,
       "ratings_excluded_fraction": 0.147
     }
   ],
@@ -132,7 +132,7 @@
     {
       "spread_threshold": 1.0,
       "images_losing_all_ratings": 0,
-      "mean_abs_shift": 0.1602,
+      "mean_abs_shift": 0.1603,
       "max_abs_shift": 1.8,
       "images_shifting_over_0.25": 574
     }
@@ -180,11 +180,11 @@
     },
     {
       "rater_id": "rater_0788",
-      "n_ratings": 1054,
-      "mean_score": 5.712523719165086,
-      "std_score": 1.7486651229330363,
-      "discrimination_spread": 0.31728896103896087,
-      "loo_correlation": 0.08911182364793833
+      "n_ratings": 1053,
+      "mean_score": 5.714150047483381,
+      "std_score": 1.7486983655456607,
+      "discrimination_spread": 0.3129426129426127,
+      "loo_correlation": 0.08929041143676686
     },
     {
       "rater_id": "panel_0010",
