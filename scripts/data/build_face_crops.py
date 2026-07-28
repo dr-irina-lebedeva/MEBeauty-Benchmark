@@ -69,6 +69,12 @@ TARGET_SIZE = 256
 #: jawline and head shape, so some context is kept.
 DEFAULT_MARGIN = 0.25
 
+#: Gaussian sigma applied to the region that falls outside the source image,
+#: and the sigma used to feather that region's boundary. Strong enough to
+#: destroy the streak structure, gentle enough to keep colour and tone.
+FILL_BLUR_SIGMA = 12.0
+FILL_FEATHER_SIGMA = 6.0
+
 #: Area ratio below which two faces count as "comparably sized", so picking
 #: the larger is close to arbitrary. Measured on this corpus: where the
 #: largest and the most central face disagree, the ratio is 1.02-1.80x;
@@ -135,12 +141,26 @@ def aligned_crop(
     reaches past their edges -- measured over a 60-image sample, 53% of
     images need some fill and the worst needs 55% of the frame.
 
-    Those pixels are filled by **replicating the source edge**, not with
-    black. A black wedge is a hard, high-contrast shape that a CNN can
-    latch onto as a feature, and its size correlates with head pose --
-    exactly the kind of spurious signal that quietly inflates a benchmark.
-    Replication is bland by comparison. The fraction is recorded per image
-    so anyone can filter on it rather than discover it later.
+    Those pixels are filled by replicating the source edge and then
+    **blurring the filled region**, feathered into the real pixels. The face
+    itself is never touched.
+
+    Each part of that was chosen against the alternatives rather than by
+    default:
+
+    - **Not black.** A black wedge is a hard, high-contrast shape, and its
+      size correlates with how close the face sat to the original frame edge
+      -- a property of the photograph, not the person. That is exactly the
+      kind of regularity a CNN adopts as a shortcut.
+    - **Not reflect or wrap.** Both were tried and are markedly worse: they
+      mirror facial features outward, generating phantom duplicate eyes and
+      mouths around the face. For a face model that is actively dangerous.
+    - **Blurred, not raw replication.** Raw replication leaves crisp streaks
+      with the same correlation problem as black. Blurring keeps the colour
+      and tone of the surroundings while destroying the structure, so the
+      region reads as out-of-focus background.
+
+    The fraction is still recorded per image so anyone can filter on it.
     """
     import cv2
     from insightface.utils.face_align import arcface_dst
@@ -157,15 +177,25 @@ def aligned_crop(
     crop = cv2.warpAffine(
         image, matrix, (target, target), borderMode=cv2.BORDER_REPLICATE
     )
-    # Warp a solid mask with the same transform to measure exactly which
-    # output pixels had no source pixel behind them.
+    # Warp a solid mask with the same transform to find exactly which output
+    # pixels had no source pixel behind them.
     covered = cv2.warpAffine(
         np.full(image.shape[:2], 255, dtype=np.uint8),
         matrix,
         (target, target),
         borderValue=0,
     )
-    return crop, float((covered == 0).mean())
+    fill_fraction = float((covered == 0).mean())
+
+    if fill_fraction > 0:
+        blurred = cv2.GaussianBlur(crop, (0, 0), FILL_BLUR_SIGMA)
+        # Feather the mask so the transition is gradual; a hard boundary
+        # would just reintroduce the crisp edge this is meant to remove.
+        weight = cv2.GaussianBlur(covered, (0, 0), FILL_FEATHER_SIGMA)
+        weight = (weight.astype(np.float32) / 255.0)[..., None]
+        crop = (crop * weight + blurred * (1.0 - weight)).astype(np.uint8)
+
+    return crop, fill_fraction
 
 
 def select_primary_face(faces: list, width: int, height: int) -> tuple[int, dict]:
@@ -336,7 +366,10 @@ def main() -> None:
         "margin": args.margin,
         "min_detection_score": args.min_score,
         "alignment": "5-point ArcFace similarity transform, margin-expanded",
-        "border_mode": "replicate (never black -- see aligned_crop docstring)",
+        "border_mode": (
+            "replicate + gaussian blur of the filled region, feathered; "
+            "reflect/wrap rejected (they mirror phantom facial features)"
+        ),
         "images_considered": len(metadata),
         "cropped": len(crops),
         "no_face_count": len(no_face),

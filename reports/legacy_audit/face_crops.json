@@ -8,7 +8,7 @@
   "margin": 0.25,
   "min_detection_score": 0.6,
   "alignment": "5-point ArcFace similarity transform, margin-expanded",
-  "border_mode": "replicate (never black -- see aligned_crop docstring)",
+  "border_mode": "replicate + gaussian blur of the filled region, feathered; reflect/wrap rejected (they mirror phantom facial features)",
   "images_considered": 2492,
   "cropped": 2492,
   "no_face_count": 0,
