@@ -178,10 +178,13 @@ are now available in `ratings/by_rater/` for personalization research.
 > **⚠ The canonical score cannot be recomputed from the per-rater table, by
 > design.** Averaging `rating_type == "generic"` reproduces only 11.6% of the
 > labels exactly. This is not a defect in the ratings: the 2021 collection
-> pipeline applied five rater-cleaning steps before averaging (drop raters
-> with <50 ratings; mask per-image scores >2σ; average; drop raters with
-> `abs(corr(rater, mean)) < 0.10`; drop a rater's ratings for one gender if
-> they scored >90% of that gender at the floor). The closest surviving rater
+> pipeline applied rater-cleaning steps before averaging. Two are confirmed
+> to have taken effect — per-image outlier masking (scores >2σ from that
+> image's mean) and dropping raters whose scores barely correlate with the
+> pooled average (`abs(corr) < 0.10`) — plus a minimum-ratings floor at 30.
+> Two further steps appear in the notebooks but are **verified not to have
+> run**, including one that silently no-ops; see Finding 20 for which, and
+> for how each verdict was tested. The closest surviving rater
 > matrix reproduces the labels to a mean absolute difference of **0.012**,
 > confirming provenance — but the pipeline's intermediate inputs are lost, so
 > the labels are distributed **as-is rather than recomputed**. Every

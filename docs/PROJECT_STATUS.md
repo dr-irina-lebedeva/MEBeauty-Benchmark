@@ -400,10 +400,18 @@ other four are recorded but untouched.**
 - **Finding 20 added and solved.** Averaging the per-rater table reproduces
   only 11.6% of canonical labels. Root cause found by reading the 2021
   notebooks in `data/legacy_snapshot/MEBeauty_creation_cleaning/`: the labels
-  are the output of a **five-step rater-cleaning pipeline** (drop <50-rating
-  raters; mask per-image >2σ scores; average; drop raters with
-  `abs(corr) < 0.10`; drop a rater's ratings for one gender if they scored
-  >90% of it at the floor), not a plain mean. Verified
+  are the output of a **rater-cleaning pipeline**, not a plain mean. The
+  notebooks contain five steps; each was tested against the surviving matrix
+  rather than taken on faith, and **only some ran**: per-image >2σ masking
+  and the `abs(corr) < 0.10` rater drop took effect (0 survivors below 0.10,
+  lowest 0.201), plus a minimum-ratings floor at 30 (not the notebook's 50 —
+  73/360 raters sit below 50). The `<50` rule and the gender-floor rule did
+  **not** run; the latter is a **silent no-op** — it matches `"/male"`
+  against an `image` column holding bare filenames, with the
+  `rename(path→image)` fix commented out, and the pattern it targets is
+  still present (8 rater-gender groups >90% floor-rated, one at 98.9% of 87
+  images). Same class of silent failure as Findings 3/4, third pipeline
+  stage. Verified
   `generic_scores_all_2022.xlsx` is already the post-cleaning matrix —
   re-applying the 2σ step degrades the match (mad 0.012 → 0.067). The
   pipeline's inputs (`pers.xlsx`, `/home/ubuntu/ECUST_FBP/scores/*.xlsx`)

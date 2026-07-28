@@ -3,8 +3,11 @@
 The canonical scores in `ratings/aggregate/*.parquet` are inherited from the
 legacy release. They are **not** a plain mean of the surviving rating files,
 and were never meant to be: the 2021 pipeline
-(`MEBeauty_creation_cleaning/*.ipynb`) applied five rater-cleaning steps
-before averaging — see `docs/DATASET_AUDIT.md`, Finding 20.
+(`MEBeauty_creation_cleaning/*.ipynb`) applied rater cleaning before
+averaging — per-image outlier masking and a consensus-correlation rater
+drop, among steps that were written but never actually ran. See
+`docs/DATASET_AUDIT.md`, Finding 20, for which steps took effect and how
+each verdict was tested.
 
 The inputs to those notebooks (`pers.xlsx`, `generic_all_path.xlsx`,
 `generic_all_pure.xlsx`) lived on a machine that no longer exists, so the

@@ -1103,36 +1103,67 @@ Measured against `ratings/aggregate/*.parquet` (2026-07-26 build):
 
 ### Why a plain mean was never going to reproduce it
 
-The legacy pipeline in `MEBeauty_creation_cleaning/` applies **five**
-rater-cleaning steps before averaging. The labels are the output of that
-pipeline, not of `mean()`:
+The legacy notebooks in `MEBeauty_creation_cleaning/` contain **five**
+rater-cleaning steps. The labels are the output of that pipeline, not of
+`mean()`. Crucially, **the notebooks are exploratory and not all five steps
+actually took effect** — each was tested against the surviving
+post-cleaning matrix rather than assumed from the code:
 
-1. **Drop low-volume raters** — raters with fewer than 50 ratings are removed
-   (`dataset_cleaning_analysis.ipynb` cell 0).
-2. **Drop per-image outlier scores** — any score more than 2σ from that
-   image's own mean is masked (`dataset_cleaning_analysis.ipynb` cell 3).
-3. **Average the survivors** — this becomes the `mean` column.
-4. **Drop raters who don't track consensus** — raters with
-   `abs(corr(rater, average)) < 0.10` are dropped
-   (`clean_data_from_bad_raters.ipynb` cell 1).
-5. **Drop gender-biased floor ratings** — if a rater gave the minimum score
-   of 1 to more than 90% of one gender's images, *all* of that rater's
-   ratings for that gender are set to `NaN`
-   (`clean_data_from_bad_raters.ipynb` cell 9).
+| # | Step | Source | Took effect? |
+|---|---|---|---|
+| 1 | Drop raters with <50 ratings | `dataset_cleaning_analysis.ipynb` cell 0 | **No** (but see below) |
+| 2 | Mask per-image scores >2σ from that image's mean | `dataset_cleaning_analysis.ipynb` cell 3 | **Yes** |
+| 3 | Average the survivors → the `mean` column | — | Yes |
+| 4 | Drop raters with `abs(corr(rater, average)) < 0.10` | `clean_data_from_bad_raters.ipynb` cell 1 | **Yes** |
+| 5 | Null a rater's ratings for one gender if they scored >90% of it at the floor (`== 1`) | `clean_data_from_bad_raters.ipynb` cell 9 | **No — silent no-op** |
 
-Note this is a substantively different policy from Finding 14's, which
-measured rater quality and deliberately excluded nobody. Steps 1, 4 and 5
-are exactly the kind of consensus-based filtering Finding 14 argued against
-— and they are already baked irreversibly into the canonical labels. Both
-statements are true and should be read together: the *per-rater table*
-excludes nobody; the *canonical labels* inherit 2021's exclusions and cannot
-be un-inherited.
+Evidence for each verdict, against `generic_scores_all_2022.xlsx`:
 
-Step 5 deserves particular care in any write-up. Discarding a rater's
-ratings for one gender when they rate that gender at the floor is a
-defensible anti-troll measure, but on a multi-ethnic *beauty* dataset it
-also removes a category of genuine strong negative preference. It is a
-judgment call made in 2021, not a neutral cleaning step.
+- **Step 1 — did not run as written, but *a* floor did.** 73 of 360 raters
+  have fewer than 50 ratings, so the ≥50 rule plainly did not apply. Yet the
+  minimum is **exactly 30**, which is too round to be accidental: some
+  minimum-ratings filter ran at 30, not 50. The notebook for that variant is
+  not in the repository.
+- **Step 2 — ran.** Re-applying 2σ masking degrades the match to the
+  canonical labels (mad 0.012 → 0.067), which is what happens when outliers
+  have already been removed once.
+- **Step 4 — ran.** Zero surviving raters sit below `abs(corr) = 0.10`; the
+  lowest is 0.201. A clean cutoff with nothing beneath it is not a
+  coincidence.
+- **Step 5 — did not run, and the mechanism is identifiable.** The code
+  tests `data['image'].str.contains("/male")`, but the `image` column holds
+  **bare filenames** (`kuma-kum-GKbPbR0ZAT4-unsplash.jpg`); gender lives in a
+  separate `path` column. `"/male"` therefore matches nothing, `df_male` and
+  `df_female` are empty, `pr1`/`pr2` are 0, and neither branch can fire. Four
+  lines above sits the disabled fix: `#data = data.rename(columns={"path":
+  "image"})`. Confirmed by outcome — the pattern the step targets is still
+  present in the cleaned matrix: **8 rater-gender groups exceed 90% floor
+  rating**, the largest being one rater at 98.9% of 87 male images and
+  another at 100% of both genders (worker IDs deliberately not reproduced
+  here; they are recoverable from the workbook plus
+  `data/rater_mapping.LOCAL_ONLY.csv`). This is the same class of silent
+  failure as Findings 3 and 4, in a third pipeline stage.
+
+Three further properties of step 5, relevant if it is ever reimplemented:
+it has **no minimum-count guard** (a rater who scored 3 male images, all at
+the floor, would lose every male rating); it matches **only the exact value
+`1`**, so a rater giving everyone 2 is untouched; and `df = df_female` /
+`df = df_male` inside the branches is **dead code**, reassigned at the top of
+the next iteration and never read.
+
+**How this interacts with Finding 14.** Finding 14 measured rater quality and
+deliberately excluded nobody. Steps 1 and 4 are exactly the kind of
+consensus-based filtering it argued against, and they are baked irreversibly
+into the canonical labels. Both statements hold and must be read together:
+the *per-rater table* excludes nobody; the *canonical labels* inherit 2021's
+exclusions and cannot be un-inherited.
+
+**On step 5 as a policy** (moot here, since it never ran, but worth stating
+because it is easy to reintroduce): discarding a rater's ratings for one
+gender when they rate that gender at the floor is a defensible anti-troll
+measure, but on a multi-ethnic *beauty* dataset it also removes a category
+of genuine strong negative preference. It would be a judgment call, not a
+neutral cleaning step.
 
 ### `generic_scores_all_2022.xlsx` is already the post-cleaning matrix
 
