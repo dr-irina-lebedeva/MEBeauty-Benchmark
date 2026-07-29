@@ -24,6 +24,44 @@ from pathlib import Path
 
 import mlcroissant as mlc
 
+#: Label columns in each split file. `score` is canonical; the others ship so
+#: that every screening and correction step stays visible and reversible.
+SCORE_FIELDS = [
+    (
+        "score",
+        (
+            "Canonical attractiveness label (1-10): the mean over valid raters "
+            "after each rater's scale is normalised, on images with at least 10 "
+            "such ratings. Recomputable from ratings_by_rater.parquet. This "
+            "REPLACES the 2021 legacy label, which was the output of a cleaning "
+            "pipeline whose inputs are lost (Finding 20)."
+        ),
+    ),
+    (
+        "score_raw_mean",
+        (
+            "Plain unweighted mean over the same valid raters, without "
+            "per-rater normalisation. Equals the mean of the shipped rating "
+            "distribution."
+        ),
+    ),
+    (
+        "score_all_raters",
+        (
+            "Plain mean over every rater with no screening at all, so the "
+            "effect of the validity filter is measurable."
+        ),
+    ),
+    (
+        "score_adjusted",
+        (
+            "Image quality fitted by a joint per-rater affine model, an "
+            "independent route to the same correction `score` applies. Agrees "
+            "with `score` at r = 0.98."
+        ),
+    ),
+]
+
 #: Soft-label columns in `ratings/distributions.parquet`, built by
 #: `build_rating_distributions.py`.
 DISTRIBUTION_FIELDS = [
@@ -140,8 +178,10 @@ def main() -> None:
         name="ratings/distributions.parquet",
         description=(
             "Per-image rating distribution (soft label) over the 1-10 scale, "
-            "one row per image. Unfiltered: every rater contributes. "
-            "`score` in the split files is the mean of this distribution."
+            "one row per image. Counts the integer scores valid raters gave, "
+            "for images with at least 10 of them. `score_raw_mean` in the "
+            "split files is the mean of this distribution; `score` is not, "
+            "because it normalises each rater's scale first."
         ),
         content_url="ratings/distributions.parquet",
         encoding_formats=["application/vnd.apache.parquet"],
@@ -153,8 +193,9 @@ def main() -> None:
         description=(
             "Individual pseudonymized rater scores for the generic "
             "attractiveness task. 583 crowd raters (`rater_XXXX`) and 10 "
-            "in-house panel raters (`panel_XXXX`); `score` is the plain mean "
-            "of these, so every label is reproducible from this file."
+            "in-house panel raters (`panel_XXXX`). Every label in the split "
+            "files is reproducible from this one: keep rows with "
+            "`rater_valid`, normalise each rater, then average."
         ),
         content_url="ratings/by_rater/ratings_by_rater.parquet",
         encoding_formats=["application/vnd.apache.parquet"],
@@ -312,21 +353,19 @@ def main() -> None:
                         extract=mlc.Extract(column="image_id"),
                     ),
                 ),
+            ]
+            + [
                 mlc.Field(
-                    id=f"ratings-{split}/score",
-                    name="score",
-                    description=(
-                        "Canonical attractiveness label, inherited from the legacy "
-                        "release. NOT recomputable from ratings_by_rater -- it is the "
-                        "output of a 2021 rater-cleaning pipeline whose intermediate "
-                        "inputs are lost (Finding 20). Use this, not score_mean."
-                    ),
+                    id=f"ratings-{split}/{column}",
+                    name=column,
+                    description=description,
                     data_types=[mlc.DataType.FLOAT],
                     source=mlc.Source(
                         file_object=f"ratings-{split}-parquet",
-                        extract=mlc.Extract(column="score"),
+                        extract=mlc.Extract(column=column),
                     ),
-                ),
+                )
+                for column, description in SCORE_FIELDS
             ],
         )
         for split in ["train", "val", "test"]

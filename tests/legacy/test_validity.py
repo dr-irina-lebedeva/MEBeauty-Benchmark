@@ -1,9 +1,10 @@
 import pandas as pd
 
 from mebeauty_benchmark.legacy.validity import (
-    MAX_DISTINCT_SCORES,
-    MIN_RATINGS,
+    MIN_DISTINCT_SCORES,
+    MIN_RATINGS_PER_IMAGE,
     attach_validity,
+    labelled_image_ids,
     rater_validity,
 )
 
@@ -16,13 +17,13 @@ def _ratings(**raters: list[float]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def test_a_rater_with_too_few_ratings_is_invalid():
-    frame = rater_validity(_ratings(light=[5.0] * (MIN_RATINGS - 1))).set_index(
-        "rater_id"
-    )
+def test_a_rater_with_few_ratings_is_kept():
+    # The rule this policy deliberately dropped. Three judgements are three
+    # real judgements; the image-level support rule is what guards the labels.
+    frame = rater_validity(_ratings(light=[2.0, 6.0, 9.0])).set_index("rater_id")
 
-    assert not frame.loc["light", "rater_valid"]
-    assert "fewer than" in frame.loc["light", "invalid_reason"]
+    assert frame.loc["light", "rater_valid"]
+    assert frame.loc["light", "invalid_reason"] == ""
 
 
 def test_a_rater_who_gave_one_score_to_everything_is_invalid():
@@ -40,11 +41,19 @@ def test_alternating_two_values_is_also_invalid():
     assert not frame.loc["binary", "rater_valid"]
 
 
+def test_the_distinct_score_rule_applies_at_any_volume():
+    # A light rater is not exempt: two values over three ratings is as
+    # uninformative as two values over two hundred.
+    frame = rater_validity(_ratings(few_flat=[4.0, 4.0, 5.0])).set_index("rater_id")
+
+    assert not frame.loc["few_flat", "rater_valid"]
+
+
 def test_three_distinct_values_is_enough_to_stay_valid():
     frame = rater_validity(_ratings(varied=[1.0, 2.0, 3.0] * 14)).set_index("rater_id")
 
     assert frame.loc["varied", "rater_valid"]
-    assert frame.loc["varied", "n_distinct_scores"] == MAX_DISTINCT_SCORES + 1
+    assert frame.loc["varied", "n_distinct_scores"] == MIN_DISTINCT_SCORES
 
 
 def test_a_harsh_but_discriminating_rater_stays_valid():
@@ -72,12 +81,12 @@ def test_a_rater_who_disagrees_with_everyone_stays_valid():
 
 
 def test_attach_validity_keeps_every_row():
-    ratings = _ratings(light=[5.0] * 3, solid=[1.0, 5.0, 9.0] * 10)
+    ratings = _ratings(flat=[5.0] * 3, solid=[1.0, 5.0, 9.0] * 10)
 
     out = attach_validity(ratings)
 
     assert len(out) == len(ratings)
-    assert out.loc[out["rater_id"] == "light", "rater_valid"].eq(False).all()
+    assert out.loc[out["rater_id"] == "flat", "rater_valid"].eq(False).all()
     assert out.loc[out["rater_id"] == "solid", "rater_valid"].all()
 
 
@@ -85,3 +94,25 @@ def test_valid_raters_have_no_reason_recorded():
     frame = rater_validity(_ratings(solid=[1.0, 5.0, 9.0] * 10)).set_index("rater_id")
 
     assert frame.loc["solid", "invalid_reason"] == ""
+
+
+def test_an_image_needs_ten_ratings_to_be_labelled():
+    every = {f"r{i}": [1.0, 5.0, 9.0] for i in range(MIN_RATINGS_PER_IMAGE)}
+    ratings = attach_validity(_ratings(**every))
+    # img2 loses one rater, leaving it one short of the threshold.
+    thin = ratings[~((ratings["image_id"] == "img2") & (ratings["rater_id"] == "r0"))]
+
+    labelled = labelled_image_ids(thin)
+
+    assert "img0" in labelled and "img1" in labelled
+    assert "img2" not in labelled
+
+
+def test_straight_lining_raters_cannot_prop_an_image_over_the_threshold():
+    # The rater screen must run first. Nine real raters plus twenty flat ones
+    # is still an image with nine usable ratings.
+    real = _ratings(**{f"real{i}": [1.0, 5.0, 9.0] for i in range(9)})
+    flat = _ratings(**{f"flat{i}": [7.0, 7.0, 7.0] for i in range(20)})
+    ratings = attach_validity(pd.concat([real, flat], ignore_index=True))
+
+    assert labelled_image_ids(ratings) == set()

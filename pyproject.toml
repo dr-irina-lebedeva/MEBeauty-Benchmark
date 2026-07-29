@@ -12,6 +12,9 @@ dependencies = [
     "huggingface-hub>=1.24.0",
     "openpyxl>=3.1.5",
     "pandas>=3.0.5",
+    "scikit-learn>=1.9.0",
+    "torch>=2.13.0",
+    "torchvision>=0.28.0",
 ]
 
 [project.scripts]
@@ -27,3 +30,12 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.0",
 ]
+
+[tool.pytest.ini_options]
+# `slow` covers the end-to-end method tests: they download pretrained weights
+# and fine-tune for one epoch, so they take ~30s rather than ~2s. Deselected by
+# default so `make check` stays fast; `make test-slow` runs them, and CI should
+# run both. They are the tests that catch a method being unable to run at all,
+# so "deselected by default" must not become "never run".
+markers = ["slow: end-to-end, needs pretrained weights (run with -m slow)"]
+addopts = "-m 'not slow'"

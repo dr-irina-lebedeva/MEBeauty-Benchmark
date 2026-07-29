@@ -1,0 +1,45 @@
+{
+  "configs": {
+    "cropped_256": {
+      "images_on_disk": 2467,
+      "rows_before": 2467,
+      "rows_after": 2467,
+      "orphan_rows_dropped": 0
+    },
+    "standardized_256": {
+      "images_on_disk": 2467,
+      "rows_before": 2467,
+      "rows_after": 2467,
+      "orphan_rows_dropped": 0
+    }
+  },
+  "coverage": {
+    "unique_images": 2467,
+    "labelled_images": 2018,
+    "unlabelled_images": 449,
+    "label_collisions_total": 7,
+    "label_collisions_resolved": 7,
+    "label_collisions_remaining": 0,
+    "landmark_rows": 2467,
+    "rating_counts": {
+      "train": 1399,
+      "val": 185,
+      "test": 434
+    },
+    "note": "Images without a label have fewer than 10 ratings from valid raters. They keep their pixels and metadata and enter no split.",
+    "configurations": {
+      "native": {
+        "images": 2467,
+        "note": "authoritative; heterogeneous resolution (Finding 17)"
+      },
+      "cropped_256": {
+        "images": 2467,
+        "note": "derived convenience config; uniform 256x256 (cropped_256)"
+      },
+      "standardized_256": {
+        "images": 2467,
+        "note": "derived convenience config; uniform 256x256 (standardized_256)"
+      }
+    }
+  }
+}

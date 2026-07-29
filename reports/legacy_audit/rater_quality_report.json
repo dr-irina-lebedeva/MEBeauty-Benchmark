@@ -150,33 +150,33 @@
       "rater_id": "panel_0003",
       "n_ratings": 1108,
       "mean_score": 3.9774368231046933,
-      "std_score": 2.42026149239678,
+      "std_score": 2.4202614923967802,
       "discrimination_spread": 2.588831594984179,
-      "loo_correlation": 0.4763890815616457
+      "loo_correlation": 0.4763890815616456
     },
     {
       "rater_id": "panel_0004",
       "n_ratings": 1108,
       "mean_score": 6.129963898916968,
-      "std_score": 2.091684659345831,
+      "std_score": 2.0916846593458316,
       "discrimination_spread": 2.3459829461577444,
-      "loo_correlation": 0.5335210428172412
+      "loo_correlation": 0.5335210428172411
     },
     {
       "rater_id": "panel_0006",
       "n_ratings": 1105,
       "mean_score": 6.103167420814479,
-      "std_score": 1.3687237900432605,
+      "std_score": 1.368723790043261,
       "discrimination_spread": 0.44939928963322284,
-      "loo_correlation": 0.10053200831279221
+      "loo_correlation": 0.10053200831279219
     },
     {
       "rater_id": "rater_0071",
       "n_ratings": 1080,
       "mean_score": 8.687962962962963,
-      "std_score": 1.4637553486125225,
+      "std_score": 1.463755348612523,
       "discrimination_spread": 1.552777777777778,
-      "loo_correlation": 0.5280652183773138
+      "loo_correlation": 0.5280652183773137
     },
     {
       "rater_id": "rater_0788",
@@ -190,9 +190,9 @@
       "rater_id": "panel_0010",
       "n_ratings": 980,
       "mean_score": 5.696938775510204,
-      "std_score": 2.2305774607264492,
+      "std_score": 2.230577460726449,
       "discrimination_spread": 2.9605081157374737,
-      "loo_correlation": 0.6001335973698478
+      "loo_correlation": 0.6001335973698477
     },
     {
       "rater_id": "panel_0008",
@@ -200,7 +200,7 @@
       "mean_score": 5.103166496424923,
       "std_score": 1.1531854095569425,
       "discrimination_spread": 1.0664340256280376,
-      "loo_correlation": 0.383128592232933
+      "loo_correlation": 0.3831285922329332
     },
     {
       "rater_id": "panel_0002",
@@ -216,7 +216,7 @@
       "mean_score": 4.18014329580348,
       "std_score": 1.422266856898577,
       "discrimination_spread": 2.114792865690353,
-      "loo_correlation": 0.6386126609003107
+      "loo_correlation": 0.6386126609003104
     }
   ]
 }

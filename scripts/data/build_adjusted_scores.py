@@ -1,18 +1,23 @@
 """Add rater-offset-adjusted scores and per-label uncertainty to the splits.
 
-`score` -- the plain unweighted mean -- stays the primary label and is not
-touched. It is reproducible in one line, matches the SCUT-FBP5500 convention,
-and equals the mean of the shipped distribution exactly. This script adds
-columns beside it:
+`score` -- the rater-normalised mean from `build_labels.py` -- stays the
+primary label and is not touched. This script adds columns beside it:
 
-    score_clean      plain mean, clearly-invalid raters dropped
     score_adjusted   fitted quality from the rater-offset model
     adjusted_lo/hi   95% rater-bootstrap interval on score_adjusted
-    ci95             half-width of the t-interval on `score`
+    ci95             half-width of the t-interval on the raw mean
     n_ratings, std   support behind the label
 
 "adjusted", not "debiased": the column names the operation performed, not a
 claim that bias has been eliminated.
+
+**This is a cross-check on `score`, not a competitor.** Both correct for the
+same thing -- raters using the scale differently -- by different routes:
+`score` standardises each rater independently, this model estimates offsets
+(and optionally scales) jointly by alternating least squares. They should
+agree closely; the report measures how closely, and a divergence would mean
+one of them is wrong. Every input here is screened by the same rules as
+`score` (`legacy/validity.py`), so the comparison is like for like.
 
 **Model selection is done, not assumed.** Plain mean, offset-only and affine
 (per-rater scale) models are all fitted on 80% of ratings and compared on the
@@ -53,17 +58,12 @@ from mebeauty_benchmark.legacy.aggregation import (
     fit_offset_model,
     held_out_rmse,
 )
+from mebeauty_benchmark.legacy.validity import (
+    MIN_RATINGS_PER_IMAGE,
+    labelled_image_ids,
+)
 
 SPLITS = ("train", "val", "test")
-
-#: A rater below this many ratings cannot be characterised, so their offset
-#: would be noise. Used only for `score_clean`; they still count in `score`.
-MIN_RATINGS_FOR_VALIDITY = 10
-
-#: Zero spread over at least this many ratings means the rater gave one number
-#: to everything, which carries no information by construction. This is judged
-#: without reference to whether they agree with anyone.
-STRAIGHT_LINING_MIN_RATINGS = 5
 
 #: RMSE improvement on held-out ratings below which the extra per-rater scale
 #: parameter is treated as not earning its keep.
@@ -156,8 +156,17 @@ def assignment_confounding(
 def main() -> None:
     args = parse_args()
     v3_dir = Path(args.v3).expanduser().resolve()
-    ratings_df = pd.read_parquet(
+    all_ratings = pd.read_parquet(
         v3_dir / "ratings" / "by_rater" / "ratings_by_rater.parquet"
+    )
+    # Same screens as `score`, or the two are not comparable: valid raters
+    # only, and only images that actually carry a label.
+    valid = all_ratings[all_ratings["rater_valid"]]
+    labelled = labelled_image_ids(all_ratings, MIN_RATINGS_PER_IMAGE)
+    ratings_df = valid[valid["image_id"].isin(labelled)].reset_index(drop=True)
+    print(
+        f"Screened {len(all_ratings)} -> {len(ratings_df)} ratings "
+        f"({all_ratings['image_id'].nunique()} -> {len(labelled)} images)"
     )
 
     images = sorted(ratings_df["image_id"].unique())
@@ -238,21 +247,6 @@ def main() -> None:
 
     stats = ratings_df.groupby("image_id")["score"].agg(["count", "mean", "std"])
 
-    # score_clean: drop only raters whose ratings carry no information, judged
-    # without reference to whether they agree with the majority.
-    rater_stats = ratings_df.groupby("rater_id")["score"].agg(["count", "std"])
-    invalid = set(
-        rater_stats.index[
-            (rater_stats["count"] < MIN_RATINGS_FOR_VALIDITY)
-            | (
-                (rater_stats["std"].fillna(0) == 0)
-                & (rater_stats["count"] >= STRAIGHT_LINING_MIN_RATINGS)
-            )
-        ]
-    )
-    clean = ratings_df[~ratings_df["rater_id"].isin(invalid)]
-    clean_mean = clean.groupby("image_id")["score"].mean()
-
     from scipy import stats as scipy_stats
 
     adjusted = pd.DataFrame(
@@ -266,7 +260,6 @@ def main() -> None:
     )
     adjusted["n_ratings"] = adjusted["image_id"].map(stats["count"]).astype("Int64")
     adjusted["std"] = adjusted["image_id"].map(stats["std"])
-    adjusted["score_clean"] = adjusted["image_id"].map(clean_mean)
     counts = adjusted["n_ratings"].astype(float)
     adjusted["ci95"] = np.where(
         counts > 1,
@@ -274,6 +267,38 @@ def main() -> None:
         * adjusted["std"]
         / np.sqrt(counts),
         np.nan,
+    )
+
+    # How closely the joint model agrees with the independently-normalised
+    # `score`. These are two different routes to the same correction, so
+    # strong agreement is evidence for both and a divergence indicts one.
+    canonical = pd.concat(
+        [
+            pd.read_parquet(v3_dir / "ratings" / "aggregate" / f"{s}.parquet")[
+                ["image_id", "score"]
+            ]
+            for s in SPLITS
+        ]
+    )
+    paired = adjusted.merge(canonical, on="image_id", how="inner")
+    difference = (paired["score_adjusted"] - paired["score"]).abs()
+    agreement = {
+        "images_compared": len(paired),
+        "pearson": round(float(paired["score_adjusted"].corr(paired["score"])), 4),
+        "spearman": round(
+            float(paired["score_adjusted"].corr(paired["score"], method="spearman")), 4
+        ),
+        "mean_abs_difference": round(float(difference.mean()), 4),
+        "max_abs_difference": round(float(difference.max()), 4),
+        "note": (
+            "score normalises each rater independently; score_adjusted fits "
+            "offsets jointly. High agreement means the correction is a "
+            "property of the ratings, not of either method."
+        ),
+    }
+    print(
+        f"  agreement with score: r={agreement['pearson']}, "
+        f"mean |diff| {agreement['mean_abs_difference']}"
     )
 
     written = {}
@@ -291,7 +316,7 @@ def main() -> None:
         written[split] = len(merged)
 
     report = {
-        "primary_label": "score (plain unweighted mean, unchanged)",
+        "primary_label": "score (rater-normalised mean, unchanged by this script)",
         "model_shipped": "affine" if use_affine else "offset-only",
         "model_selection": {
             "held_out_rmse_mean_of_5_splits": {
@@ -336,15 +361,7 @@ def main() -> None:
                 4,
             ),
         },
-        "score_clean": {
-            "raters_dropped": len(invalid),
-            "ratings_dropped": int(len(ratings_df) - len(clean)),
-            "fraction_dropped": round(1 - len(clean) / len(ratings_df), 5),
-            "criteria": (
-                f"fewer than {MIN_RATINGS_FOR_VALIDITY} ratings, or zero spread "
-                f"over at least {STRAIGHT_LINING_MIN_RATINGS} ratings"
-            ),
-        },
+        "agreement_with_score": agreement,
         "bootstrap_draws": args.bootstrap,
         "rows_written": written,
     }

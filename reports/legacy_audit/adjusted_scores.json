@@ -1,19 +1,19 @@
 {
-  "primary_label": "score (plain unweighted mean, unchanged)",
+  "primary_label": "score (rater-normalised mean, unchanged by this script)",
   "model_shipped": "affine",
   "model_selection": {
     "held_out_rmse_mean_of_5_splits": {
-      "plain_mean": 2.16933,
-      "offset": 1.76101,
-      "affine": 1.71374
+      "plain_mean": 2.14138,
+      "offset": 1.75489,
+      "affine": 1.70301
     },
-    "affine_gain_over_offset": 0.04727,
+    "affine_gain_over_offset": 0.05188,
     "affine_wins_folds": "5/5",
     "rater_scale_distribution": {
       "min": 0.0,
-      "median": 1.0087,
-      "max": 2.4563,
-      "floored_at_zero": 2
+      "median": 0.9953,
+      "max": 2.4291,
+      "floored_at_zero": 3
     },
     "margin_required": 0.005,
     "note": "Affine adds a per-rater scale. It ships only if it predicts held-out ratings better; otherwise the extra freedom is fitting noise from light raters."
@@ -24,33 +24,35 @@
     "anchor_identifiable": true
   },
   "assignment_confounding": {
-    "correlation": 0.0905,
-    "permutation_null_mean": 0.0034,
-    "permutation_null_sd": 0.0544,
-    "p_value": 0.11,
+    "correlation": 0.1198,
+    "permutation_null_mean": -0.0024,
+    "permutation_null_sd": 0.0549,
+    "p_value": 0.0333,
     "note": "Leave-one-rater-out. Using image means that include the rater's own ratings self-correlates and inflates this substantially."
   },
   "offset_distribution": {
-    "min": -10.4782,
-    "p25": -1.811,
-    "median": 0.1069,
-    "p75": 1.901,
-    "max": 8.1331
+    "min": -10.1922,
+    "p25": -1.855,
+    "median": 0.0798,
+    "p75": 1.862,
+    "max": 8.0754
   },
   "score_vs_adjusted": {
-    "mean_abs_difference": 0.3224,
-    "max_abs_difference": 2.5134
+    "mean_abs_difference": 0.2847,
+    "max_abs_difference": 1.5625
   },
-  "score_clean": {
-    "raters_dropped": 108,
-    "ratings_dropped": 566,
-    "fraction_dropped": 0.00821,
-    "criteria": "fewer than 10 ratings, or zero spread over at least 5 ratings"
+  "agreement_with_score": {
+    "images_compared": 2018,
+    "pearson": 0.9761,
+    "spearman": 0.9738,
+    "mean_abs_difference": 0.228,
+    "max_abs_difference": 1.1281,
+    "note": "score normalises each rater independently; score_adjusted fits offsets jointly. High agreement means the correction is a property of the ratings, not of either method."
   },
   "bootstrap_draws": 200,
   "rows_written": {
-    "train": 1719,
-    "val": 218,
-    "test": 523
+    "train": 1399,
+    "val": 185,
+    "test": 434
   }
 }

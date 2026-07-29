@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import shutil
 from collections import defaultdict
@@ -220,6 +221,71 @@ def build_metadata(images_df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, str
     return metadata_df, path_to_image_id
 
 
+#: JPEG quality for the two legacy PNGs, converted so every shipped image is
+#: a `.jpg`. High enough that the re-encode is visually lossless.
+PNG_TO_JPEG_QUALITY = 95
+
+
+def convert_pngs_to_jpeg(
+    metadata_df: pd.DataFrame, legacy_root: Path, output_dir: Path
+) -> dict[str, str]:
+    """Re-encode the legacy PNGs as JPEG, and re-derive their `image_id`.
+
+    Two of the 2,467 images are PNG; the maintainer asked for a single format
+    throughout. The conversion is not a rename: `image_id` is the SHA-256 of
+    the file's bytes, so changing the bytes must change the id, or the
+    dataset's content-addressing invariant silently becomes false.
+
+    This lives in the build rather than being applied to the output directory
+    once, because a one-off edit is undone by the next rebuild -- the copy
+    step would simply restore the PNG from the legacy snapshot.
+
+    Two real costs, accepted deliberately:
+
+    - one PNG carries an alpha channel (values 254-255, imperceptible but
+      present). JPEG cannot store alpha, so it is flattened onto white.
+    - a lossless source is re-encoded lossily. At quality 95 this is
+      invisible, but it is not reversible.
+
+    Returns old id -> new id, so every table keyed by `image_id` can follow.
+    """
+    from io import BytesIO
+
+    from PIL import Image
+
+    images_root = legacy_root / "original_images"
+    remap: dict[str, str] = {}
+    for row in metadata_df[metadata_df["extension"] == ".png"].itertuples():
+        with Image.open(images_root / row.legacy_path) as image:
+            if image.mode in {"RGBA", "LA", "P"}:
+                flattened = Image.new("RGB", image.size, (255, 255, 255))
+                converted = image.convert("RGBA")
+                flattened.paste(converted, mask=converted.split()[-1])
+                image = flattened
+            else:
+                image = image.convert("RGB")
+            buffer = BytesIO()
+            image.save(buffer, "JPEG", quality=PNG_TO_JPEG_QUALITY, subsampling=0)
+
+        payload = buffer.getvalue()
+        new_id = hashlib.sha256(payload).hexdigest()
+        remap[row.image_id] = new_id
+        (output_dir / "images").mkdir(parents=True, exist_ok=True)
+        (output_dir / "images" / f"{new_id}.jpg").write_bytes(payload)
+        print(f"  Converted {row.legacy_path} -> .jpg ({len(payload) / 1024:.0f} KB)")
+
+    if remap:
+        mask = metadata_df["image_id"].isin(remap)
+        metadata_df.loc[mask, "size_bytes"] = [
+            (output_dir / "images" / f"{remap[i]}.jpg").stat().st_size
+            for i in metadata_df.loc[mask, "image_id"]
+        ]
+        metadata_df.loc[mask, "image_id"] = metadata_df.loc[mask, "image_id"].map(remap)
+        metadata_df.loc[mask, "extension"] = ".jpg"
+        metadata_df.loc[mask, "file_name"] = metadata_df.loc[mask, "image_id"] + ".jpg"
+    return remap
+
+
 def copy_images(metadata_df: pd.DataFrame, legacy_root: Path, output_dir: Path) -> None:
     images_root = legacy_root / "original_images"
     dest_dir = output_dir / "images"
@@ -229,7 +295,9 @@ def copy_images(metadata_df: pd.DataFrame, legacy_root: Path, output_dir: Path) 
         source = images_root / row.legacy_path
         dest = dest_dir / f"{row.image_id}{row.extension}"
         expected.add(dest.name)
-        if not dest.exists():
+        # Converted PNGs are already written by convert_pngs_to_jpeg; their
+        # legacy source no longer corresponds to the shipped bytes.
+        if not dest.exists() and source.suffix.lower() == row.extension:
             shutil.copy2(source, dest)
 
     # Rebuilding into an existing directory must also *remove* images that are
@@ -375,6 +443,16 @@ def main() -> None:
         images_df = images_df.loc[~excluded_mask].reset_index(drop=True)
 
     metadata_df, path_to_image_id = build_metadata(images_df)
+    # Re-encode the legacy PNGs before anything downstream reads an image_id:
+    # the id is the file hash, so converting the bytes must change it, and
+    # every join key has to follow in the same pass.
+    (output_dir / "images").mkdir(parents=True, exist_ok=True)
+    png_remap = convert_pngs_to_jpeg(metadata_df, legacy_root, output_dir)
+    if png_remap:
+        path_to_image_id = {
+            path: png_remap.get(image_id, image_id)
+            for path, image_id in path_to_image_id.items()
+        }
     metadata_df = apply_near_duplicates(metadata_df, args.near_duplicates)
     if args.near_duplicates:
         print(

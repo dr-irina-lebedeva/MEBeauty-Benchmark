@@ -12,26 +12,33 @@
     10
   ],
   "max_entropy_bits": 3.32193,
-  "rows": 2461,
+  "rows": 2018,
   "rater_screening": "behavioural validity only (see legacy/validity.py)",
+  "min_ratings_per_image_threshold": 10,
   "rating_task": "generic",
-  "note": "Built from valid raters only -- the same rows as `score`, so the two always agree. Screening is behavioural, never based on agreement with other raters.",
-  "images": 2461,
-  "ratings": 68317,
-  "min_ratings_per_image": 7,
-  "median_ratings_per_image": 27.0,
+  "note": "Built from valid raters over images with at least 10 such ratings -- the same rows as `score`, so the two always agree. Screening is behavioural, never based on agreement with other raters.",
+  "images": 2018,
+  "ratings": 64624,
+  "observed_min_ratings_per_image": 10,
+  "median_ratings_per_image": 29.0,
   "max_ratings_per_image": 103,
-  "mean_entropy_bits": 2.6443,
-  "images_with_single_rating": 0,
+  "mean_entropy_bits": 2.73049,
+  "normalised_distribution": {
+    "file": "ratings/distributions_normalised.parquet",
+    "rows": 2018,
+    "expectation_vs_mean_max_drift": 2.6645352591003757e-15,
+    "note": "Soft-binned normalised ratings. Its expectation is `score`; distributions.parquet's expectation is `score_raw_mean`. A benchmark must use the one matching the label it scores on."
+  },
   "disagreement_measure_bias": {
     "note": "Correlation of each disagreement measure with n_ratings. entropy_bits is biased upward by sample size (an image with 9 ratings cannot fill 10 bins); use std to compare images.",
-    "entropy_bits_vs_n_ratings": 0.6485,
-    "std_vs_n_ratings": 0.0731,
-    "mean_std": 2.0655
+    "entropy_bits_vs_n_ratings": 0.5854,
+    "std_vs_n_ratings": 0.1856,
+    "mean_std": 2.0504
   },
   "image_coverage": {
-    "images_with_any_distribution": 2461,
+    "images_with_a_distribution": 2018,
     "images_in_dataset": 2467,
-    "images_with_no_ratings": 6
+    "images_without_a_distribution": 449,
+    "note": "Images below the support threshold keep their pixels and metadata but carry no label and enter no split."
   }
 }

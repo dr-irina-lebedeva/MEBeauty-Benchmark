@@ -120,6 +120,80 @@ def rating_distribution(scores: Sequence[float]) -> RatingDistribution:
     )
 
 
+def soft_bin(values: Sequence[float]) -> tuple[float, ...]:
+    """Spread continuous 1-10 values across integer bins, preserving the mean.
+
+    Each value is split between the two bins it falls between, in proportion
+    to how close it is to each -- 6.25 contributes 0.75 to bin 6 and 0.25 to
+    bin 7. Linear interpolation is chosen precisely because it is
+    mean-preserving: sum(k * weight_k) equals mean(values) exactly.
+
+    That identity is the point. `score` is a mean of *normalised* ratings,
+    which are continuous, so it cannot be the mean of a histogram of raw
+    integer ratings. Binning the normalised values this way gives a soft label
+    whose expectation is the label, which is what a distribution-learning
+    method needs in order to be scored on the same quantity it is trained on.
+
+    Rounding to the nearest bin instead would shift the mean by up to 0.5 per
+    rating and reintroduce the mismatch it exists to remove.
+    """
+    if not values:
+        raise ValueError("Cannot build a distribution from zero ratings")
+
+    weights = [0.0] * len(SCORE_BINS)
+    for value in values:
+        if not SCORE_BINS[0] <= value <= SCORE_BINS[-1]:
+            raise ValueError(
+                f"Value {value!r} is outside {SCORE_BINS[0]}-{SCORE_BINS[-1]}; "
+                "normalised ratings must be clipped before binning"
+            )
+        low = math.floor(value)
+        if low == SCORE_BINS[-1]:  # exactly 10 -- all weight on the last bin
+            weights[-1] += 1.0
+            continue
+        fraction = value - low
+        weights[low - SCORE_BINS[0]] += 1.0 - fraction
+        weights[low - SCORE_BINS[0] + 1] += fraction
+    return tuple(weights)
+
+
+def build_soft_distributions(
+    ratings_df: pd.DataFrame, value_column: str = "score_normalised"
+) -> pd.DataFrame:
+    """One soft distribution per image, from continuous per-rating values.
+
+    The counterpart to `build_distributions` for normalised ratings. Ships
+    `weights` (fractional, summing to `n_ratings`) rather than `counts`,
+    because the values being binned are not integers and calling them counts
+    would misrepresent them.
+    """
+    missing = {"image_id", value_column} - set(ratings_df.columns)
+    if missing:
+        raise ValueError(f"Per-rater table is missing columns: {sorted(missing)}")
+
+    rows = []
+    for image_id, group in ratings_df.groupby("image_id", sort=True):
+        values = group[value_column].tolist()
+        weights = soft_bin(values)
+        total = sum(weights)
+        probabilities = [weight / total for weight in weights]
+        series = pd.Series(values, dtype="float64")
+        entropy = -sum(p * math.log2(p) for p in probabilities if p > 0)
+        rows.append(
+            {
+                "image_id": image_id,
+                "n_ratings": len(values),
+                "weights": list(weights),
+                "probabilities": probabilities,
+                "mean": float(series.mean()),
+                "median": float(series.median()),
+                "std": float(series.std()) if len(values) > 1 else None,
+                "entropy_bits": entropy,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def build_distributions(ratings_df: pd.DataFrame) -> pd.DataFrame:
     """Build one distribution per image from a per-rater table.
 

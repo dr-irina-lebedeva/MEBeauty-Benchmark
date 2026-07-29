@@ -8,8 +8,13 @@ the canonical single `score` alone cannot support it.
 
 Built from the **valid** raters in `ratings/by_rater/ratings_by_rater.parquet`
 -- the same rows behind `score`, so the point label and the soft label can
-never disagree; `build_labels.py` asserts it. Validity is behavioural only
-(see `legacy/validity.py`); it never depends on agreeing with anyone.
+never disagree; `build_labels.py` asserts it against `score_raw_mean`.
+Validity is behavioural only (see `legacy/validity.py`); it never depends on
+agreeing with anyone.
+
+Only images with at least `MIN_RATINGS_PER_IMAGE` valid ratings get a
+distribution. A ten-bin soft label estimated from three ratings is mostly
+zeros and a rounding artefact, and shipping it would invite training on it.
 
 Run this **before** `build_labels.py`, which verifies against the output.
 
@@ -30,6 +35,15 @@ from mebeauty_benchmark.legacy.distributions import (
     MAX_ENTROPY_BITS,
     SCORE_BINS,
     build_distributions,
+    build_soft_distributions,
+)
+from mebeauty_benchmark.legacy.normalization import (
+    DEFAULT_SHRINKAGE,
+    normalise_ratings,
+)
+from mebeauty_benchmark.legacy.validity import (
+    MIN_RATINGS_PER_IMAGE,
+    labelled_image_ids,
 )
 
 SPLITS = ("train", "val", "test")
@@ -52,13 +66,20 @@ def main() -> None:
     metadata = pd.read_parquet(v3_dir / "images" / "metadata.parquet")
     print(f"Source: {len(per_rater)} per-rater ratings, {len(metadata)} images")
 
-    # The canonical score is the mean over valid raters, so the distribution
-    # it must equal is built from the same rows.
+    # The canonical score is built from valid raters over sufficiently rated
+    # images, so the distribution must be built from exactly those rows.
     valid = per_rater[per_rater["rater_valid"]]
     print(
         f"  valid raters: {valid['rater_id'].nunique()} of {per_rater['rater_id'].nunique()}"
     )
-    distributions = build_distributions(valid)
+    labelled = labelled_image_ids(per_rater, MIN_RATINGS_PER_IMAGE)
+    supported = valid[valid["image_id"].isin(labelled)]
+    print(
+        f"  images with >={MIN_RATINGS_PER_IMAGE} valid ratings: {len(labelled)} "
+        f"of {valid['image_id'].nunique()} "
+        f"({len(valid) - len(supported)} ratings left unlabelled)"
+    )
+    distributions = build_distributions(supported)
 
     # Every distribution must be a real probability distribution, and must
     # account for exactly the ratings it was built from. Checked here rather
@@ -71,29 +92,79 @@ def main() -> None:
         raise AssertionError("counts do not sum to n_ratings")
     if not distributions["counts"].apply(len).eq(len(SCORE_BINS)).all():
         raise AssertionError(f"expected {len(SCORE_BINS)} bins per distribution")
+    if int(distributions["n_ratings"].min()) < MIN_RATINGS_PER_IMAGE:
+        raise AssertionError(
+            f"a distribution rests on fewer than {MIN_RATINGS_PER_IMAGE} ratings"
+        )
 
     output_path = v3_dir / "ratings" / "distributions.parquet"
     distributions.to_parquet(output_path, index=False)
     print(f"Wrote {len(distributions)} distributions to {output_path}")
+
+    # The soft label that matches the canonical `score`. `distributions.parquet`
+    # counts the integer scores raters gave, so its mean is `score_raw_mean`;
+    # a method trained on it and scored against `score` is being asked for one
+    # quantity and graded on another. Measured on this dataset that cost the
+    # LDL entry ~0.09 MAE. This one bins the *normalised* ratings, so its mean
+    # is `score` exactly.
+    # Rater scales are estimated from *all* of a rater's valid ratings, exactly
+    # as `build_labels.py` does -- including their ratings on images that will
+    # not be labelled, because a rater's scale habit is a property of the
+    # person. Normalising over only the supported subset instead gives every
+    # rater slightly different statistics, and the resulting soft label no
+    # longer has `score` as its mean. That mismatch is not theoretical: it was
+    # caught here by the protocol's expectation check, at 0.09.
+    normalised_rows = normalise_ratings(
+        valid[["image_id", "rater_id", "score"]], shrinkage=DEFAULT_SHRINKAGE
+    )
+    soft = build_soft_distributions(
+        normalised_rows[normalised_rows["image_id"].isin(labelled)]
+    )
+    probability_sums = soft["probabilities"].apply(sum)
+    if not probability_sums.sub(1.0).abs().lt(1e-9).all():
+        raise AssertionError("some normalised probability vectors do not sum to 1")
+    expectation = soft["probabilities"].apply(
+        lambda p: sum(b * w for b, w in zip(SCORE_BINS, p, strict=True))
+    )
+    drift = float((expectation - soft["mean"]).abs().max())
+    if drift > 1e-9:
+        raise AssertionError(
+            f"soft distribution expectation drifts from its mean by {drift}"
+        )
+    soft_path = v3_dir / "ratings" / "distributions_normalised.parquet"
+    soft.to_parquet(soft_path, index=False)
+    print(f"Wrote {len(soft)} normalised distributions to {soft_path}")
+    print(f"  expectation == mean to {drift:.1e}")
 
     report: dict[str, object] = {
         "score_bins": list(SCORE_BINS),
         "max_entropy_bits": round(MAX_ENTROPY_BITS, 5),
         "rows": len(distributions),
         "rater_screening": "behavioural validity only (see legacy/validity.py)",
+        "min_ratings_per_image_threshold": MIN_RATINGS_PER_IMAGE,
         "rating_task": "generic",
         "note": (
-            "Built from valid raters only -- the same rows as `score`, so "
-            "the two always agree. Screening is behavioural, never based on "
-            "agreement with other raters."
+            "Built from valid raters over images with at least "
+            f"{MIN_RATINGS_PER_IMAGE} such ratings -- the same rows as "
+            "`score`, so the two always agree. Screening is behavioural, "
+            "never based on agreement with other raters."
         ),
         "images": int(distributions["image_id"].nunique()),
         "ratings": int(distributions["n_ratings"].sum()),
-        "min_ratings_per_image": int(distributions["n_ratings"].min()),
+        "observed_min_ratings_per_image": int(distributions["n_ratings"].min()),
         "median_ratings_per_image": float(distributions["n_ratings"].median()),
         "max_ratings_per_image": int(distributions["n_ratings"].max()),
         "mean_entropy_bits": round(float(distributions["entropy_bits"].mean()), 5),
-        "images_with_single_rating": int((distributions["n_ratings"] == 1).sum()),
+        "normalised_distribution": {
+            "file": "ratings/distributions_normalised.parquet",
+            "rows": len(soft),
+            "expectation_vs_mean_max_drift": drift,
+            "note": (
+                "Soft-binned normalised ratings. Its expectation is `score`; "
+                "distributions.parquet's expectation is `score_raw_mean`. A "
+                "benchmark must use the one matching the label it scores on."
+            ),
+        },
     }
 
     # entropy_bits is sample-size dependent and must not be used to rank
@@ -116,9 +187,13 @@ def main() -> None:
 
     coverage = distributions["image_id"].nunique()
     report["image_coverage"] = {
-        "images_with_any_distribution": int(coverage),
+        "images_with_a_distribution": int(coverage),
         "images_in_dataset": len(metadata),
-        "images_with_no_ratings": len(metadata) - int(coverage),
+        "images_without_a_distribution": len(metadata) - int(coverage),
+        "note": (
+            "Images below the support threshold keep their pixels and "
+            "metadata but carry no label and enter no split."
+        ),
     }
 
     report_path = Path(args.report_out).expanduser().resolve()
