@@ -1,25 +1,57 @@
 [project]
-name = "mebeauty-benchmark"
-version = "0.1.0"
-description = "Add your description here"
+name = "fbp-benchmark"
+version = "1.0.0"
+description = "A reproducible benchmark for facial beauty prediction: one protocol, twenty methods, from hand-crafted geometry to foundation models."
 readme = "README.md"
+license = { text = "MIT" }
 authors = [
     { name = "Irina Lebedeva", email = "dr.irina.lebedeva@gmail.com" }
 ]
 requires-python = ">=3.12"
+keywords = [
+    "facial-beauty-prediction",
+    "facial-attractiveness",
+    "benchmark",
+    "computer-vision",
+    "affective-computing",
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# The floor: enough to load the dataset and run the classical methods. Torch is
+# deliberately *not* here, so a machine with no GPU stack can still install the
+# package, list the methods and run the geometric baselines.
 dependencies = [
     "datasets>=5.0.0",
     "huggingface-hub>=1.24.0",
-    "openpyxl>=3.1.5",
+    "numpy>=2.0",
     "pandas>=3.0.5",
+    "pyyaml>=6.0",
     "scikit-learn>=1.9.0",
+]
+
+[project.optional-dependencies]
+# The deep and foundation eras. `pip install fbp-benchmark[all]` is the normal
+# install; the split exists so a 2 GB dependency is a choice, not a surprise.
+deep = ["torch>=2.13.0", "torchvision>=0.28.0"]
+foundation = ["torch>=2.13.0", "torchvision>=0.28.0", "transformers>=5.0.0"]
+all = [
     "torch>=2.13.0",
     "torchvision>=0.28.0",
     "transformers>=5.0.0",
+    "scipy>=1.14",
 ]
 
+[project.urls]
+Dataset = "https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty"
+"Original dataset" = "https://github.com/fbplab/MEBeauty-database"
+Paper = "https://doi.org/10.1007/s00521-021-06535-0"
+
 [project.scripts]
-mebeauty-benchmark = "mebeauty_benchmark:main"
+fbp-benchmark = "fbp_benchmark.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.11.31,<0.12.0"]
@@ -30,6 +62,10 @@ dev = [
     "pre-commit>=4.6.1",
     "pytest>=9.1.1",
     "ruff>=0.16.0",
+    "scipy>=1.14",
+    "torch>=2.13.0",
+    "torchvision>=0.28.0",
+    "transformers>=5.0.0",
 ]
 
 [tool.pytest.ini_options]
@@ -38,5 +74,8 @@ dev = [
 # default so `make check` stays fast; `make test-slow` runs them, and CI should
 # run both. They are the tests that catch a method being unable to run at all,
 # so "deselected by default" must not become "never run".
-markers = ["slow: end-to-end, needs pretrained weights (run with -m slow)"]
+markers = [
+    "slow: end-to-end, needs pretrained weights (run with -m slow)",
+    "network: downloads the dataset from the Hugging Face Hub",
+]
 addopts = "-m 'not slow'"
