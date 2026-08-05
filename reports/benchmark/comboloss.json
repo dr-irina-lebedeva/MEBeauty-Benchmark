@@ -1,0 +1,76 @@
+{
+  "method": "comboloss",
+  "reference": "Xu & Xiang 2020",
+  "implementation_note": "reimplementation",
+  "setup": {
+    "method": "comboloss",
+    "reference": "Xu & Xiang 2020, arXiv:2010.10721",
+    "source": "paper",
+    "optimizer": "sgd",
+    "learning_rate": 0.01,
+    "momentum": 0.9,
+    "weight_decay": 0.001,
+    "batch_size": 64,
+    "epochs": 60,
+    "backbone": "resnext50",
+    "image_size": 224,
+    "scheduler": "step_50",
+    "augmentation": [
+      "resize_256",
+      "random_crop_224",
+      "hflip",
+      "color_jitter",
+      "rotation"
+    ],
+    "paper_quote": "The learning rate starts from 0.01 and is divided by 10 per 50 epochs. Weight decay and batch size are set as 0.001 and 64, respectively. The model is trained via SGD with 0.9 momentum for 200 epochs. The images are resized and randomly cropped to 224x224 patches, color jittering and random rotation are applied for data augmentation. The network is initialized with ImageNet pretrained weights.",
+    "deviation_from_paper": "Backbone is ResNeXt-50, not the paper's SE-ResNeXt-50, which torchvision does not provide; the squeeze-excitation blocks are therefore absent. The paper's 200 epochs are capped at 60: 200 passes over 1,399 images is well past the point where this dataset is being memorised rather than learned. Early stopping on the validation split (patience 5) replaces the paper's fixed schedule: benchmark-v1 is a single fixed split, so a fixed epoch count would report whatever the last epoch produced rather than the method's best honest result.",
+    "notes": ""
+  },
+  "epochs_overridden": null,
+  "protocol": {
+    "protocol": "benchmark-v1",
+    "label": "score",
+    "images": "cropped_256",
+    "seed": 0,
+    "sizes": {
+      "train": 1399,
+      "val": 185,
+      "test": 434
+    },
+    "not_comparable_to": "SCUT-FBP5500 results, and the 2022 MEBeauty release: different images, labels and splits"
+  },
+  "train_seconds": 761.6,
+  "epochs_trained": 14,
+  "best_val_mae": 0.6986,
+  "point": {
+    "PC": 0.7297,
+    "SROCC": 0.7247,
+    "MAE": 0.7037,
+    "RMSE": 0.877,
+    "n": 434
+  },
+  "pearson_ci95": [
+    0.6822,
+    0.7725
+  ],
+  "distribution": {
+    "Chebyshev": 0.2689,
+    "Clark": 2.2436,
+    "Canberra": 6.3045,
+    "KL": 1.1385,
+    "Cosine": 0.7226,
+    "Intersection": 0.5728,
+    "n": 434
+  },
+  "environment": {
+    "timestamp": "2026-07-29T11:18:12+00:00",
+    "git_commit": "1d02a242bf4a738897d13132bff903aaad0da9b1",
+    "git_tree_dirty": true,
+    "reproducible_from_commit": false,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}

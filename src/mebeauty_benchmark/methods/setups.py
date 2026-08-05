@@ -476,6 +476,107 @@ SETUPS: dict[str, Setup] = {
             + UNIFORM_DEVIATION
         ),
     ),
+    # ---------------------------------------------------- proposed here
+    "rw-ldl": Setup(
+        method="rw-ldl",
+        reference="This work (reliability-weighted LDL)",
+        source="default",
+        optimizer="adamw",
+        learning_rate=1e-4,
+        weight_decay=1e-4,
+        batch_size=32,
+        epochs=30,
+        backbone="resnet18",
+        image_size=224,
+        scheduler="cosine",
+        augmentation=("hflip",),
+        notes=(
+            "Proposed here, not from the literature. Identical to "
+            "`ldl-ren2017` in backbone, head, optimiser and reported "
+            "statistic -- the *only* difference is the loss, so the "
+            "comparison isolates it. Fits the multinomial likelihood of the "
+            "rating counts instead of KL to the normalised histogram, and "
+            "weights the regression term by each label's inverse variance. "
+            "Both exploit the fact that MEBeauty records how many raters "
+            "produced each label (10-102, a 4.3x spread in standard error) "
+            "and that every existing method discards it."
+        ),
+        deviation=UNIFORM_DEVIATION,
+    ),
+    "rw-ldl-noweight": Setup(
+        method="rw-ldl-noweight",
+        reference="This work (ablation: no precision weighting)",
+        source="default",
+        optimizer="adamw",
+        learning_rate=1e-4,
+        batch_size=32,
+        epochs=30,
+        notes="Ablation of `rw-ldl`: multinomial likelihood only.",
+        deviation=UNIFORM_DEVIATION,
+    ),
+    "rw-ldl-kl": Setup(
+        method="rw-ldl-kl",
+        reference="This work (ablation: no multinomial likelihood)",
+        source="default",
+        optimizer="adamw",
+        learning_rate=1e-4,
+        batch_size=32,
+        epochs=30,
+        notes="Ablation of `rw-ldl`: precision weighting only, plain KL.",
+        deviation=UNIFORM_DEVIATION,
+    ),
+    # ------------------------------------------------ beyond the survey table
+    "dinov2-linear": Setup(
+        method="dinov2-linear",
+        reference="Oquab et al. 2024 (DINOv2) + this benchmark",
+        source="adapted",
+        optimizer="adamw",
+        learning_rate=1e-3,
+        weight_decay=1e-4,
+        batch_size=32,
+        epochs=capped_epochs(40),
+        backbone="facebook/dinov2-base",
+        image_size=224,
+        scheduler="cosine",
+        augmentation=("resize_256", "random_crop_224", "hflip"),
+        notes=(
+            "Not a published FBP method. Frozen DINOv2 ViT-B/14 features "
+            "(CLS + mean-pooled patches) with a small MLP head, plus "
+            "horizontal-flip test-time augmentation. Included because the "
+            "2025-2026 results suggest the binding constraint at 1,399 "
+            "training images is the representation, not the head: MD-Net's "
+            "ablation loses more from removing its pretrained prior (0.021 "
+            "PC) than from replacing its fusion (0.011). Learning rate is "
+            "1e-3 rather than 1e-4 because only the head trains."
+        ),
+        deviation=(
+            "DINOv3 would be the stronger choice but its weights are gated "
+            "behind a licence requiring personal details, so the ungated "
+            "Apache-2.0 DINOv2 ships instead. " + UNIFORM_DEVIATION
+        ),
+    ),
+    "dinov2-partial": Setup(
+        method="dinov2-partial",
+        reference="Oquab et al. 2024 (DINOv2) + this benchmark",
+        source="adapted",
+        optimizer="adamw",
+        learning_rate=1e-5,
+        weight_decay=1e-4,
+        batch_size=16,
+        epochs=capped_epochs(30),
+        backbone="facebook/dinov2-base",
+        image_size=224,
+        scheduler="cosine",
+        augmentation=("resize_256", "random_crop_224", "hflip"),
+        notes=(
+            "The same, with the last 4 transformer blocks unfrozen. Present "
+            "so 'freezing is better at this scale' is settled by measurement "
+            "rather than by the argument in foundation.py's docstring. If "
+            "this beats `dinov2-linear`, that argument was wrong. Much lower "
+            "learning rate (1e-5) since pretrained blocks are being updated."
+        ),
+        deviation=UNIFORM_DEVIATION,
+    ),
     "mean-baseline": Setup(
         method="mean-baseline",
         reference="--",

@@ -1,0 +1,63 @@
+{
+  "method": "aanet",
+  "reference": "Lin et al. 2019",
+  "implementation_note": "reimplementation, conditions on gender/ethnicity",
+  "setup": {
+    "method": "aanet",
+    "reference": "Lin et al. 2019, IJCAI (AaNet / P-AaNet)",
+    "source": "paper",
+    "optimizer": "sgd",
+    "learning_rate": 0.1,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "epochs": 40,
+    "backbone": "resnet18",
+    "image_size": 224,
+    "scheduler": "warmup_linear",
+    "augmentation": [
+      "hflip"
+    ],
+    "paper_quote": "trained by using mini-batch Stochastic Gradient Descent (SGD) with a batch size of 32, a momentum of 0.9, and a weight decay of 5e-4 ... the learning rate is increased from 0 to a peak value of 0.01 in a warm-up schedule of 2K iterations, and then decreased to 0, linearly, in 18K iterations. ... For ResNet-18 and its extension networks, we set the peak value of learning rate and weight decay as 0.1 and 1e-4.",
+    "deviation_from_paper": "The paper's 20K-iteration schedule is defined in iterations, not epochs. At batch 32 on 1,399 images (44 steps/epoch) that would be ~455 epochs -- far past overfitting on a quarter of the data. The warm-up *fraction* (10% of training) is preserved and the total rescaled. ResNet-18 values (peak lr 0.1, weight decay 1e-4) are used since that is this benchmark's backbone; the AlexNet values quoted above (0.01, 5e-4) do not apply. Early stopping on the validation split (patience 5) replaces the paper's fixed schedule: benchmark-v1 is a single fixed split, so a fixed epoch count would report whatever the last epoch produced rather than the method's best honest result.",
+    "notes": "This method conditions on gender and ethnicity by construction. On a multi-ethnic beauty dataset that belongs in the fairness analysis, not in a footnote."
+  },
+  "epochs_overridden": null,
+  "protocol": {
+    "protocol": "benchmark-v1",
+    "label": "score",
+    "images": "cropped_256",
+    "seed": 0,
+    "sizes": {
+      "train": 1399,
+      "val": 185,
+      "test": 434
+    },
+    "not_comparable_to": "SCUT-FBP5500 results, and the 2022 MEBeauty release: different images, labels and splits"
+  },
+  "train_seconds": 193.6,
+  "epochs_trained": 11,
+  "best_val_mae": 0.8385,
+  "point": {
+    "PC": 0.4885,
+    "SROCC": 0.4985,
+    "MAE": 0.8264,
+    "RMSE": 1.0843,
+    "n": 434
+  },
+  "pearson_ci95": [
+    0.4069,
+    0.5647
+  ],
+  "environment": {
+    "timestamp": "2026-07-29T11:05:16+00:00",
+    "git_commit": "1d02a242bf4a738897d13132bff903aaad0da9b1",
+    "git_tree_dirty": true,
+    "reproducible_from_commit": false,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}

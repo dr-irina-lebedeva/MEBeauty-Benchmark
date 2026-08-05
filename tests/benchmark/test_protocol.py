@@ -133,3 +133,26 @@ def test_the_canonical_label_is_normalised_away_from_the_raw_mean():
 
     assert np.abs(normalised - raw).max() > 0.1
     assert np.corrcoef(normalised, raw)[0, 1] > 0.95
+
+
+def test_dirty_flag_ignores_the_results_directory():
+    """A run writes results into the repo; that must not mark it dirty.
+
+    The first version of this check ran `git status --porcelain` over the whole
+    tree, so writing `reports/benchmark/<method>.json` made every later result
+    declare itself irreproducible because of its own output.
+    """
+    from mebeauty_benchmark.benchmark.protocol import CODE_PATHS
+
+    assert "reports" not in CODE_PATHS
+    assert "data" not in CODE_PATHS
+    assert "src" in CODE_PATHS and "scripts" in CODE_PATHS
+
+
+def test_environment_reports_reproducibility_consistently():
+    from mebeauty_benchmark.benchmark.protocol import environment
+
+    info = environment()
+
+    assert isinstance(info["git_tree_dirty"], bool)
+    assert info["reproducible_from_commit"] is not info["git_tree_dirty"]

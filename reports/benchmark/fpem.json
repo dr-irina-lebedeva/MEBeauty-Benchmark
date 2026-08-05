@@ -1,0 +1,63 @@
+{
+  "method": "fpem",
+  "reference": "Li et al. 2025",
+  "implementation_note": "architecture only -- no Swin/FaceNet/CLIP encoders",
+  "setup": {
+    "method": "fpem",
+    "reference": "Li et al. 2025, ICCV (FPEM: Face Prior Enhanced Facial Attractiveness Prediction for Live Videos), arXiv:2501.02509",
+    "source": "paper",
+    "optimizer": "adamw",
+    "learning_rate": 5e-05,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "epochs": 50,
+    "backbone": "resnet18",
+    "image_size": 224,
+    "scheduler": "warmup_cosine",
+    "augmentation": [
+      "hflip"
+    ],
+    "paper_quote": "AdamW is selected as the optimizer, and the learning rate scheduler is set with linear warm-up and cosine annealing scheme. ... Each training phase lasts 50 epochs ... batch size is set as 32.",
+    "deviation_from_paper": "All pretrained prior encoders (Swin-T, FaceNet, CLIP, GPT-2) missing; two-phase training reduced to one; base learning rate not stated in the paper. Early stopping on the validation split (patience 5) replaces the paper's fixed schedule: benchmark-v1 is a single fixed split, so a fixed epoch count would report whatever the last epoch produced rather than the method's best honest result.",
+    "notes": "ARCHITECTURE ONLY, and this is the largest gap in the table. The paper's PAPM fuses a Swin-T (pretrained on face tasks) with a frozen FaceNet, and its MAEM adds CLIP ViT-B/16 + GPT-2 as image and text encoders. Here all of them are replaced by separate projections of one shared torchvision backbone, which cannot contribute knowledge the backbone does not already hold. The optimiser, schedule, batch size and epoch count are the paper's; the encoders are not. Expect this entry to underperform its published figure substantially -- that is a fact about this implementation, not about FPEM. The paper is also built for live video with face retouching, a setting this dataset does not have. Its base learning rate 'varies with different training phase' and is not stated, so 5e-5 is this benchmark's choice for an attention-fusion head."
+  },
+  "epochs_overridden": null,
+  "protocol": {
+    "protocol": "benchmark-v1",
+    "label": "score",
+    "images": "cropped_256",
+    "seed": 0,
+    "sizes": {
+      "train": 1399,
+      "val": 185,
+      "test": 434
+    },
+    "not_comparable_to": "SCUT-FBP5500 results, and the 2022 MEBeauty release: different images, labels and splits"
+  },
+  "train_seconds": 390.8,
+  "epochs_trained": 24,
+  "best_val_mae": 0.6425,
+  "point": {
+    "PC": 0.774,
+    "SROCC": 0.7494,
+    "MAE": 0.6172,
+    "RMSE": 0.773,
+    "n": 434
+  },
+  "pearson_ci95": [
+    0.7302,
+    0.8139
+  ],
+  "environment": {
+    "timestamp": "2026-07-29T15:36:24+00:00",
+    "git_commit": "1d02a242bf4a738897d13132bff903aaad0da9b1",
+    "git_tree_dirty": true,
+    "reproducible_from_commit": false,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}

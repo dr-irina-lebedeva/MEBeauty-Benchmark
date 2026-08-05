@@ -73,6 +73,12 @@ class TrainConfig:
     backbone: str = "resnet18"
     augmentation: tuple[str, ...] = ("hflip",)
     patience: int = 5
+    #: Epochs that must pass before early stopping may fire. SGD runs at the
+    #: published learning rates (0.01-0.1) have noisy validation curves for
+    #: their first several epochs, and patience alone can halt inside that
+    #: noise -- measured: `cnn-resnext50` stopped at epoch 9 of 40 and moved
+    #: 0.145 PC between two otherwise identical runs.
+    min_epochs: int = 0
     num_workers: int = 0
 
     @classmethod
@@ -372,7 +378,10 @@ class _DeepMethod:
                 best_state = self._snapshot()
             else:
                 waited += 1
-                if waited >= self.config.patience:
+                if (
+                    waited >= self.config.patience
+                    and epoch + 1 >= self.config.min_epochs
+                ):
                     break
 
         self.epochs_trained = epoch + 1

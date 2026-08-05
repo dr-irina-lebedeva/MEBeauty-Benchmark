@@ -1,0 +1,65 @@
+{
+  "method": "cnn-resnet18",
+  "reference": "Xie et al. 2015 / MEBeauty 2022",
+  "implementation_note": "CNN regression baseline",
+  "setup": {
+    "method": "cnn-resnet18",
+    "reference": "Liang et al. 2018, ICPR (SCUT-FBP5500 baseline)",
+    "source": "paper",
+    "optimizer": "sgd",
+    "learning_rate": 0.01,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "epochs": 40,
+    "backbone": "resnet18",
+    "image_size": 224,
+    "scheduler": "cosine",
+    "augmentation": [
+      "resize_256",
+      "random_crop_224",
+      "hflip"
+    ],
+    "paper_quote": "Each raw RGB image was resized as 256x256, and a 224x224 random crop was sent to ResNeXt. ... Model parameters were initialized by pretrained CNN models of ImageNet and updated by mini-batch Stochastic Gradient Descent (SGD).",
+    "deviation_from_paper": "The paper reports 5-fold cross-validation and a 60/40 split on 5,500 images with labels on 1-5; benchmark-v1 is a fixed split on 1,399 training images with labels on 1-10. L1 is used rather than the paper's L2 because the doubled label scale puts about four times the weight on the same relative error, letting the noisiest labels dominate. Early stopping on the validation split (patience 5) replaces the paper's fixed schedule: benchmark-v1 is a single fixed split, so a fixed epoch count would report whatever the last epoch produced rather than the method's best honest result.",
+    "notes": ""
+  },
+  "epochs_overridden": null,
+  "protocol": {
+    "protocol": "benchmark-v1",
+    "label": "score",
+    "images": "cropped_256",
+    "seed": 0,
+    "sizes": {
+      "train": 1399,
+      "val": 185,
+      "test": 434
+    },
+    "not_comparable_to": "SCUT-FBP5500 results, and the 2022 MEBeauty release: different images, labels and splits"
+  },
+  "train_seconds": 153.1,
+  "epochs_trained": 11,
+  "best_val_mae": 0.9203,
+  "point": {
+    "PC": 0.5236,
+    "SROCC": 0.4659,
+    "MAE": 0.8551,
+    "RMSE": 1.0628,
+    "n": 434
+  },
+  "pearson_ci95": [
+    0.4503,
+    0.5893
+  ],
+  "environment": {
+    "timestamp": "2026-07-29T10:23:53+00:00",
+    "git_commit": "1d02a242bf4a738897d13132bff903aaad0da9b1",
+    "git_tree_dirty": true,
+    "reproducible_from_commit": false,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}

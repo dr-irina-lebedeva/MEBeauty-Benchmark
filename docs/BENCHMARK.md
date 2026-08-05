@@ -147,16 +147,91 @@ provenance, environment), an `.npz` of per-image predictions, and `summary.md`.
 invocation, so a resumed run produces the whole table rather than the last
 chunk of it.
 
-**`environment` records whether the working tree was dirty.** A commit hash on
-its own is a false promise when the code has uncommitted changes: the result
-did not come from that commit and cannot be reproduced by checking it out.
-`reproducible_from_commit: false` means exactly that.
+**`environment` records whether the code was modified.** A commit hash on its
+own is a false promise when there are uncommitted changes: the result did not
+come from that commit and cannot be reproduced by checking it out.
+`reproducible_from_commit: false` means exactly that. The check is scoped to
+`src/`, `scripts/`, `tests/` and the dependency files — an earlier version
+scanned the whole tree, which meant a run writing its own results into
+`reports/` marked every subsequent result irreproducible because of its own
+output.
+
+> **Known false positive.** The 2026-07-29 run predates that fix, so every
+> result in it reports `git_tree_dirty: true` for that reason. The code was at
+> commit `1d02a24`; only `reports/` differed.
+
+## Analysis after a run
+
+```bash
+# Which differences are real: paired bootstrap over all method pairs,
+# Holm-Bonferroni corrected. Run this before describing any method as better
+# than another.
+uv run python scripts/benchmark/compare.py --results reports/benchmark
+
+# Rank-average the strongest members. Selection is by recorded validation MAE,
+# never by test score.
+uv run python scripts/benchmark/ensemble.py --top-k 5
+
+# Fidelity: do these implementations reproduce their published numbers?
+# Needs SCUT-FBP5500, which is not downloaded automatically (licence).
+uv run python scripts/benchmark/validate_on_scut.py --scut <path>
+```
+
+`compare.py` is not optional decoration. With n = 434 the leading entries sit
+inside each other's confidence intervals, so the ranking in `summary.md` is
+not by itself evidence that one method beats another.
+
+## Beyond the survey table
+
+Two entries are **not** published facial-beauty methods and are labelled as
+such wherever they appear. They exist to test what the 2025-2026 literature
+implies about a dataset this size.
+
+| Reported on SCUT-FBP5500 | PC |
+|---|---|
+| R3CNN (2022) | 0.9142 |
+| FairViT-GAN (2025) | 0.9230 |
+| MD-Net / SynergyNet (2025) | 0.9235 |
+| Hybrid VMamba-ViT (2025) | 0.9261 |
+
+MD-Net's ablation is the informative part: removing its diffusion prior costs
+0.021 PC, removing its Mamba stream 0.015, and replacing cross-attention
+fusion with concatenation only 0.011. **The pretrained prior contributes more
+than the architecture.** At 1,399 training images that should matter even
+more, so:
+
+- **`dinov2-linear`** — frozen DINOv2 ViT-B/14 features (CLS + mean-pooled
+  patches), small MLP head, horizontal-flip test-time augmentation. Nothing is
+  fine-tuned, so there is very little to overfit.
+- **`dinov2-partial`** — the same with the last 4 blocks unfrozen, included so
+  that "freezing wins at this scale" is decided by measurement rather than by
+  the argument above.
+
+**DINOv3 is not used.** It is stronger, but its weights are gated behind a
+licence requiring personal details, and this project does not automate around
+a licence (the same reason `validate_on_scut.py` will not fetch SCUT). DINOv2
+is Apache-2.0 and ungated. `backbone` takes any checkpoint name, so a DINOv3
+licence-holder can substitute one without code changes.
+
+**MD-Net cannot be run on Apple Silicon at all.** It needs Vision Mamba, and
+`mamba-ssm` requires CUDA kernels. Recorded rather than silently skipped.
 
 ## Honest limits
 
-**Reimplementations, not reproductions.** Eleven of fifteen are `adapted`. A
-reimplementation scoring below its published number is evidence about *this
-implementation on this dataset*, not about the original work.
+**Reimplementations, not reproductions.** Eleven of the fifteen published
+methods are `adapted`. A reimplementation scoring below its published number
+is evidence about *this implementation on this dataset*, not about the
+original work. `docs/IMPLEMENTATION_VS_PAPERS.md` lists every gap.
+
+**No implementation has been checked against a published number.**
+`validate_on_scut.py` exists for exactly this and has not been run, because
+SCUT-FBP5500 requires accepting a release agreement. Until it runs, a low
+score here cannot be distinguished from a broken implementation — which is not
+hypothetical: `comboloss` optimised the wrong objective until 2026-07-28.
+
+**Twelve of the fifteen have no test of their objective.** Only `comboloss`,
+`ldl-ren2017` and `r3cnn` have their loss asserted against a formula. The rest
+are covered only by an end-to-end "it runs" test.
 
 **FPEM is architecture-only.** Its three pretrained encoders (Swin, FaceNet,
 CLIP-aesthetic) are replaced by projections of one shared backbone, so the

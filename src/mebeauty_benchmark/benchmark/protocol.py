@@ -11,9 +11,15 @@ undo that and reintroduce identity leakage. Cross-validation would give tighter
 error bars around a number that had been quietly inflated.
 
 **Labels.** `score` -- the rater-normalised mean over valid raters, on images
-with at least 10 such ratings. Alternative labels ship (`score_raw_mean`,
+with at least 8 such ratings. Alternative labels ship (`score_raw_mean`,
 `score_adjusted`, `score_all_raters`) and can be selected explicitly, but the
 default is the canonical one, and a result must say which it used.
+
+**`score` is not a published column.** The Hugging Face release ships
+`score_adjusted` (recommended) and `score_mean` (= `score_all_raters` here).
+`score` correlates 0.99 with `score_adjusted`, but a table produced against it
+is not reproducible by someone holding only the release, so any result meant
+for publication should name a published label.
 
 **Comparability with published numbers.** Results here are *not* comparable to
 figures reported on SCUT-FBP5500 or on the 2022 MEBeauty release. Different
@@ -36,6 +42,11 @@ import numpy as np
 import pandas as pd
 
 SPLITS = ("train", "val", "test")
+
+#: Paths whose contents can change a result. Used to decide whether a run is
+#: reproducible from its commit; deliberately excludes `reports/`, `data/` and
+#: `docs/`, none of which the training path reads.
+CODE_PATHS = ("src", "scripts", "tests", "pyproject.toml", "uv.lock")
 
 #: The rating scale the soft labels are defined over.
 SCORE_BINS_MIN, SCORE_BINS_MAX = 1, 10
@@ -77,9 +88,24 @@ class Split:
     image_paths: list[Path]
     distributions: np.ndarray | None = None
     metadata: pd.DataFrame = field(default_factory=pd.DataFrame)
+    #: How many valid raters produced each label, and how much they disagreed.
+    #: Shipped to methods because label reliability is *known* here and varies
+    #: 4x across the test split -- an image rated 11 times is a far noisier
+    #: target than one rated 102 times. A method may use this on train and val;
+    #: using it on test would be reading the answer sheet's margin notes, so
+    #: the harness never scores against it.
+    n_ratings: np.ndarray | None = None
+    label_std: np.ndarray | None = None
 
     def __len__(self) -> int:
         return len(self.image_ids)
+
+    @property
+    def standard_error(self) -> np.ndarray | None:
+        """Standard error of each label's mean: std / sqrt(n)."""
+        if self.n_ratings is None or self.label_std is None:
+            return None
+        return np.asarray(self.label_std) / np.sqrt(np.asarray(self.n_ratings))
 
 
 @dataclass(frozen=True)
@@ -198,6 +224,12 @@ def load_protocol(
             image_paths=paths,
             distributions=matrix,
             metadata=metadata.set_index("image_id").loc[image_ids].reset_index(),
+            n_ratings=(
+                frame["n_ratings"].to_numpy(dtype=float)
+                if "n_ratings" in frame
+                else None
+            ),
+            label_std=(frame["std"].to_numpy(dtype=float) if "std" in frame else None),
         )
 
     return Protocol(
@@ -223,11 +255,16 @@ def _git(*args: str) -> str:
 def environment() -> dict[str, str]:
     """Record what produced a result, so it can be reproduced or discounted."""
     commit = _git("rev-parse", "HEAD")
-    # A commit hash alone is a false promise when the tree is modified: the
-    # result did not come from that commit's code and cannot be reproduced by
+    # A commit hash alone is a false promise when the code is modified: the
+    # result did not come from that commit and cannot be reproduced by
     # checking it out. Recorded so a reader can discount the run rather than
     # trust a hash that does not describe it.
-    dirty = bool(_git("status", "--porcelain"))
+    #
+    # Scoped to the paths that can change a result. A whole-tree check is
+    # useless here and was: a run writes its own results into `reports/`, so
+    # the first result file makes the tree dirty and every subsequent record
+    # claims to be irreproducible because of its own output.
+    dirty = bool(_git("status", "--porcelain", "--", *CODE_PATHS))
 
     info = {
         "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),

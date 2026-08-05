@@ -96,7 +96,7 @@ def test_valid_raters_have_no_reason_recorded():
     assert frame.loc["solid", "invalid_reason"] == ""
 
 
-def test_an_image_needs_ten_ratings_to_be_labelled():
+def test_an_image_needs_the_threshold_in_ratings_to_be_labelled():
     every = {f"r{i}": [1.0, 5.0, 9.0] for i in range(MIN_RATINGS_PER_IMAGE)}
     ratings = attach_validity(_ratings(**every))
     # img2 loses one rater, leaving it one short of the threshold.
@@ -109,9 +109,11 @@ def test_an_image_needs_ten_ratings_to_be_labelled():
 
 
 def test_straight_lining_raters_cannot_prop_an_image_over_the_threshold():
-    # The rater screen must run first. Nine real raters plus twenty flat ones
-    # is still an image with nine usable ratings.
-    real = _ratings(**{f"real{i}": [1.0, 5.0, 9.0] for i in range(9)})
+    # The rater screen must run first. One short of the threshold in real
+    # raters, plus any number of flat ones, is still one short.
+    real = _ratings(
+        **{f"real{i}": [1.0, 5.0, 9.0] for i in range(MIN_RATINGS_PER_IMAGE - 1)}
+    )
     flat = _ratings(**{f"flat{i}": [7.0, 7.0, 7.0] for i in range(20)})
     ratings = attach_validity(pd.concat([real, flat], ignore_index=True))
 

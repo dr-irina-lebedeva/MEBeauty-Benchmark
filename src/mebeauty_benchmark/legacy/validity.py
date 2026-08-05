@@ -42,9 +42,27 @@ import pandas as pd
 #: two hundred times.
 MIN_DISTINCT_SCORES = 3
 
-#: Ratings an image needs before it can carry a label. Below this the mean is
-#: dominated by which raters happened to see it rather than by the face.
-MIN_RATINGS_PER_IMAGE = 10
+#: Ratings an image needs before it can carry a label.
+#:
+#: **8, not 10, and the reason is measured.** The rating counts have a clean
+#: gap: 435 images sit at exactly 9 valid ratings and 8 more at 8, while
+#: nothing at all falls between 1 and 7. A threshold of 10 therefore does not
+#: separate well-rated images from poorly-rated ones -- it slices through the
+#: middle of a single collection batch.
+#:
+#: What it slices off is not random. The images with 8-9 ratings are 27.3%
+#: asian, 17.8% indian and 17.2% black, against 10.9 / 10.4 / 10.5% among
+#: images with 10 or more. Excluding them removes 443 images (18%) and pushes
+#: the ethnic imbalance from 3.35x to 4.21x -- it makes a dataset built to be
+#: multi-ethnic measurably less so, which is the opposite of its purpose.
+#:
+#: The reliability cost is real but small and, crucially, *disclosed*: median
+#: standard error 0.71 for the 8-9 band against 0.41 for 10-29. `rating_count`,
+#: `score_std` and `label_status` ship with every image, so a consumer who
+#: wants only the tightly-rated subset can have it in one line -- while a
+#: consumer who wants the balanced dataset is no longer forced to take an
+#: unbalanced one.
+MIN_RATINGS_PER_IMAGE = 8
 
 
 def rater_validity(ratings: pd.DataFrame) -> pd.DataFrame:

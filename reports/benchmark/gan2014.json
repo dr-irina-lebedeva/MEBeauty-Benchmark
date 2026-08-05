@@ -1,0 +1,63 @@
+{
+  "method": "gan2014",
+  "reference": "Gan et al. 2014",
+  "implementation_note": "reimplementation, no external unlabelled corpus",
+  "setup": {
+    "method": "gan2014",
+    "reference": "Gan et al. 2014, Neurocomputing 133",
+    "source": "adapted",
+    "optimizer": "adamw",
+    "learning_rate": 0.0001,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "epochs": 20,
+    "backbone": "resnet18",
+    "image_size": 224,
+    "scheduler": "cosine",
+    "augmentation": [
+      "hflip"
+    ],
+    "paper_quote": "",
+    "deviation_from_paper": "",
+    "notes": "Self-taught: representation from unlabelled faces, then a shallow regressor. The paper's external unlabelled corpus is unavailable, so the unsupervised stage runs on this dataset's training images without their labels. This removes the method's main advantage -- seeing far more faces than are labelled -- and the result should be read as a floor for the approach, not a reproduction."
+  },
+  "epochs_overridden": null,
+  "protocol": {
+    "protocol": "benchmark-v1",
+    "label": "score",
+    "images": "cropped_256",
+    "seed": 0,
+    "sizes": {
+      "train": 1399,
+      "val": 185,
+      "test": 434
+    },
+    "not_comparable_to": "SCUT-FBP5500 results, and the 2022 MEBeauty release: different images, labels and splits"
+  },
+  "train_seconds": 31.9,
+  "epochs_trained": null,
+  "best_val_mae": null,
+  "point": {
+    "PC": 0.6305,
+    "SROCC": 0.6158,
+    "MAE": 0.7469,
+    "RMSE": 0.9589,
+    "n": 434
+  },
+  "pearson_ci95": [
+    0.5647,
+    0.6915
+  ],
+  "environment": {
+    "timestamp": "2026-07-29T10:21:16+00:00",
+    "git_commit": "1d02a242bf4a738897d13132bff903aaad0da9b1",
+    "git_tree_dirty": true,
+    "reproducible_from_commit": false,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}

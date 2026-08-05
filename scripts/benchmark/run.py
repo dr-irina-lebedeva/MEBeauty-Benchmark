@@ -41,7 +41,12 @@ from mebeauty_benchmark.benchmark.protocol import (
 from mebeauty_benchmark.methods.setups import provenance_table, setup_for
 
 
-def build_registry(seed: int, epochs: int | None = None):
+def build_registry(
+    seed: int,
+    epochs: int | None = None,
+    patience: int | None = None,
+    min_epochs: int | None = None,
+):
     """Method name -> factory.
 
     Each deep method is built from *its own paper's* setup
@@ -62,7 +67,9 @@ def build_registry(seed: int, epochs: int | None = None):
             module = importlib.import_module(
                 f"mebeauty_benchmark.methods.{module_name}"
             )
-            config = TrainConfig.from_setup(method, epochs=epochs)
+            config = TrainConfig.from_setup(
+                method, epochs=epochs, patience=patience, min_epochs=min_epochs
+            )
             return getattr(module, cls_name)(config=config, seed=seed)
 
         return factory
@@ -91,6 +98,13 @@ def build_registry(seed: int, epochs: int | None = None):
         "uol": deep("UncertaintyOrderLearning", "uol", "modern"),
         "fpem": deep("FPEM", "fpem", "modern"),
         "transfbp": deep("TransFBP", "transfbp", "modern"),
+        # Beyond the survey table: foundation-model features, 2025-2026.
+        # Proposed here.
+        "rw-ldl": deep("ReliabilityWeightedLDL", "rw-ldl", "proposed"),
+        "rw-ldl-noweight": deep("RWLDLNoWeighting", "rw-ldl-noweight", "proposed"),
+        "rw-ldl-kl": deep("RWLDLKLOnly", "rw-ldl-kl", "proposed"),
+        "dinov2-linear": deep("DINOv2Regression", "dinov2-linear", "foundation"),
+        "dinov2-partial": deep("DINOv2Partial", "dinov2-partial", "foundation"),
     }
 
 
@@ -114,6 +128,20 @@ PROVENANCE = {
     "uol": ("Liang et al. 2024", "reimplementation, no Bradley-Terry graph"),
     "fpem": ("Li et al. 2025", "architecture only -- no Swin/FaceNet/CLIP encoders"),
     "transfbp": ("Boukhari & Dornaika 2026", "reimplementation, no TransMix aug"),
+    "rw-ldl": (
+        "This work",
+        "PROPOSED HERE -- multinomial-likelihood LDL, precision-weighted",
+    ),
+    "rw-ldl-noweight": ("This work", "ablation of rw-ldl: no precision weighting"),
+    "rw-ldl-kl": ("This work", "ablation of rw-ldl: KL instead of likelihood"),
+    "dinov2-linear": (
+        "DINOv2 (Oquab et al. 2024)",
+        "NOT a published FBP method -- frozen foundation features + MLP head",
+    ),
+    "dinov2-partial": (
+        "DINOv2 (Oquab et al. 2024)",
+        "NOT a published FBP method -- last 4 blocks unfrozen",
+    ),
 }
 
 
@@ -130,6 +158,21 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help="Override every method's published epoch count. Smoke tests only.",
+    )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=None,
+        help="Override early-stopping patience for every method. A protocol "
+        "change, not a per-method tweak: use the same value for the whole "
+        "table or the comparison is not like for like.",
+    )
+    parser.add_argument(
+        "--min-epochs",
+        type=int,
+        default=None,
+        help="Epochs that must elapse before early stopping may fire. Guards "
+        "against halting during the noisy start of a high-learning-rate run.",
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--out", default="reports/benchmark")
@@ -185,7 +228,7 @@ def rebuild_summary(out: Path) -> list[dict]:
 
 def main() -> None:
     args = parse_args()
-    registry = build_registry(args.seed, args.epochs)
+    registry = build_registry(args.seed, args.epochs, args.patience, args.min_epochs)
     requested = list(registry) if args.methods == "all" else args.methods.split(",")
     unknown = [m for m in requested if m not in registry]
     if unknown:
@@ -228,6 +271,8 @@ def main() -> None:
             "implementation_note": note,
             "setup": setup_for(name).as_dict(),
             "epochs_overridden": args.epochs,
+            "patience_overridden": args.patience,
+            "min_epochs_overridden": args.min_epochs,
             "protocol": protocol.describe(),
             "train_seconds": round(elapsed, 1),
             # How long early stopping actually let it run, which is the

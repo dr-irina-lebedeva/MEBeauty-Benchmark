@@ -2,10 +2,12 @@ import numpy as np
 import pytest
 
 from mebeauty_benchmark.legacy.aggregation import (
+    OFFSET_SHRINKAGE,
     bootstrap_quality_ci,
     fit_affine_model,
     fit_offset_model,
     held_out_rmse,
+    split_half_reliability,
 )
 
 
@@ -137,3 +139,72 @@ def test_scale_is_never_negative():
     fit = fit_affine_model(ratings, images, raters, 2, 3, ridge=0.0)
 
     assert np.all(fit.scale >= 0.0)
+
+
+def test_a_light_rater_earns_less_offset_than_an_identical_heavy_one():
+    # Raters 0 and 1 both sit exactly +2 on the scale; rater 0 rated 40 images
+    # and rater 1 rated 3. Only the heavy rater has the evidence to earn the
+    # full correction. Rater 2 sits at -2 and anchors the mean-zero constraint,
+    # which with only two raters would force the offsets to be symmetric and
+    # hide the effect entirely.
+    rng = np.random.default_rng(0)
+    quality = rng.uniform(3, 8, 40)
+    images = np.concatenate([np.arange(40), np.array([0, 1, 2]), np.arange(40)])
+    raters = np.concatenate([np.zeros(40, int), np.ones(3, int), np.full(40, 2)])
+    true_offset = np.array([2.0, 2.0, -2.0])
+    ratings = quality[images] + true_offset[raters]
+
+    unshrunk = fit_offset_model(ratings, images, raters, 40, 3)
+    shrunk = fit_offset_model(ratings, images, raters, 40, 3, OFFSET_SHRINKAGE)
+
+    assert unshrunk.offset[0] == pytest.approx(unshrunk.offset[1], abs=1e-4)
+    assert shrunk.offset[1] < shrunk.offset[0]
+
+
+def test_shrinkage_of_zero_reproduces_the_unregularised_fit():
+    offsets = np.linspace(-2, 2, 12)
+    offsets -= offsets.mean()
+    ratings, images, raters, _, _ = _synthetic(offsets=offsets)
+
+    assert np.allclose(
+        fit_offset_model(ratings, images, raters, 40, 12, 0.0).quality,
+        fit_offset_model(ratings, images, raters, 40, 12).quality,
+    )
+
+
+def test_split_half_reliability_prefers_the_model_that_removes_real_bias():
+    # Raters carry large offsets, so a plain mean is polluted by whoever
+    # happened to rate each image and the offset model should reproduce
+    # better across an independent half of the panel.
+    rng = np.random.default_rng(3)
+    n_images, n_raters = 120, 24
+    quality = rng.uniform(2, 9, n_images)
+    offset = rng.normal(0, 2.0, n_raters)
+    images = np.repeat(np.arange(n_images), 8)
+    raters = np.concatenate(
+        [rng.choice(n_raters, 8, replace=False) for _ in range(n_images)]
+    )
+    ratings = quality[images] + offset[raters] + rng.normal(0, 0.3, len(images))
+
+    result = split_half_reliability(
+        ratings, images, raters, n_images, n_raters, seeds=8, min_per_half=2
+    )
+
+    assert result["offset"] > result["plain_mean"]
+
+
+def test_fitted_qualities_stay_on_the_scale_the_ratings_were_given_on():
+    # A prolific generous rater and a light harsh one. Whatever the fit does
+    # to individual images, the rating-weighted average of the fitted
+    # qualities must equal the average of the raw ratings -- otherwise the
+    # label drifts off the 1-10 scale it is published on.
+    rng = np.random.default_rng(7)
+    quality = rng.uniform(3, 8, 30)
+    images = np.concatenate([np.arange(30), np.arange(30), np.array([0, 1, 2])])
+    raters = np.concatenate([np.zeros(30, int), np.ones(30, int), np.full(3, 2)])
+    true_offset = np.array([1.5, 0.0, -3.0])
+    ratings = quality[images] + true_offset[raters]
+
+    fit = fit_offset_model(ratings, images, raters, 30, 3, OFFSET_SHRINKAGE)
+
+    assert fit.quality[images].mean() == pytest.approx(ratings.mean(), abs=1e-9)

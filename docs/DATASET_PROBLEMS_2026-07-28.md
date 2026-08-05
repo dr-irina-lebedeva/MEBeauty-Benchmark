@@ -223,6 +223,46 @@ changed at once, and they interact, so they are recorded together.
   1,719 → 1,399, val 218 → 185, test 523 → 434. They keep their pixels and
   metadata; only the label is gone.
 
+### Corrections made on 2026-07-29
+
+Three changes after the policy first shipped, all found by checking rather
+than by review:
+
+**1. The soft label and the point label disagreed.** `score` is a mean of
+*normalised* ratings, but `distributions.parquet` counts the *raw* integer
+scores, so its expectation is `score_raw_mean`. A distribution-learning method
+trains on the distribution and is then scored against `score` — measured, that
+cost the LDL entry **~0.09 MAE (≈16%)** for correctly hitting the target it
+was given.
+
+Fixed at the root: clipping now happens **per rating** rather than after
+averaging, so `score` is exactly the mean of a mean-preserving soft-binned
+distribution over normalised ratings. `distributions_normalised.parquet` ships
+alongside, the benchmark selects the soft label matching the point label, and
+the protocol **verifies expectation == label on every load**. That check
+immediately caught a second bug: the two builders were normalising over
+different rating sets (0.09 drift). Both now agree to 2×10⁻¹⁵.
+
+**2. The shrinkage constant was never validated.** `k = 10` was chosen by
+analogy to the 10-rating image threshold. Held-out rating prediction (5 folds,
+`scripts/data/validate_shrinkage.py`) says **k = 5**, and the default changed.
+
+But the honest headline is that **the choice barely matters**: everything from
+k = 0 to k = 20 sits inside 0.1% of the best. It is not a tuned knob and
+should not be presented as one. What the measurement *does* rule out is heavy
+shrinkage — k ≥ 50 is clearly worse, because it drags every rater onto the
+global scale and erases the differences normalisation exists to model.
+
+The comparison also understates shrinkage's value, and does so honestly: to
+score k = 0 at all, raters whose z is undefined (one rating, zero spread) must
+be dropped — exactly the rows shrinkage exists to handle. Shrinkage is in the
+pipeline because the policy keeps light raters, not because this curve proves
+it.
+
+**3. Labels shifted slightly.** With k = 5 and per-rating clipping,
+normalisation now moves a label by 0.234 on average (was 0.243) and 1.195 at
+most. Agreement with the independent affine model is unchanged at r = 0.976.
+
 ### Why normalisation needed shrinkage
 
 Keeping light raters and z-scoring them are directly in tension: the returning

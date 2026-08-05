@@ -1,0 +1,63 @@
+{
+  "method": "eisenthal2006",
+  "reference": "Eisenthal et al. 2006",
+  "implementation_note": "reimplementation",
+  "setup": {
+    "method": "eisenthal2006",
+    "reference": "Eisenthal, Dror & Ruppin 2006, Neural Computation 18(1)",
+    "source": "adapted",
+    "optimizer": "none",
+    "learning_rate": 0.0001,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "epochs": 30,
+    "backbone": "resnet18",
+    "image_size": 224,
+    "scheduler": "cosine",
+    "augmentation": [
+      "hflip"
+    ],
+    "paper_quote": "",
+    "deviation_from_paper": "",
+    "notes": "No gradient training: geometric features, feature selection, then a KNN/ridge ensemble. The paper's landmarks were placed by hand and its appearance features were eigenfaces over a 92-image corpus; neither transfers, so the reimplementation keeps the structure (geometry + symmetry, ensembled shallow regressors) and substitutes the 68-point landmarks this dataset ships."
+  },
+  "epochs_overridden": null,
+  "protocol": {
+    "protocol": "benchmark-v1",
+    "label": "score",
+    "images": "cropped_256",
+    "seed": 0,
+    "sizes": {
+      "train": 1399,
+      "val": 185,
+      "test": 434
+    },
+    "not_comparable_to": "SCUT-FBP5500 results, and the 2022 MEBeauty release: different images, labels and splits"
+  },
+  "train_seconds": 0.7,
+  "epochs_trained": null,
+  "best_val_mae": null,
+  "point": {
+    "PC": 0.4316,
+    "SROCC": 0.4233,
+    "MAE": 0.8823,
+    "RMSE": 1.1053,
+    "n": 434
+  },
+  "pearson_ci95": [
+    0.3574,
+    0.5083
+  ],
+  "environment": {
+    "timestamp": "2026-07-29T10:20:40+00:00",
+    "git_commit": "1d02a242bf4a738897d13132bff903aaad0da9b1",
+    "git_tree_dirty": true,
+    "reproducible_from_commit": false,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "method": "uol",
+  "reference": "Liang et al. 2024",
+  "implementation_note": "reimplementation, no Bradley-Terry graph",
+  "setup": {
+    "method": "uol",
+    "reference": "Liang et al. 2024, arXiv:2409.00603 (Uncertainty-oriented Order Learning)",
+    "source": "paper",
+    "optimizer": "adamw",
+    "learning_rate": 0.0001,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "epochs": 60,
+    "backbone": "vgg16",
+    "image_size": 224,
+    "scheduler": "cosine",
+    "augmentation": [
+      "resize_256",
+      "random_crop_224",
+      "hflip"
+    ],
+    "paper_quote": "Adam optimizer with a batch size of 32 ... learning rate is 1e-4 at the beginning ... Cosine Annealing scheduler with the minimal learning rate 1e-6 ... 100 epochs ... pretrained VGG16 on ImageNet as the backbone ... resized to 256x256 ... 224x224 center cropping and random horizontal flipping.",
+    "deviation_from_paper": "Adam -> AdamW; the comparator is batch-internal rather than Monte-Carlo over sampled Gaussian embeddings. Early stopping on the validation split (patience 5) replaces the paper's fixed schedule: benchmark-v1 is a single fixed split, so a fixed epoch count would report whatever the last epoch produced rather than the method's best honest result.",
+    "notes": "An earlier version of this file recorded 'no published hyperparameters to quote' and ran a ResNet-18. That was wrong: the paper states all of them, and the backbone is VGG16. The values above are now the paper's. AdamW is used rather than the paper's Adam -- the only remaining optimiser difference -- because every other entry decouples weight decay and mixing the two would confound the comparison. The method's distinguishing parts (ordinal distribution head, predicted per-image uncertainty, pairwise order) are implemented; the paper's Gaussian-embedding comparator with Monte-Carlo sampling and its Wasserstein hinge are replaced by batch-internal pairwise ordering, so this is an adaptation of the method under the paper's training setup."
+  },
+  "epochs_overridden": null,
+  "protocol": {
+    "protocol": "benchmark-v1",
+    "label": "score",
+    "images": "cropped_256",
+    "seed": 0,
+    "sizes": {
+      "train": 1399,
+      "val": 185,
+      "test": 434
+    },
+    "not_comparable_to": "SCUT-FBP5500 results, and the 2022 MEBeauty release: different images, labels and splits"
+  },
+  "train_seconds": 15070.6,
+  "epochs_trained": 26,
+  "best_val_mae": 0.6541,
+  "point": {
+    "PC": 0.7981,
+    "SROCC": 0.7769,
+    "MAE": 0.5834,
+    "RMSE": 0.7354,
+    "n": 434
+  },
+  "pearson_ci95": [
+    0.7594,
+    0.8326
+  ],
+  "distribution": {
+    "Chebyshev": 0.112,
+    "Clark": 1.4546,
+    "Canberra": 3.5455,
+    "KL": 0.1917,
+    "Cosine": 0.8972,
+    "Intersection": 0.7776,
+    "n": 434
+  },
+  "environment": {
+    "timestamp": "2026-07-29T15:29:48+00:00",
+    "git_commit": "1d02a242bf4a738897d13132bff903aaad0da9b1",
+    "git_tree_dirty": true,
+    "reproducible_from_commit": false,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}

@@ -16,13 +16,16 @@ same thing -- raters using the scale differently -- by different routes:
 `score` standardises each rater independently, this model estimates offsets
 (and optionally scales) jointly by alternating least squares. They should
 agree closely; the report measures how closely, and a divergence would mean
-one of them is wrong. Every input here is screened by the same rules as
-`score` (`legacy/validity.py`), so the comparison is like for like.
+one of them is wrong. Every rating on a labelled image is used, with no rater
+screened out, so `score_adjusted` is recomputable from exactly the ratings the
+release ships.
 
-**Model selection is done, not assumed.** Plain mean, offset-only and affine
-(per-rater scale) models are all fitted on 80% of ratings and compared on the
-held-out 20%. The offset-only model ships unless affine measurably predicts
-better -- a richer model that does not predict better is overfitting.
+**Model selection is done, not assumed -- and on the right criterion.** Plain
+mean, offset and affine models are compared by *split-half reliability of the
+image score*: split the raters in two, aggregate each half, correlate. Held-out
+RMSE on individual ratings is also reported, but it is not what selects, because
+it answers a different question and here it picks the worse label -- affine wins
+on RMSE and loses on reliability. See `legacy/aggregation.py`.
 
 **Two assumptions are tested rather than trusted**, and both results are
 written to the report:
@@ -52,11 +55,13 @@ import numpy as np
 import pandas as pd
 
 from mebeauty_benchmark.legacy.aggregation import (
+    OFFSET_SHRINKAGE,
     OffsetModel,
     bootstrap_quality_ci,
     fit_affine_model,
     fit_offset_model,
     held_out_rmse,
+    split_half_reliability,
 )
 from mebeauty_benchmark.legacy.validity import (
     MIN_RATINGS_PER_IMAGE,
@@ -65,8 +70,8 @@ from mebeauty_benchmark.legacy.validity import (
 
 SPLITS = ("train", "val", "test")
 
-#: RMSE improvement on held-out ratings below which the extra per-rater scale
-#: parameter is treated as not earning its keep.
+#: Split-half reliability gain below which the extra per-rater scale parameter
+#: is treated as not earning its keep.
 AFFINE_MARGIN = 0.005
 
 
@@ -76,6 +81,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report-out", required=True, help="JSON report path")
     parser.add_argument("--bootstrap", type=int, default=200, help="Bootstrap draws")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--reliability-splits",
+        type=int,
+        default=40,
+        help="Rater split-halves used for model selection",
+    )
     return parser.parse_args()
 
 
@@ -159,11 +170,15 @@ def main() -> None:
     all_ratings = pd.read_parquet(
         v3_dir / "ratings" / "by_rater" / "ratings_by_rater.parquet"
     )
-    # Same screens as `score`, or the two are not comparable: valid raters
-    # only, and only images that actually carry a label.
-    valid = all_ratings[all_ratings["rater_valid"]]
+    # **Every rating, no rater screened out.** `score_mean` is published as the
+    # plain mean over all raters, and `score_adjusted` sits beside it in the
+    # same files; fitting this one on a subset would publish a label no user
+    # could recompute from the ratings they were given. The `rater_valid` flag
+    # is still carried in the private tier for anyone who wants to apply it.
     labelled = labelled_image_ids(all_ratings, MIN_RATINGS_PER_IMAGE)
-    ratings_df = valid[valid["image_id"].isin(labelled)].reset_index(drop=True)
+    ratings_df = all_ratings[all_ratings["image_id"].isin(labelled)].reset_index(
+        drop=True
+    )
     print(
         f"Screened {len(all_ratings)} -> {len(ratings_df)} ratings "
         f"({all_ratings['image_id'].nunique()} -> {len(labelled)} images)"
@@ -209,20 +224,32 @@ def main() -> None:
         model: float(np.mean([f[model] for f in folds]))
         for model in ("plain_mean", "offset", "affine")
     }
-    gains = [f["offset"] - f["affine"] for f in folds]
-    affine_gain = float(np.mean(gains))
-    # Require the win in every fold, not just on average, so a single lucky
-    # split cannot promote the more complex model.
-    use_affine = affine_gain > AFFINE_MARGIN and all(g > 0 for g in gains)
     print(f"  held-out RMSE over 5 splits: {comparison}")
-    print(f"  affine gain {affine_gain:+.4f}, wins {sum(g > 0 for g in gains)}/5 folds")
-    print(f"  shipping {'affine' if use_affine else 'offset-only'} model")
+
+    # **Selection runs on reliability, not on held-out RMSE.** RMSE asks which
+    # model predicts one person's rating; the label is a consensus, so the
+    # question is whether another panel would reproduce it. The two criteria
+    # disagree here: affine wins on RMSE and loses on reliability. See the
+    # `aggregation` module docstring.
+    reliability = split_half_reliability(
+        values,
+        image_index,
+        rater_index,
+        n_images,
+        n_raters,
+        seeds=args.reliability_splits,
+    )
+    print(f"  split-half reliability: {reliability}")
+    use_affine = reliability["affine"] > reliability["offset"] + AFFINE_MARGIN
+    print(f"  shipping {'affine' if use_affine else 'offset'} model")
 
     # Both are fitted and both ship. The selected model becomes
-    # `score_adjusted`; the offset-only fit is kept beside it as the
-    # conservative option, because a pure location shift cannot re-weight
-    # anyone's opinion whatever the fit prefers.
-    offset_fit = fit_offset_model(values, image_index, rater_index, n_images, n_raters)
+    # `score_adjusted`; the unshrunk offset fit is kept beside it so the
+    # effect of shrinkage stays visible to anyone auditing the label.
+    offset_fit = fit_offset_model(
+        values, image_index, rater_index, n_images, n_raters, OFFSET_SHRINKAGE
+    )
+    unshrunk = fit_offset_model(values, image_index, rater_index, n_images, n_raters)
     affine = fit_affine_model(values, image_index, rater_index, n_images, n_raters)
     fit = (
         OffsetModel(affine.quality, affine.offset, affine.iterations, affine.converged)
@@ -253,7 +280,7 @@ def main() -> None:
         {
             "image_id": images,
             "score_adjusted": fit.quality,
-            "score_adjusted_offset": offset_fit.quality,
+            "score_adjusted_offset": unshrunk.quality,
             "adjusted_lo": lower,
             "adjusted_hi": upper,
         }
@@ -317,19 +344,26 @@ def main() -> None:
 
     report = {
         "primary_label": "score (rater-normalised mean, unchanged by this script)",
-        "model_shipped": "affine" if use_affine else "offset-only",
+        "model_shipped": "affine" if use_affine else "offset",
         "model_selection": {
+            "criterion": "split_half_reliability_of_image_score",
+            "split_half_reliability": {k: round(v, 5) for k, v in reliability.items()},
+            "affine_gain_over_offset": round(
+                reliability["affine"] - reliability["offset"], 5
+            ),
             "held_out_rmse_mean_of_5_splits": {
                 k: round(v, 5) for k, v in comparison.items()
             },
-            "affine_gain_over_offset": round(affine_gain, 5),
-            "affine_wins_folds": f"{sum(g > 0 for g in gains)}/5",
             "rater_scale_distribution": scale_summary,
             "margin_required": AFFINE_MARGIN,
+            "offset_shrinkage": OFFSET_SHRINKAGE,
             "note": (
-                "Affine adds a per-rater scale. It ships only if it predicts "
-                "held-out ratings better; otherwise the extra freedom is "
-                "fitting noise from light raters."
+                "Selection is on split-half reliability of the image score, "
+                "not on held-out RMSE of individual ratings. The two disagree "
+                "here: affine predicts single ratings better while producing a "
+                "less reproducible image score, so RMSE would pick the worse "
+                "label. Both figures are reported so the disagreement is "
+                "visible rather than buried."
             ),
         },
         "identifiability": graph,

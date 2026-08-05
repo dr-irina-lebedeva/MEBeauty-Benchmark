@@ -133,9 +133,17 @@ def main() -> None:
         },
         "splits": {},
     }
+    # Split membership comes from `splits.parquet`, which the release split
+    # builder writes. Reading it from the existing aggregate files instead --
+    # as this did -- silently preserves whatever membership was there before,
+    # so a rebuilt split never actually takes effect.
+    assignment = pd.read_parquet(v3_dir / "ratings" / "splits.parquet")
+    ratings_dir.mkdir(parents=True, exist_ok=True)
+
     for split in SPLITS:
         path = ratings_dir / f"{split}.parquet"
-        rows = pd.read_parquet(path)[["image_id"]].copy()
+        rows = assignment[assignment["split"] == split][["image_id"]].copy()
+        rows = rows.sort_values("image_id").reset_index(drop=True)
         rows["score"] = rows["image_id"].map(means)
         # The unnormalised and unscreened means, so the effect of each step
         # stays visible and the pre-filter label remains recoverable.
