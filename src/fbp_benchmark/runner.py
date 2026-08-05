@@ -55,6 +55,15 @@ def check_requirements(entry: Entry, protocol: Protocol) -> None:
             f"a rating distribution column "
             f"(spec.distribution_column={protocol.spec.distribution_column!r})"
         )
+    if "attributes" in entry.requires:
+        columns = set(protocol.train.metadata.columns)
+        needed = {"gender", "ethnicity"} - columns
+        if needed:
+            missing.append(
+                f"demographic columns {sorted(needed)} (spec.metadata_columns="
+                f"{list(protocol.spec.metadata_columns)}); the minimal `fbp` "
+                "config does not carry them -- use `fbp_extended`"
+            )
     if "landmarks" in entry.requires and not protocol.train.landmarks:
         missing.append(
             f"facial landmarks (spec.landmark_column={protocol.spec.landmark_column!r})"

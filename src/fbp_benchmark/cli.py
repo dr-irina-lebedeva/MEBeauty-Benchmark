@@ -100,7 +100,11 @@ def main(argv: list[str] | None = None) -> int:
 
     def shared(p: argparse.ArgumentParser) -> None:
         p.add_argument("--dataset", help="YAML DatasetSpec; defaults to MEBeauty")
-        p.add_argument("--config", default="fbp", help="Hugging Face config name")
+        p.add_argument(
+            "--config",
+            default="fbp_extended",
+            help="Hugging Face config name; `fbp` is the minimal surface",
+        )
         p.add_argument("--label", default="beauty_score")
         p.add_argument("--protocol", choices=("holdout", "cv"), default="holdout")
         p.add_argument("--fold", type=int, help="required when --protocol cv")

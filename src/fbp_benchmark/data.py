@@ -53,8 +53,11 @@ class DatasetSpec:
     """How to read one dataset. The only place a dataset is described."""
 
     repo_id: str = MEBEAUTY_REPO
-    #: Hugging Face config name. `fbp` is MEBeauty's minimal training surface.
-    config: str = "fbp"
+    #: Hugging Face config name. `fbp_extended` is the default rather than the
+    #: smaller `fbp` because it is the smallest config every registered method
+    #: can run against: attribute-aware methods need `gender`/`ethnicity`, and
+    #: a default that leaves one method unrunnable is a bad default.
+    config: str = "fbp_extended"
     image_column: str = "image"
     label_column: str = "beauty_score"
     id_column: str = "image_id"

@@ -254,6 +254,7 @@ class R3CNN(_DeepMethod):
     "aanet",
     era="deep",
     reference="Lin, Liang & Jin, 2019",
+    requires=("attributes",),
     trainable=True,
 )
 class AttributeAware(_DeepMethod):
