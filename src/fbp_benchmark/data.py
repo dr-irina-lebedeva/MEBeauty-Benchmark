@@ -64,6 +64,10 @@ class DatasetSpec:
     distribution_column: str | None = "rating_distribution"
     landmark_column: str | None = "landmarks"
     fold_column: str | None = "cv_fold"
+    #: Nested per-rater ratings: a list of `{rater_id, score}` per row. Off by
+    #: default because it is only in the personalized configs and costs memory.
+    #: Methods that model rater effects declare `requires=("ratings",)`.
+    ratings_column: str | None = None
     #: Hub split names, in train/val/test order.
     split_names: tuple[str, str, str] = ("train", "validation", "test")
     #: The rating scale. Metrics and the soft-label binning need it, and it is
@@ -137,6 +141,13 @@ class Split:
     #: on train and val to weight its loss.
     n_ratings: np.ndarray | None = None
     label_std: np.ndarray | None = None
+    #: Individual ratings in flat form: for observation k, `rating_image[k]` is
+    #: the row it belongs to, `rating_rater[k]` who gave it and
+    #: `rating_value[k]` what they said. Flat rather than nested so a loss can
+    #: index it without a Python loop per batch.
+    rating_image: np.ndarray | None = None
+    rating_rater: np.ndarray | None = None
+    rating_value: np.ndarray | None = None
     landmarks: dict[str, np.ndarray] = field(default_factory=dict)
     metadata: pd.DataFrame = field(default_factory=pd.DataFrame)
 
@@ -253,6 +264,19 @@ def _build_split(name: str, dataset: Any, spec: DatasetSpec) -> Split:
         for image_id, points in zip(image_ids, raw_landmarks):
             landmarks[image_id] = np.asarray(points, dtype=float).reshape(-1, 2)
 
+    rating_image = rating_rater = rating_value = None
+    nested = _column(dataset, spec.ratings_column)
+    if nested is not None:
+        rows, raters, values = [], [], []
+        for index, records in enumerate(nested):
+            for record in records:
+                rows.append(index)
+                raters.append(record["rater_id"])
+                values.append(float(record["score"]))
+        rating_image = np.asarray(rows, dtype=np.int64)
+        rating_rater = np.asarray(raters)
+        rating_value = np.asarray(values, dtype=float)
+
     present = [c for c in spec.metadata_columns if c in dataset.column_names]
     metadata = (
         pd.DataFrame({c: dataset[c] for c in present}) if present else pd.DataFrame()
@@ -266,6 +290,9 @@ def _build_split(name: str, dataset: Any, spec: DatasetSpec) -> Split:
         distributions=distributions,
         n_ratings=n_ratings,
         label_std=label_std,
+        rating_image=rating_image,
+        rating_rater=rating_rater,
+        rating_value=rating_value,
         landmarks=landmarks,
         metadata=metadata,
     )

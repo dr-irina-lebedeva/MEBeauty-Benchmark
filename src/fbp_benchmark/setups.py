@@ -117,6 +117,29 @@ def capped_epochs(paper_epochs: int) -> int:
 
 
 SETUPS: dict[str, Setup] = {
+    # Proposed. Identical schedule to `dinov2-partial` on purpose: the two
+    # differ only in what they are supervised by, so any gap is attributable
+    # to the objective rather than to tuning.
+    "rater-dinov2": Setup(
+        method="rater-dinov2",
+        reference="proposed in this benchmark",
+        optimizer="adamw",
+        learning_rate=1e-5,
+        weight_decay=1e-4,
+        batch_size=16,
+        epochs=30,
+        backbone="facebook/dinov2-base",
+        image_size=224,
+        scheduler="cosine",
+        augmentation=("resize_256", "random_crop_224", "hflip"),
+        source="adapted",
+        deviation=UNIFORM_DEVIATION,
+        notes=(
+            "Matched to dinov2-partial so the comparison isolates the "
+            "training objective: individual ratings with a learned rater "
+            "offset, rather than the consensus mean."
+        ),
+    ),
     # ------------------------------------------------------------------ 2006-2012
     "eisenthal2006": Setup(
         method="eisenthal2006",

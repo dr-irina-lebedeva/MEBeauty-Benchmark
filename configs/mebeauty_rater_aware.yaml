@@ -1,0 +1,13 @@
+# MEBeauty with individual per-rater ratings exposed.
+#
+# The `personalized_fbp` config nests every rating under its image, which is
+# what rater-effects methods need. It carries everything the default config
+# has, so any method runs against it -- it is simply heavier to download.
+repo_id: dr-irina-lebedeva/MEBeauty
+config: personalized_fbp
+label_column: beauty_score
+distribution_column: rating_distribution
+landmark_column: landmarks
+ratings_column: ratings
+metadata_columns: [gender, ethnicity]
+score_range: [1.0, 10.0]

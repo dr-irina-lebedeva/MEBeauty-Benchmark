@@ -62,10 +62,13 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch.utils.data import DataLoader
 
 from ..data import Protocol, Split
 from ..registry import register
-from .training import SCORE_BINS, TrainConfig, _DeepMethod
+from ..reproducibility import set_seed
+from .foundation import DINOv2Partial
+from .training import SCORE_BINS, FaceDataset, TrainConfig, _DeepMethod
 
 #: Relative weight of the regression term against the distribution likelihood.
 DEFAULT_REGRESSION_WEIGHT = 1.0
@@ -225,3 +228,205 @@ class RWLDLKLOnly(ReliabilityWeightedLDL):
 
     def __init__(self, config: TrainConfig | None = None, seed: int = 0) -> None:
         super().__init__(config, seed, use_multinomial=False)
+
+
+@register(
+    "rater-dinov2",
+    era="foundation",
+    reference="proposed in this benchmark",
+    requires=("ratings",),
+    trainable=True,
+    notes="proposed: rater effects on a foundation backbone",
+)
+class RaterAwareFoundation(DINOv2Partial):
+    """Predict the *rater-marginal*, by learning the model the label is defined by.
+
+    `beauty_score` is not an arbitrary summary. It is the fitted `quality(i)`
+    in `rating(r, i) = quality(i) + offset(r)`. Every other method in this
+    benchmark ignores that: they regress the summary statistic, discarding
+    55,542 individual ratings to fit 1,962 means.
+
+    This one fits the generative model instead. The network predicts
+    `quality(i)`; a learned scalar per rater supplies `offset(r)`; and the loss
+    is taken against every individual rating rather than against their mean.
+    At test time only `quality(i)` is used, which is exactly the published
+    label -- so the training objective and the evaluation target are the same
+    quantity, not a proxy for it.
+
+    **Three things fall out for free.**
+
+    *No extra compute.* One forward pass per image, as before. The loss sums
+    over that image's 8-92 ratings, so supervision multiplies ~28x while the
+    backbone cost is unchanged.
+
+    *Reliability weighting, unparameterised.* An image rated 92 times
+    contributes 92 loss terms and one rated 8 times contributes 8. `rw-ldl`
+    buys the same effect with an explicit inverse-variance scheme and a tuned
+    floor; here it is a consequence of counting observations.
+
+    *Rater bias cannot leak into the image score.* A harsh rater's ratings are
+    explained by their own offset rather than by the faces they happened to
+    see -- the same correction the label itself was built with.
+
+    **Offsets are re-centred every step, weighted by rating count.** Without an
+    anchor the model is degenerate: any constant can move between `quality` and
+    `offset`. Count-weighting matches how `beauty_score` was defined, and keeps
+    the predictions on the scale the ratings were given on.
+
+    Not novel in general machine learning -- annotator embeddings are
+    established in subjective NLP, speech MOS and medical segmentation. Novel
+    in facial beauty prediction, where the per-rater data needed for it has
+    only just been published.
+    """
+
+    name = "rater-dinov2"
+    predicts_distribution = False
+
+    def __init__(
+        self,
+        config: TrainConfig | None = None,
+        seed: int = 0,
+        consensus_weight: float = 0.2,
+        offset_decay: float = 1e-3,
+        **kwargs,
+    ) -> None:
+        super().__init__(config, seed, **kwargs)
+        #: Weight on the auxiliary term that regresses the consensus directly.
+        #: The rater term alone is the principled objective, but the consensus
+        #: is what is scored, and a small direct signal stabilises early epochs.
+        self.consensus_weight = consensus_weight
+        self.offset_decay = offset_decay
+
+    def _prepare_ratings(self, split: Split) -> None:
+        """Ragged per-image ratings -> padded tensors indexed by row."""
+        if split.rating_value is None:
+            raise ValueError(
+                "rater-dinov2 needs individual ratings; run it against the "
+                "`personalized_fbp` config"
+            )
+        raters, rater_index = np.unique(split.rating_rater, return_inverse=True)
+        n_images = len(split)
+        counts = np.bincount(split.rating_image, minlength=n_images)
+        width = int(counts.max())
+
+        pad_rater = np.zeros((n_images, width), dtype=np.int64)
+        pad_value = np.zeros((n_images, width), dtype=np.float32)
+        pad_mask = np.zeros((n_images, width), dtype=np.float32)
+        slot = np.zeros(n_images, dtype=np.int64)
+        for image, rater, value in zip(
+            split.rating_image, rater_index, split.rating_value
+        ):
+            position = slot[image]
+            pad_rater[image, position] = rater
+            pad_value[image, position] = value
+            pad_mask[image, position] = 1.0
+            slot[image] += 1
+
+        self._pad_rater = torch.from_numpy(pad_rater).to(self.device)
+        self._pad_value = torch.from_numpy(pad_value).to(self.device)
+        self._pad_mask = torch.from_numpy(pad_mask).to(self.device)
+        # Count-weighted centring, as used to define the label itself.
+        self._rater_counts = torch.from_numpy(
+            np.bincount(rater_index, minlength=len(raters)).astype(np.float32)
+        ).to(self.device)
+        self.offsets = nn.Embedding(len(raters), 1).to(self.device)
+        nn.init.zeros_(self.offsets.weight)
+        print(
+            f"  rater-dinov2: {len(split.rating_value):,} ratings from "
+            f"{len(raters)} raters over {n_images} images "
+            f"({len(split.rating_value) / n_images:.1f} per image)",
+            flush=True,
+        )
+
+    @torch.no_grad()
+    def _recentre(self) -> None:
+        """Anchor the offsets so quality carries the level, not the raters."""
+        weights = self.offsets.weight
+        centre = (weights.squeeze(-1) * self._rater_counts).sum() / (
+            self._rater_counts.sum()
+        )
+        weights -= centre
+
+    def _rater_loss(self, quality: torch.Tensor, rows: torch.Tensor) -> torch.Tensor:
+        rater = self._pad_rater[rows]
+        value = self._pad_value[rows]
+        mask = self._pad_mask[rows]
+        predicted = quality.unsqueeze(1) + self.offsets(rater).squeeze(-1)
+        per_rating = F.smooth_l1_loss(predicted, value, reduction="none", beta=1.0)
+        return (per_rating * mask).sum() / mask.sum().clamp(min=1.0)
+
+    def fit(self, protocol: Protocol) -> None:
+        set_seed(self.seed)
+        self._prepare_ratings(protocol.train)
+        super().fit(protocol)
+
+    def _modules(self) -> dict[str, nn.Module]:
+        modules = super()._modules()
+        modules["offsets"] = self.offsets
+        return modules
+
+    def _fit_loop(self, protocol: Protocol) -> None:
+        """As the parent's loop, but supervised by individual ratings.
+
+        `attribute_codes` carries the row index rather than a demographic code,
+        which is what lets the loss find each image's ratings without the
+        DataLoader having to collate a ragged structure.
+        """
+        train_loader = DataLoader(
+            FaceDataset(
+                protocol.train,
+                self.config.image_size,
+                train=True,
+                attribute_codes=np.arange(len(protocol.train)),
+                augmentation=self.config.augmentation,
+            ),
+            batch_size=self.config.batch_size,
+            shuffle=True,
+            num_workers=self.config.num_workers,
+        )
+        modules = self._modules()
+        for module in modules.values():
+            module.to(self.device)
+        parameters = [
+            p for m in modules.values() for p in m.parameters() if p.requires_grad
+        ]
+        optimiser = self._make_optimiser(parameters)
+        schedule = self._make_schedule(optimiser, len(train_loader))
+
+        best_mae, best_state, waited, epoch = float("inf"), None, 0, 0
+        for epoch in range(self.config.epochs):
+            for module in modules.values():
+                module.train()
+            for images, labels, _distributions, rows in train_loader:
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+                rows = rows.to(self.device)
+                optimiser.zero_grad()
+                quality = self._forward(images).squeeze(-1)
+                loss = self._rater_loss(quality, rows)
+                if self.consensus_weight:
+                    loss = loss + self.consensus_weight * F.l1_loss(quality, labels)
+                if self.offset_decay:
+                    loss = loss + self.offset_decay * self.offsets.weight.pow(2).mean()
+                loss.backward()
+                optimiser.step()
+                self._recentre()
+            schedule.step()
+
+            mae = float(
+                np.abs(self.predict(protocol.val).scores - protocol.val.labels).mean()
+            )
+            if mae < best_mae - 1e-4:
+                best_mae, waited, best_state = mae, 0, self._snapshot()
+            else:
+                waited += 1
+                if (
+                    waited >= self.config.patience
+                    and epoch + 1 >= self.config.min_epochs
+                ):
+                    break
+
+        self.epochs_trained = epoch + 1
+        self.best_val_mae = best_mae
+        if best_state is not None:
+            self._restore(best_state)

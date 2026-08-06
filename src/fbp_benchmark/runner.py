@@ -55,6 +55,12 @@ def check_requirements(entry: Entry, protocol: Protocol) -> None:
             f"a rating distribution column "
             f"(spec.distribution_column={protocol.spec.distribution_column!r})"
         )
+    if "ratings" in entry.requires and protocol.train.rating_value is None:
+        missing.append(
+            f"individual per-rater ratings (spec.ratings_column="
+            f"{protocol.spec.ratings_column!r}); use the `personalized_fbp` "
+            "config, which nests them per image"
+        )
     if "attributes" in entry.requires:
         columns = set(protocol.train.metadata.columns)
         needed = {"gender", "ethnicity"} - columns
