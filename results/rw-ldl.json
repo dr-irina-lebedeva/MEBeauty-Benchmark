@@ -1,0 +1,44 @@
+{
+  "method": "rw-ldl",
+  "era": "deep",
+  "metrics": {
+    "PC": 0.7643,
+    "SROCC": 0.754,
+    "MAE": 0.5749,
+    "RMSE": 0.7429,
+    "n": 250,
+    "Chebyshev": 0.1561,
+    "Clark": 1.72,
+    "Canberra": 4.3738,
+    "KL": 0.3385,
+    "Cosine": 0.8302,
+    "Intersection": 0.7097
+  },
+  "seconds": 467.5,
+  "dataset": "dr-irina-lebedeva/MEBeauty",
+  "config": "fbp_extended",
+  "label": "beauty_score",
+  "protocol": "holdout",
+  "fold": null,
+  "seed": 0,
+  "score_range": [
+    1.0,
+    10.0
+  ],
+  "sizes": {
+    "train": 1962,
+    "val": 250,
+    "test": 250
+  },
+  "environment": {
+    "timestamp": "2026-08-06T05:04:04+00:00",
+    "git_commit": "05780b64963e7d0ffd408f6892da802b18052114",
+    "git_tree_dirty": false,
+    "reproducible_from_commit": true,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}
