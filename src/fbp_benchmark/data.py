@@ -129,11 +129,26 @@ class Split:
     labels: np.ndarray
     images: ImageSource
     distributions: np.ndarray | None = None
+    #: How many raters produced each label, and how much they disagreed.
+    #: Both are derived from the rating histogram rather than read from
+    #: separate columns, so they are available in every config that ships a
+    #: distribution -- not only the heaviest one. Label reliability is *known*
+    #: here and varies ~10x across a split; a method may legitimately use it
+    #: on train and val to weight its loss.
+    n_ratings: np.ndarray | None = None
+    label_std: np.ndarray | None = None
     landmarks: dict[str, np.ndarray] = field(default_factory=dict)
     metadata: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     def __len__(self) -> int:
         return len(self.image_ids)
+
+    @property
+    def standard_error(self) -> np.ndarray | None:
+        """Standard error of each label's mean: sd / sqrt(n)."""
+        if self.n_ratings is None or self.label_std is None:
+            return None
+        return np.asarray(self.label_std) / np.sqrt(np.asarray(self.n_ratings))
 
     def with_labels(self, labels: np.ndarray) -> Split:
         """A copy carrying different labels. Used by the leak check."""
@@ -203,7 +218,7 @@ def _build_split(name: str, dataset: Any, spec: DatasetSpec) -> Split:
     )
 
     raw_distributions = _column(dataset, spec.distribution_column)
-    distributions = None
+    distributions = n_ratings = label_std = None
     if raw_distributions is not None:
         counts = np.asarray(raw_distributions, dtype=float)
         totals = counts.sum(axis=1, keepdims=True)
@@ -214,6 +229,22 @@ def _build_split(name: str, dataset: Any, spec: DatasetSpec) -> Split:
             totals,
             out=np.full_like(counts, 1.0 / counts.shape[1]),
             where=totals > 0,
+        )
+        # The histogram is a complete record of the raw ratings, so the count
+        # and their spread come out of it exactly -- no extra column needed.
+        low, _ = spec.score_range
+        bins = low + np.arange(counts.shape[1], dtype=float)
+        n_ratings = totals.ravel()
+        mean = (counts * bins).sum(axis=1) / np.where(n_ratings > 0, n_ratings, 1)
+        variance = (counts * (bins - mean[:, None]) ** 2).sum(axis=1)
+        # ddof=1, matching the sample standard deviation a groupby would give.
+        label_std = np.sqrt(
+            np.divide(
+                variance,
+                n_ratings - 1,
+                out=np.zeros_like(variance),
+                where=n_ratings > 1,
+            )
         )
 
     raw_landmarks = _column(dataset, spec.landmark_column)
@@ -233,6 +264,8 @@ def _build_split(name: str, dataset: Any, spec: DatasetSpec) -> Split:
         labels=labels,
         images=ImageSource(dataset, spec.image_column),
         distributions=distributions,
+        n_ratings=n_ratings,
+        label_std=label_std,
         landmarks=landmarks,
         metadata=metadata,
     )

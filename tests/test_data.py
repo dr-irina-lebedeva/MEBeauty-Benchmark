@@ -107,3 +107,34 @@ def test_an_unknown_yaml_field_is_refused_rather_than_ignored():
         path.write_text("labl_column: beauty_score\n")
         with pytest.raises(ValueError, match="unknown field"):
             DatasetSpec.from_yaml(path)
+
+
+def test_rating_count_and_spread_are_recovered_from_the_histogram():
+    # The histogram is a complete record of the raw ratings, so both come out
+    # of it exactly. Deriving them is what lets reliability-weighted methods
+    # run on configs that do not ship `rating_count`/`score_std` as columns.
+    dataset = make(rating_distribution=[[3, 0, 1], [0, 4, 0], [1, 1, 2]])
+    split = _build_split("test", dataset, DatasetSpec(score_range=(1.0, 3.0)))
+
+    assert split.n_ratings.tolist() == [4, 4, 4]
+    # [1,1,1,3]: mean 1.5, sample sd 1.0
+    assert split.label_std[0] == pytest.approx(1.0)
+    # A single value everywhere has no spread, and must not be NaN.
+    assert split.label_std[1] == pytest.approx(0.0)
+    assert np.isfinite(split.label_std).all()
+
+
+def test_standard_error_shrinks_as_more_raters_agree():
+    dataset = make(rating_distribution=[[1, 0, 1], [50, 0, 50]])
+    dataset._columns = {k: v[:2] for k, v in dataset._columns.items()}
+    split = _build_split("test", dataset, DatasetSpec(score_range=(1.0, 3.0)))
+
+    # Same spread, 50x the raters -> the well-supported label is more certain.
+    assert split.standard_error[1] < split.standard_error[0]
+
+
+def test_reliability_fields_are_absent_without_a_histogram():
+    dataset = FakeDataset({"image": ["<i>"], "image_id": ["a"], "beauty_score": [5.0]})
+    split = _build_split("test", dataset, DatasetSpec())
+    assert split.n_ratings is None
+    assert split.standard_error is None
