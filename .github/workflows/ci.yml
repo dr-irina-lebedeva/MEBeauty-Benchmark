@@ -4,29 +4,84 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+# A new push to a PR makes the previous run irrelevant; cancelling keeps the
+# queue short without losing signal.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
+env:
+  UV_VERSION: "0.11.32"
+
 jobs:
-  quality:
+  lint:
+    name: Lint and format
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
-          version: "0.11.32"
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
+      - run: uv sync --locked --all-extras --dev
+      - run: uv run ruff check --output-format=github .
+      - run: uv run ruff format --check .
 
-      - name: Install Python
-        run: uv python install
+  types:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --locked --all-extras --dev
+      - run: uv run mypy src
 
-      - name: Install project
-        run: uv sync --locked --all-extras --dev
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Linux is what CI gates on; macOS is here because the maintainer
+        # develops there and the torch device path (mps vs cpu) differs.
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --locked --all-extras --dev
+      - name: Run tests with coverage
+        run: >-
+          uv run pytest
+          --cov=fbp_benchmark
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-fail-under=52
+      - uses: actions/upload-artifact@v5
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: coverage
+          path: coverage.xml
 
-      - name: Run checks
-        run: make check
+  results-current:
+    name: README results match results/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --locked --all-extras --dev
+      # A hand-edited leaderboard is one that quietly stops matching the code.
+      - run: uv run fbp-benchmark report --check-readme

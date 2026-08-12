@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this dataset, code, or benchmark results, please cite the original paper."
+title: "MEBeauty: a multi-ethnic facial beauty dataset in-the-wild"
+type: dataset
+authors:
+  - family-names: Lebedeva
+    given-names: Irina
+  - family-names: Guo
+    given-names: Yi
+  - family-names: Ying
+    given-names: Fangli
+doi: 10.1007/s00521-021-06535-0
+url: "https://link.springer.com/article/10.1007/s00521-021-06535-0"
+repository-code: "https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark"
+preferred-citation:
+  type: article
+  title: "MEBeauty: a multi-ethnic facial beauty dataset in-the-wild"
+  authors:
+    - family-names: Lebedeva
+      given-names: Irina
+    - family-names: Guo
+      given-names: Yi
+    - family-names: Ying
+      given-names: Fangli
+  journal: "Neural Computing and Applications"
+  volume: "34"
+  issue: "17"
+  start: "14169"
+  end: "14183"
+  year: 2022
+  doi: 10.1007/s00521-021-06535-0

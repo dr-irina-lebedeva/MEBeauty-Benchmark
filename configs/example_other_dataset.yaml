@@ -1,0 +1,20 @@
+# Template for running this benchmark on a dataset that is not MEBeauty.
+#
+# The requirements are modest: one row per face, an image column, and a numeric
+# label. Everything else is optional and simply disables the methods that need
+# it -- drop `landmark_column` and the classical geometric methods are skipped;
+# drop `distribution_column` and the label-distribution methods are skipped.
+#
+# SCUT-FBP5500, for example, is on a 1-5 scale rather than 1-10, which the
+# metrics and the soft-label binning both need to know.
+repo_id: your-org/your-dataset
+config: default
+image_column: image
+label_column: beauty_score
+id_column: image_id
+distribution_column: null
+landmark_column: null
+fold_column: null
+split_names: [train, validation, test]
+score_range: [1.0, 5.0]
+metadata_columns: []

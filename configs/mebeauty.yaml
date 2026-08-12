@@ -1,0 +1,17 @@
+# MEBeauty on the Hugging Face Hub. This is the default -- `fbp-benchmark run`
+# uses these values with no --dataset flag.
+#
+# Access is gated with automatic approval: accept the terms once at
+# https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty then
+# `huggingface-cli login`.
+repo_id: dr-irina-lebedeva/MEBeauty
+config: fbp_extended
+image_column: image
+label_column: beauty_score
+id_column: image_id
+distribution_column: rating_distribution
+landmark_column: landmarks
+fold_column: cv_fold
+split_names: [train, validation, test]
+score_range: [1.0, 10.0]
+metadata_columns: [gender, ethnicity]

@@ -14,9 +14,15 @@ __pycache__/
 *.pem
 *.key
 
-# Local datasets
-data/*
-!data/README.md
+# Hugging Face cache and any local dataset copies. The benchmark streams the
+# dataset from the Hub, so nothing here is required to run it.
+data/
+.cache/
+
+# Benchmark output. Results are committed deliberately, one at a time, not by
+# a bulk `git add` -- a results file records the commit that produced it, so
+# sweeping them in alongside code changes makes that record a lie.
+results/*.npz
 
 # Experiments and models
 outputs/
@@ -31,3 +37,7 @@ wandb/
 # IDE
 .vscode/
 .idea/
+reports/local/
+.coverage
+coverage.xml
+htmlcov/

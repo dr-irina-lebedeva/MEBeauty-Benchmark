@@ -1,19 +1,68 @@
 [project]
-name = "mebeauty-benchmark"
-version = "0.1.0"
-description = "Add your description here"
+name = "fbp-benchmark"
+version = "1.0.0"
+description = "A reproducible benchmark for facial beauty prediction: one protocol, twenty methods, from hand-crafted geometry to foundation models."
 readme = "README.md"
+license = { text = "MIT" }
 authors = [
     { name = "Irina Lebedeva", email = "dr.irina.lebedeva@gmail.com" }
 ]
 requires-python = ">=3.12"
+keywords = [
+    "facial-beauty-prediction",
+    "facial-attractiveness",
+    "facial-aesthetics",
+    "beauty-prediction",
+    "attractiveness-prediction",
+    "fbp",
+    "mebeauty",
+    "benchmark",
+    "computer-vision",
+    "deep-learning",
+    "affective-computing",
+    "label-distribution-learning",
+    "foundation-models",
+    "dinov2",
+    "face-analysis",
+    "reproducible-research",
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# The floor: enough to load the dataset and run the classical methods. Torch is
+# deliberately *not* here, so a machine with no GPU stack can still install the
+# package, list the methods and run the geometric baselines.
 dependencies = [
     "datasets>=5.0.0",
     "huggingface-hub>=1.24.0",
+    "numpy>=2.0",
+    "pandas>=3.0.5",
+    "pyyaml>=6.0",
+    "scikit-learn>=1.9.0",
 ]
 
+[project.optional-dependencies]
+# The deep and foundation eras. `pip install fbp-benchmark[all]` is the normal
+# install; the split exists so a 2 GB dependency is a choice, not a surprise.
+deep = ["torch>=2.13.0", "torchvision>=0.28.0"]
+foundation = ["torch>=2.13.0", "torchvision>=0.28.0", "transformers>=5.0.0"]
+all = [
+    "torch>=2.13.0",
+    "torchvision>=0.28.0",
+    "transformers>=5.0.0",
+    "scipy>=1.14",
+]
+
+[project.urls]
+Dataset = "https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty"
+"Original dataset" = "https://github.com/fbplab/MEBeauty-database"
+Paper = "https://doi.org/10.1007/s00521-021-06535-0"
+
 [project.scripts]
-mebeauty-benchmark = "mebeauty_benchmark:main"
+fbp-benchmark = "fbp_benchmark.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.11.31,<0.12.0"]
@@ -21,7 +70,51 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "mypy>=1.14",
     "pre-commit>=4.6.1",
     "pytest>=9.1.1",
+    "pytest-cov>=6.0",
     "ruff>=0.16.0",
+    "scipy>=1.14",
+    "torch>=2.13.0",
+    "torchvision>=0.28.0",
+    "transformers>=5.0.0",
+]
+
+[tool.pytest.ini_options]
+# `slow` covers the end-to-end method tests: they download pretrained weights
+# and fine-tune for one epoch, so they take ~30s rather than ~2s. Deselected by
+# default so `make check` stays fast; `make test-slow` runs them, and CI should
+# run both. They are the tests that catch a method being unable to run at all,
+# so "deselected by default" must not become "never run".
+markers = [
+    "slow: end-to-end, needs pretrained weights (run with -m slow)",
+    "network: downloads the dataset from the Hugging Face Hub",
+]
+addopts = "-m 'not slow'"
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+# Pragmatic rather than strict: this is research code with heavy numpy and
+# torch use, where full annotation costs more than it catches. What is enforced
+# is that annotations present are *correct* and that nothing silently returns
+# Any across a module boundary.
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["fbp_benchmark"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "@overload",
 ]

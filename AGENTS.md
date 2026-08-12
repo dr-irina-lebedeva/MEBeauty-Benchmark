@@ -1,54 +1,34 @@
-# MEBeauty Benchmark — Agent Instructions
+# Working in this repository
 
-## Purpose
+This is a **benchmark**, not a dataset pipeline. It contains method
+implementations and the harness that runs them. It contains no code for
+cleaning, building or publishing a dataset — that lives on the
+`chore/legacy-inventory` branch and must not be merged back here.
 
-Build a reproducible dataset and benchmark for general and personalized facial attractiveness prediction.
+## Rules
 
-## Required workflow
+- **Never add dataset preparation code.** The dataset is consumed from the
+  Hugging Face Hub as published. If it needs fixing, fix it in the dataset
+  repository and republish.
+- **Never invent a training schedule.** Every trainable method takes its
+  hyperparameters from `setups.py`, quoted from its paper with `source`,
+  `quote` and `deviation` recorded. If a published value cannot transfer, say
+  so in `deviation` — do not silently substitute.
+- **Never let a method define its own evaluation.** Metrics belong to
+  `metrics.py`. A method returns predictions; the harness scores them.
+- **Never remove the leak check.** `assert_no_test_leak` runs every method
+  twice with shuffled test labels. It is the one guard against the mistake
+  that would invalidate every number in the table.
+- **Do not claim a result was reproduced without running it.** Results carry
+  the commit and a dirty-tree flag for exactly this reason.
 
-- Work on a feature branch; never push directly to `main`.
-- Read the relevant issue and inspect existing code before editing.
-- Keep changes small and reviewable.
-- Run `make check` before committing.
-- Report changed files, tests run, and remaining uncertainties.
+## Adding a method
 
-## Data and research rules
+Decorate the class with `@register(...)`, giving `era`, `reference`, and
+`requires` if it needs landmarks or rating distributions. Add a `setups.py`
+entry if it is `trainable=True`. A test in `tests/test_registry.py` fails if
+you forget the second step.
 
-- Treat the legacy MEBeauty repository and raw data as read-only.
-- Never modify raw files manually.
-- Never commit images, model weights, private ratings, tokens, or credentials.
-- Never upload data without explicit approval.
-- Keep rater identifiers anonymous.
-- Distinguish clearly between:
-  - author-reported results;
-  - reimplemented results;
-  - reproduced results;
-  - verified results.
-- Do not claim scientific reproduction unless the protocol and metrics were actually run.
-- Record dataset revision, Git SHA, configuration, seed, and environment for every experiment.
+## Before finishing
 
-## Code standards
-
-- Python 3.12.
-- Use `uv` for environments and dependencies.
-- Put reusable code under `src/mebeauty_benchmark/`.
-- Put commands and conversion utilities under `scripts/`.
-- Add tests for parsing, validation, preprocessing, and evaluation logic.
-- Prefer deterministic scripts over manual notebook operations.
-- Use Ruff for linting and formatting.
-- Use type hints for public functions.
-- Do not silently catch data-quality errors.
-
-## Commands
-
-- Install: `uv sync --locked --all-extras --dev`
-- Format: `make format`
-- Lint: `make lint`
-- Test: `make test`
-- Full check: `make check`
-
-## Security
-
-- Secrets belong in `.env` or platform secret storage.
-- Never expose Hugging Face, GitHub, W&B, or RunPod credentials.
-- Do not provide coding agents unrestricted access to private identifiable data.
+Run `make check`, and summarise what changed and what remains uncertain.

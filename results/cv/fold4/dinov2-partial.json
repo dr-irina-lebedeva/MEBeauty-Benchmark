@@ -1,0 +1,38 @@
+{
+  "method": "dinov2-partial",
+  "era": "foundation",
+  "metrics": {
+    "PC": 0.8178,
+    "SROCC": 0.8019,
+    "MAE": 0.5471,
+    "RMSE": 0.6876,
+    "n": 491
+  },
+  "seconds": 2309.1,
+  "dataset": "dr-irina-lebedeva/MEBeauty",
+  "config": "personalized_fbp",
+  "label": "beauty_score",
+  "protocol": "cv",
+  "fold": 4,
+  "seed": 0,
+  "score_range": [
+    1.0,
+    10.0
+  ],
+  "sizes": {
+    "train": 1479,
+    "val": 492,
+    "test": 491
+  },
+  "environment": {
+    "timestamp": "2026-08-07T02:02:16+00:00",
+    "git_commit": "575812f06257c356a7e6f3ed67442cb7cd567659",
+    "git_tree_dirty": false,
+    "reproducible_from_commit": true,
+    "python": "3.12.13",
+    "platform": "Darwin arm64",
+    "numpy": "2.5.1",
+    "torch": "2.13.0",
+    "device": "mps"
+  }
+}
