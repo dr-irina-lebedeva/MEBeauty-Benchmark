@@ -88,8 +88,25 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
-    from .report import build_table
+    from .report import build_table, readme_section, update_readme
 
+    if args.check_readme:
+        # CI gate: the README's table must match `results/`. A hand-edited
+        # leaderboard is one that quietly stops matching the code.
+        current = Path(args.readme).read_text(encoding="utf-8")
+        if readme_section(args.out).strip() not in current:
+            print(
+                f"{args.readme} results are out of date. "
+                "Run `fbp-benchmark report --update-readme`.",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"{args.readme} results are up to date.")
+        return 0
+    if args.update_readme:
+        changed = update_readme(args.readme, args.out)
+        print(f"{args.readme}: {'updated' if changed else 'already current'}")
+        return 0
     print(build_table(args.out))
     return 0
 
@@ -133,6 +150,13 @@ def main(argv: list[str] | None = None) -> int:
 
     p_report = sub.add_parser("report", help="render the results table")
     p_report.add_argument("--out", default=str(DEFAULT_RESULTS))
+    p_report.add_argument("--readme", default="README.md")
+    p_report.add_argument(
+        "--update-readme", action="store_true", help="write the table into the README"
+    )
+    p_report.add_argument(
+        "--check-readme", action="store_true", help="fail if the README is stale (CI)"
+    )
     p_report.set_defaults(func=cmd_report)
 
     args = parser.parse_args(argv)

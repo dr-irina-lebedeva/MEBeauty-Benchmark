@@ -324,8 +324,14 @@ def load_protocol(
             )
             for role, hub_split in zip(("train", "val", "test"), spec.split_names)
         }
-        splits = {role: _build_split(role, ds, spec) for role, ds in parts.items()}
-        return Protocol(**splits, spec=spec, protocol=protocol, seed=seed)
+        return Protocol(
+            train=_build_split("train", parts["train"], spec),
+            val=_build_split("val", parts["val"], spec),
+            test=_build_split("test", parts["test"], spec),
+            spec=spec,
+            protocol=protocol,
+            seed=seed,
+        )
 
     if fold is None:
         raise ValueError("protocol='cv' requires a fold index")
@@ -353,5 +359,12 @@ def load_protocol(
         "val": everything.select(np.flatnonzero(val_mask)),
         "test": everything.select(np.flatnonzero(test_mask)),
     }
-    splits = {role: _build_split(role, ds, spec) for role, ds in parts.items()}
-    return Protocol(**splits, spec=spec, protocol=protocol, seed=seed, fold=fold)
+    return Protocol(
+        train=_build_split("train", parts["train"], spec),
+        val=_build_split("val", parts["val"], spec),
+        test=_build_split("test", parts["test"], spec),
+        spec=spec,
+        protocol=protocol,
+        seed=seed,
+        fold=fold,
+    )

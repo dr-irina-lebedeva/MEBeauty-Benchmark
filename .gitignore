@@ -38,3 +38,6 @@ wandb/
 .vscode/
 .idea/
 reports/local/
+.coverage
+coverage.xml
+htmlcov/

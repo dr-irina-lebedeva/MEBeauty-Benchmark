@@ -13,13 +13,13 @@ entry here records:
 
 **Why anything deviates at all.** Every published setup here was written for
 SCUT-FBP5500 (5,500 images, 5-fold cross-validation, labels on 1-5) or SCUT-FBP
-(500 images). MEBeauty's benchmark-v1 is 1,399 training images, a fixed split,
+(500 images). MEBeauty's benchmark-v1 is 1,962 training images, a fixed split,
 and labels on 1-10. Three consequences run through the table below:
 
 1. **Epoch counts are ceilings, not targets.** An earlier version of this file
    rescaled epochs to match each paper's *optimiser step* count. That was
    wrong: ComboLoss's 200 epochs over 4,400 images shows each image 200 times.
-   Matching its step count instead -- 200 x ceil(4400/64) = 13,800 -- on 1,399
+   Matching its step count instead -- 200 x ceil(4400/64) = 13,800 -- on 1,962
    images at batch 64 (22 steps per epoch) would take ~627 epochs, showing
    each image 627 times: more overfitting, not less. Overfitting tracks
    epochs, not steps.
@@ -98,9 +98,9 @@ UNIFORM_DEVIATION = (
     "method's best honest result."
 )
 
-MEBEAUTY_TRAIN_IMAGES = 1399
+MEBEAUTY_TRAIN_IMAGES = 1962
 
-#: No method may run longer than this regardless of its paper. With 1,399
+#: No method may run longer than this regardless of its paper. With 1,962
 #: training images and early stopping active, anything beyond this is spent
 #: memorising: the published schedules were written for 3-4x more data.
 MAX_EPOCHS = 60
@@ -218,7 +218,7 @@ SETUPS: dict[str, Setup] = {
         deviation=(
             "The paper reports 5-fold cross-validation and a 60/40 split on "
             "5,500 images with labels on 1-5; benchmark-v1 is a fixed split on "
-            "1,399 training images with labels on 1-10. L1 is used rather "
+            "1,962 training images with labels on 1-10. L1 is used rather "
             "than the paper's L2 because the doubled label scale puts about "
             "four times the weight on the same relative error, letting the "
             "noisiest labels dominate. " + UNIFORM_DEVIATION
@@ -288,7 +288,7 @@ SETUPS: dict[str, Setup] = {
             "in this benchmark's metric set."
         ),
         deviation=(
-            "500-image SCUT-FBP with ten-fold CV, versus 1,399 images on a "
+            "500-image SCUT-FBP with ten-fold CV, versus 1,962 images on a "
             "fixed split. " + UNIFORM_DEVIATION
         ),
     ),
@@ -308,7 +308,7 @@ SETUPS: dict[str, Setup] = {
             "retrievable, so the optimiser settings follow its sibling paper "
             "(AaNet, same first author and year) rather than being invented. "
             "Pairs for the ranking term are formed within each batch instead "
-            "of from a precomputed pair set: at 1,399 images an explicit list "
+            "of from a precomputed pair set: at 1,962 images an explicit list "
             "adds memory without adding information."
         ),
         deviation=(
@@ -339,7 +339,7 @@ SETUPS: dict[str, Setup] = {
         ),
         deviation=(
             "The paper's 20K-iteration schedule is defined in iterations, not "
-            "epochs. At batch 32 on 1,399 images (44 steps/epoch) that would "
+            "epochs. At batch 32 on 1,962 images (62 steps/epoch) that would "
             "be ~455 epochs -- far past overfitting on a quarter of the data. "
             "The warm-up *fraction* (10% of training) is preserved and the "
             "total rescaled. ResNet-18 values (peak lr 0.1, weight decay 1e-4) "
@@ -386,7 +386,7 @@ SETUPS: dict[str, Setup] = {
             "Backbone is ResNeXt-50, not the paper's SE-ResNeXt-50, which "
             "torchvision does not provide; the squeeze-excitation blocks are "
             "therefore absent. The paper's 200 epochs are capped at "
-            f"{MAX_EPOCHS}: 200 passes over 1,399 images is well past the "
+            f"{MAX_EPOCHS}: 200 passes over 1,962 images is well past the "
             "point where this dataset is being memorised rather than learned. "
             + UNIFORM_DEVIATION
         ),
@@ -566,7 +566,7 @@ SETUPS: dict[str, Setup] = {
             "Not a published FBP method. Frozen DINOv2 ViT-B/14 features "
             "(CLS + mean-pooled patches) with a small MLP head, plus "
             "horizontal-flip test-time augmentation. Included because the "
-            "2025-2026 results suggest the binding constraint at 1,399 "
+            "2025-2026 results suggest the binding constraint at 1,962 "
             "training images is the representation, not the head: MD-Net's "
             "ablation loses more from removing its pretrained prior (0.021 "
             "PC) than from replacing its fusion (0.011). Learning rate is "

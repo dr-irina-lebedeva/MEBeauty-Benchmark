@@ -27,6 +27,8 @@ the shortcut this project has already had to remove twice.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from ..data import Protocol, Split
@@ -38,7 +40,7 @@ LEFT_EYE = slice(36, 42)
 RIGHT_EYE = slice(42, 48)
 
 #: A compact, well-spread subset of the 68 points. Using all 68 gives 2,278
-#: pairwise distances for 1,399 training images -- more features than samples,
+#: pairwise distances for 1,962 training images -- more features than samples,
 #: which is how the classical methods overfit rather than how they worked.
 #: These 19 cover jaw, brows, eyes, nose and mouth.
 KEY_POINTS = (0, 4, 8, 12, 16, 19, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 62)
@@ -125,13 +127,17 @@ class _GeometricMethod:
     """Shared plumbing: build features, standardise, fit, predict."""
 
     name = "geometric"
+    #: How many features survive univariate selection. Declared here rather
+    #: than left to each subclass: it is read by `fit`, so a subclass that
+    #: forgot it would fail only at training time.
+    n_features: int = 30
 
     def __init__(self, seed: int = 0) -> None:
         self.seed = seed
         self._landmarks: dict[str, np.ndarray] = {}
-        self._model = None
-        self._mean = None
-        self._std = None
+        self._model: Any = None
+        self._mean: np.ndarray | None = None
+        self._std: np.ndarray | None = None
         self._selected: np.ndarray | None = None
         self._fallback = 0.0
 
@@ -142,7 +148,7 @@ class _GeometricMethod:
         raise NotImplementedError
 
     def _matrix(self, split: Split) -> np.ndarray:
-        rows = []
+        rows: list[np.ndarray | None] = []
         for image_id in split.image_ids:
             points = self._landmarks.get(image_id)
             if points is None:
@@ -159,10 +165,12 @@ class _GeometricMethod:
         self._fallback = float(protocol.train.labels.mean())
 
         features = self._matrix(protocol.train)
-        self._mean = features.mean(axis=0)
-        self._std = features.std(axis=0)
-        self._std[self._std < 1e-8] = 1.0
-        standardised = (features - self._mean) / self._std
+        mean = features.mean(axis=0)
+        spread = features.std(axis=0)
+        # A constant feature has zero spread; dividing by it yields inf.
+        spread[spread < 1e-8] = 1.0
+        self._mean, self._std = mean, spread
+        standardised = (features - mean) / spread
 
         # Univariate selection, as all three papers used in some form: with
         # more features than images, keeping everything fits noise.

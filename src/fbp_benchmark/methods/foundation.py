@@ -5,10 +5,10 @@ module is different: it is what the literature since 2025 says should work on
 *this* dataset, adapted rather than reproduced, and it exists to answer "can
 we do better than the survey table?"
 
-**The reasoning, which matters more than the code.** benchmark-v1 has 1,399
+**The reasoning, which matters more than the code.** benchmark-v1 has 1,962
 training images. Every published method here fine-tunes an ImageNet backbone,
 and at this scale that is the binding constraint: a ResNet-18 has 11M
-parameters chasing 1,399 labels, so most of the training run is spent
+parameters chasing 1,962 labels, so most of the training run is spent
 memorising. The 2025-2026 results reflect this -- the gains come from *better
 representations*, not better heads:
 
@@ -74,7 +74,7 @@ class FoundationBackbone(nn.Module):
         self.model = AutoModel.from_pretrained(name)
         self.width = self.model.config.hidden_size
 
-        # Frozen by default. With 1,399 images, fine-tuning 86M parameters is
+        # Frozen by default. With 1,962 images, fine-tuning 86M parameters is
         # the failure mode this module exists to avoid; `trainable_blocks`
         # unfreezes only the last few layers when that is wanted.
         for parameter in self.model.parameters():

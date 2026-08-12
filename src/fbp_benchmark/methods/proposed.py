@@ -138,8 +138,10 @@ class ReliabilityWeightedLDL(_DeepMethod):
         # Constants from the training split only. The floor is what stops a
         # single tightly-agreed image from dominating: unregularised inverse
         # variance spans ~20x on this dataset.
-        self._mean_n = float(np.mean(train.n_ratings))
-        error = train.standard_error
+        counts, error = train.n_ratings, train.standard_error
+        if error is None:
+            raise ValueError("rw-ldl needs per-image rating counts")
+        self._mean_n = float(np.mean(counts))
         self._floor_variance = float(np.median(error) ** 2)
         print(
             f"  rw-ldl: mean n={self._mean_n:.1f}, "
@@ -299,23 +301,27 @@ class RaterAwareFoundation(DINOv2Partial):
 
     def _prepare_ratings(self, split: Split) -> None:
         """Ragged per-image ratings -> padded tensors indexed by row."""
-        if split.rating_value is None:
+        if (
+            split.rating_value is None
+            or split.rating_rater is None
+            or split.rating_image is None
+        ):
             raise ValueError(
                 "rater-dinov2 needs individual ratings; run it against the "
                 "`personalized_fbp` config"
             )
-        raters, rater_index = np.unique(split.rating_rater, return_inverse=True)
+        # Bound once, so the rest of the method works with plain arrays.
+        values, who, which = split.rating_value, split.rating_rater, split.rating_image
+        raters, rater_index = np.unique(who, return_inverse=True)
         n_images = len(split)
-        counts = np.bincount(split.rating_image, minlength=n_images)
+        counts = np.bincount(which, minlength=n_images)
         width = int(counts.max())
 
         pad_rater = np.zeros((n_images, width), dtype=np.int64)
         pad_value = np.zeros((n_images, width), dtype=np.float32)
         pad_mask = np.zeros((n_images, width), dtype=np.float32)
         slot = np.zeros(n_images, dtype=np.int64)
-        for image, rater, value in zip(
-            split.rating_image, rater_index, split.rating_value
-        ):
+        for image, rater, value in zip(which, rater_index, values, strict=True):
             position = slot[image]
             pad_rater[image, position] = rater
             pad_value[image, position] = value
@@ -332,7 +338,7 @@ class RaterAwareFoundation(DINOv2Partial):
         self.offsets = nn.Embedding(len(raters), 1).to(self.device)
         nn.init.zeros_(self.offsets.weight)
         print(
-            f"  rater-dinov2: {len(split.rating_value):,} ratings from "
+            f"  rater-dinov2: {len(values):,} ratings from "
             f"{len(raters)} raters over {n_images} images "
             f"({len(split.rating_value) / n_images:.1f} per image)",
             flush=True,

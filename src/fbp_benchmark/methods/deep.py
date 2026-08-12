@@ -217,7 +217,7 @@ class R3CNN(_DeepMethod):
     Each batch contributes both terms -- regression on individual scores, and a
     margin ranking loss over every pair within the batch. Pairs come from the
     batch rather than a separately-built pair set, which keeps memory flat; at
-    1,399 images an explicit pair list is unnecessary.
+    1,962 images an explicit pair list is unnecessary.
     """
 
     name = "r3cnn"
@@ -499,7 +499,7 @@ class UncertaintyOrderLearning(_DeepMethod):
     The paper recovers scores through a Bradley-Terry treatment of pairwise
     comparisons. This implementation keeps the ordinal-plus-uncertainty core
     and uses batch-internal pairwise ordering, as in `R3CNN`, rather than
-    building an explicit comparison graph -- at 1,399 images the graph adds
+    building an explicit comparison graph -- at 1,962 images the graph adds
     memory without adding information.
     """
 

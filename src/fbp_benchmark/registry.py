@@ -27,7 +27,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal, TypeVar
+from typing import TYPE_CHECKING, Literal, TypeVar
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from .methods.base import Method
 
 Era = Literal["baseline", "classical", "deep", "foundation"]
 
@@ -41,7 +44,7 @@ class Entry:
     """One registered method."""
 
     name: str
-    factory: Callable[..., object]
+    factory: Callable[..., Method]
     era: Era
     reference: str
     #: What the method needs from the dataset beyond images and a label.
@@ -113,7 +116,7 @@ def get(name: str) -> Entry:
     return _REGISTRY[name]
 
 
-def create(name: str, seed: int = 0, **overrides) -> object:
+def create(name: str, seed: int = 0, **overrides) -> Method:
     """Instantiate a registered method.
 
     Trainable methods are built from their own paper's schedule, with any

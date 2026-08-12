@@ -58,6 +58,54 @@ original weights or feature extractors. A low score is evidence about *this
 implementation on this dataset*, not a verdict on the original work. Each class
 docstring says what was substituted.
 
+## Results
+
+<!-- RESULTS:START -->
+
+### Held-out split
+
+`dr-irina-lebedeva/MEBeauty` config `fbp_extended`, label `beauty_score`, seed 0 — train 1,962 / val 250 / test 250.
+
+| Method | Era | PC | SROCC | MAE | RMSE | Time |
+|---|---|---|---|---|---|---|
+| `mean-baseline` | baseline | -0.0000 | 0.0000 | 0.9107 | 1.1512 | 0s |
+| `eisenthal2006` | classical | 0.3769 | 0.3928 | 0.8549 | 1.0672 | 1s |
+| `kagian2008` | classical | 0.3694 | 0.3849 | 0.8989 | 1.1091 | 0s |
+| `fan2012` | classical | 0.3115 | 0.3295 | 0.9235 | 1.1416 | 0s |
+| `rw-ldl` | deep | 0.7643 | 0.7540 | 0.5749 | 0.7429 | 468s |
+| `comboloss` | deep | 0.7599 | 0.7617 | 0.5958 | 0.7538 | 2799s |
+| `rw-ldl-kl` | deep | 0.7530 | 0.7411 | 0.6012 | 0.7598 | 175s |
+| `uol` | deep | 0.7487 | 0.7411 | 0.6062 | 0.7764 | 8504s |
+| `rw-ldl-noweight` | deep | 0.7470 | 0.7302 | 0.5984 | 0.7666 | 206s |
+| `fpem` | deep | 0.7255 | 0.7151 | 0.6251 | 0.7922 | 429s |
+| `ldl-ren2017` | deep | 0.7202 | 0.7137 | 0.6381 | 0.7987 | 180s |
+| `pi-cnn` | deep | 0.7087 | 0.7127 | 0.6374 | 0.8138 | 1862s |
+| `r3cnn` | deep | 0.6949 | 0.6919 | 0.6616 | 0.8372 | 332s |
+| `cnn-resnext50` | deep | 0.6672 | 0.6457 | 0.6635 | 0.8611 | 1145s |
+| `gan2014` | deep | 0.6342 | 0.6353 | 0.7160 | 0.9060 | 70s |
+| `aanet` | deep | 0.5537 | 0.5655 | 0.7502 | 0.9701 | 162s |
+| `cnn-resnet18` | deep | 0.4065 | 0.4817 | 0.8336 | 1.0609 | 138s |
+| `rater-dinov2` | foundation | 0.7798 | 0.7734 | 0.5662 | 0.7206 | 2232s |
+| `dinov2-partial` | foundation | 0.7711 | 0.7669 | 0.5658 | 0.7373 | 1413s |
+| `transfbp` | foundation | 0.7412 | 0.7392 | 0.6109 | 0.7727 | 1776s |
+| `dinov2-linear` | foundation | 0.7223 | 0.7319 | 0.6476 | 0.8267 | 903s |
+
+### 5-fold cross-validation
+
+Every image is tested exactly once across the folds, so this is the comparison to trust — the held-out split has only 250 test images, too few to separate methods within about 0.04 correlation.
+
+| Method | Era | PC (mean ± sd) | SROCC (mean ± sd) | MAE (mean ± sd) | RMSE (mean ± sd) |
+|---|---|---|---|---|---|
+| `dinov2-partial` | foundation | 0.8035 ± 0.0136 | 0.8022 ± 0.0104 | 0.5371 ± 0.0061 | 0.7056 ± 0.0231 |
+| `rater-dinov2` | foundation | 0.7959 ± 0.0196 | 0.7932 ± 0.0183 | 0.5562 ± 0.0182 | 0.7243 ± 0.0291 |
+
+<!-- RESULTS:END -->
+
+**The held-out split cannot separate the top methods.** With 250 test images a
+paired bootstrap puts the gap between the best two at p = 0.48. Under 5-fold
+cross-validation the ordering reverses and becomes significant
+(p < 0.001), which is why the CV table is the one to cite.
+
 ## Running it
 
 ```bash

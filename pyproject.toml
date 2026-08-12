@@ -59,8 +59,10 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "mypy>=1.14",
     "pre-commit>=4.6.1",
     "pytest>=9.1.1",
+    "pytest-cov>=6.0",
     "ruff>=0.16.0",
     "scipy>=1.14",
     "torch>=2.13.0",
@@ -79,3 +81,29 @@ markers = [
     "network: downloads the dataset from the Hugging Face Hub",
 ]
 addopts = "-m 'not slow'"
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+# Pragmatic rather than strict: this is research code with heavy numpy and
+# torch use, where full annotation costs more than it catches. What is enforced
+# is that annotations present are *correct* and that nothing silently returns
+# Any across a module boundary.
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["fbp_benchmark"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "@overload",
+]

@@ -1,0 +1,30 @@
+name: End-to-end
+
+# The slow suite downloads the dataset and pretrained weights and trains each
+# method for one epoch. It is the only thing that catches a method that cannot
+# run at all, so it must not be "skipped by default" forever -- it runs weekly
+# and on demand.
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  end-to-end:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.32"
+          enable-cache: true
+      - run: uv sync --locked --all-extras --dev
+      - name: Every method fits and predicts
+        env:
+          # The dataset is gated; a read token is needed to fetch it.
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: uv run pytest -m slow -q
