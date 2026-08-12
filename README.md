@@ -25,17 +25,33 @@ trained and scored under one protocol on the **MEBeauty** multi-ethnic dataset.
 
 ## Installation
 
-Requires Python 3.12+. The dataset is gated with automatic approval: accept
-the terms on the [dataset page](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty),
-then authenticate.
+**Python 3.12 or newer.**
 
 ```bash
-pip install "fbp-benchmark[all]"     # omit [all] for the CPU-only classical methods
+git clone https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark
+cd MEBeauty-Benchmark
+uv sync --all-extras                 # recommended; installs Python 3.12 if needed
 huggingface-cli login
 ```
 
+With [uv](https://docs.astral.sh/uv/), prefix commands with `uv run`:
+`uv run fbp-benchmark list`. To use pip instead, note that an editable install
+of this project needs a recent pip as well as Python 3.12+:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e ".[all]"              # omit [all] for the CPU-only classical methods
+```
+
+**Dataset access.** The dataset is gated with automatic approval: accept the
+terms on the [dataset page](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty)
+while signed in, then `huggingface-cli login` with a token from
+[your settings](https://huggingface.co/settings/tokens).
+
 Nothing else is required — no download script, no preprocessing step and no
-local dataset directory. Images and labels stream from the Hub and are cached.
+local dataset directory. Images and labels stream from the Hub and are cached
+by `datasets` (about 750 MB on first use).
 
 ## Usage
 
@@ -47,11 +63,15 @@ fbp-benchmark run --method comboloss --protocol cv --fold 0
 fbp-benchmark report                                  # render results/ as a table
 ```
 
+Each run writes `results/<method>.json` with its metrics, the protocol it used
+and the commit that produced it, plus per-image predictions as `.npz`. Change
+the destination with `--out`.
+
 | Option | Purpose |
 |---|---|
 | `--protocol cv --fold N` | 5-fold cross-validation instead of the held-out split |
 | `--epochs 1` | smoke test; overrides every schedule and is recorded in the result |
-| `--dataset configs/*.yaml` | evaluate on a different dataset |
+| `--dataset configs/mebeauty_rater_aware.yaml` | evaluate on a different dataset or config |
 | `--save-weights DIR` | export trained weights |
 | `--seed N` | change the seed (default 0) |
 
