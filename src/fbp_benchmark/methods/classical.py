@@ -208,6 +208,7 @@ class Kagian2008(_GeometricMethod):
 
 @register(
     "fan2012",
+    paper="https://doi.org/10.1016/j.patcog.2011.11.024",
     era="classical",
     reference="Fan et al. 2012, Pattern Recognition 45(6)",
     requires=("landmarks",),

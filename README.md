@@ -130,6 +130,11 @@ correlate 0.97 but differ by up to 1.2 on individual images.
 sampling noise, so a perfect predictor would not reach 1.0. The strongest
 method here reaches 0.80.
 
+**Some methods are seed-sensitive.** `cnn-resnet18` ranges 0.41-0.71 across
+four seeds under its published SGD schedule. Schedules are not retuned here,
+so a single-seed number for an unstable method is one draw; cross-validation
+averages five and is the safer figure.
+
 **Test differences, do not eyeball them.**
 `fbp_benchmark.metrics.paired_bootstrap_difference` returns the difference, a
 95% interval and a p-value for any two methods' predictions.
@@ -164,7 +169,7 @@ fbp-benchmark list          # names, eras, and what each one needs
 | Method | Paper |
 |---|---|
 | `eisenthal2006` | [Eisenthal, Dror & Ruppin 2006, Neural Computation 18(1)](https://doi.org/10.1162/089976606774841602) |
-| `fan2012` | Fan et al. 2012, Pattern Recognition 45(6) |
+| `fan2012` | [Fan et al. 2012, Pattern Recognition 45(6)](https://doi.org/10.1016/j.patcog.2011.11.024) |
 | `kagian2008` | [Kagian et al. 2008, Vision Research 48(2)](https://www.sciencedirect.com/science/article/pii/S0042698907005032) |
 
 **Deep** — convolutional networks trained end to end
@@ -176,7 +181,7 @@ fbp-benchmark list          # names, eras, and what each one needs
 | `cnn-resnext50` | [Liang et al. 2018, ICPR (SCUT-FBP5500 best backbone)](https://arxiv.org/abs/1801.06345) |
 | `comboloss` | [Xu & Xiang 2020, arXiv:2010.10721](https://arxiv.org/abs/2010.10721) |
 | `fpem` | [Li et al. 2025, ICCV (FPEM: Face Prior Enhanced Facial Attractiveness Prediction for Live Videos), arXiv:2501.02509](https://arxiv.org/abs/2501.02509) |
-| `gan2014` | Gan et al. 2014, Neurocomputing 133 — reimplementation; no external unlabelled corpus |
+| `gan2014` | [Gan et al. 2014, Neurocomputing 144](https://doi.org/10.1016/j.neucom.2014.05.028) — reimplementation; no external unlabelled corpus |
 | `ldl-ren2017` | [Ren & Geng 2017, IJCAI](https://www.ijcai.org/proceedings/2017/369) |
 | `pi-cnn` | [Xu et al. 2017, ICASSP](https://ieeexplore.ieee.org/document/7952438) |
 | `r3cnn` | [Lin, Liang & Jin 2019/2022, IEEE Trans. Affective Computing](https://doi.org/10.1109/TAFFC.2019.2933523) |

@@ -38,7 +38,17 @@ from .training import (
     trainable=True,
 )
 class CNNRegression(_DeepMethod):
-    """Plain L1 regression on a fine-tuned backbone."""
+    """Plain L1 regression on a fine-tuned backbone.
+
+    **Unstable on this dataset.** Under the paper's SGD schedule (lr 0.01) the
+    held-out correlation ranges 0.41-0.71 across seeds 0-3. Raising
+    `min_epochs` does not help: the model genuinely peaks early and the best
+    validation checkpoint is that early one, so this is optimisation
+    instability rather than premature stopping. The schedule is left as
+    published -- retuning it here would measure this benchmark's tuning
+    instead of the paper's -- so single-seed numbers for this entry should be
+    read as one draw, and the cross-validated figure preferred.
+    """
 
     name = "cnn-resnet18"
 
@@ -266,8 +276,9 @@ class AttributeAware(_DeepMethod):
 
 @register(
     "gan2014",
+    paper="https://doi.org/10.1016/j.neucom.2014.05.028",
     era="deep",
-    reference="Gan et al. 2014, Neurocomputing 133",
+    reference="Gan et al. 2014, Neurocomputing 144",
     trainable=True,
     notes="reimplementation; no external unlabelled corpus",
 )

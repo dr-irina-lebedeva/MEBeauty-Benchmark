@@ -149,7 +149,7 @@ SETUPS: dict[str, Setup] = {
     # ------------------------------------------------------------------ 2014-2018
     "gan2014": Setup(
         method="gan2014",
-        reference="Gan et al. 2014, Neurocomputing 133",
+        reference="Gan et al. 2014, Neurocomputing 144",
         source="adapted",
         optimizer="adamw",
         learning_rate=1e-4,
