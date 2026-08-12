@@ -1,4 +1,4 @@
-.PHONY: help sync format lint types test test-slow coverage results check check-all
+.PHONY: help sync format lint types test test-slow coverage results figures check check-all
 
 help:
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -35,6 +35,9 @@ test-slow:  ## End-to-end method tests (slow, needs network)
 
 results:  ## Regenerate the README results table from results/
 	uv run fbp-benchmark report --update-readme
+
+figures:  ## Regenerate the README figures from the dataset and results/
+	uv run --with matplotlib python scripts/make_figures.py
 
 check: lint types test  ## What CI gates on
 	uv run fbp-benchmark report --check-readme

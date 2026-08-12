@@ -15,6 +15,30 @@ trained and scored under one protocol on the **MEBeauty** multi-ethnic dataset.
 > identification, verification, biometric matching or surveillance.
 > If you use this benchmark or the dataset, please [cite the paper](#citation).
 
+### Where things live
+
+| | |
+|---|---|
+| **Dataset — improved, current** | [huggingface.co/datasets/dr-irina-lebedeva/MEBeauty](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty) |
+| **Benchmark code** | this repository |
+| **Original 2021 release** *(dataset + code, superseded)* | [github.com/fbplab/MEBeauty-database](https://github.com/fbplab/MEBeauty-database) |
+| **Paper** | [Neural Computing and Applications 34(17), 2022](https://doi.org/10.1007/s00521-021-06535-0) |
+
+The Hugging Face release is a **corrected and re-audited version** of the
+original: duplicate photographs merged, splits rebuilt so that images of the
+same person cannot span a train/test boundary, provenance recorded per image,
+and the label recomputed from the individual ratings. Counts differ from the
+2021 release for those reasons, so **numbers from papers using the original
+files are not directly comparable**. The original repository remains available
+for reference.
+
+![MEBeauty label distribution, rater support and ethnic composition](docs/figures/dataset.png)
+
+*2,462 faces, each rated by 8–92 people from six ethnic groups. No face from
+the dataset is reproduced here — the people shown did not consent to being
+rated for attractiveness, so this repository describes the distributions
+rather than displaying them.*
+
 ---
 
 ## Contents
@@ -175,6 +199,8 @@ Entries without a link are published in venues with no stable open URL; the cita
 <!-- METHODS:END -->
 
 ## Results
+
+![Pearson correlation by method, grouped by era](docs/figures/results.png)
 
 <!-- RESULTS:START -->
 
