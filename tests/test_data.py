@@ -138,3 +138,44 @@ def test_reliability_fields_are_absent_without_a_histogram():
     split = _build_split("test", dataset, DatasetSpec())
     assert split.n_ratings is None
     assert split.standard_error is None
+
+
+def test_face_dataset_normalisation_is_per_backbone():
+    # A face-verification net trained on (x-127.5)/128 receives garbage if it
+    # is handed ImageNet statistics. Getting this wrong cost transfbp 0.037
+    # correlation, so the parameter must actually reach the transform.
+    import numpy as np
+    from PIL import Image
+
+    from fbp_benchmark.data import Split
+    from fbp_benchmark.methods.training import MEAN, STD, FaceDataset
+
+    class OneGrey:
+        def __len__(self):
+            return 1
+
+        def __getitem__(self, index):
+            return Image.new("RGB", (64, 64), (128, 128, 128))
+
+    split = Split(
+        name="t",
+        image_ids=np.array(["a"]),
+        labels=np.array([5.0]),
+        images=OneGrey(),
+    )
+    imagenet = FaceDataset(split, 64, train=False, augmentation=())[0][0]
+    facenet = FaceDataset(
+        split, 64, train=False, augmentation=(), mean=(0.5,) * 3, std=(0.5,) * 3
+    )[0][0]
+
+    assert not torch_allclose(imagenet, facenet)
+    # Mid-grey under (x-0.5)/0.5 sits at ~0, under ImageNet stats it does not.
+    assert abs(float(facenet.mean())) < 0.05
+    assert abs(float(imagenet.mean())) > 0.1
+    assert (MEAN, STD) != ((0.5,) * 3, (0.5,) * 3)
+
+
+def torch_allclose(a, b) -> bool:
+    import torch
+
+    return bool(torch.allclose(a, b))

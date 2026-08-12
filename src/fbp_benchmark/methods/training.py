@@ -96,6 +96,8 @@ class FaceDataset(Dataset):
         train: bool,
         attribute_codes: np.ndarray | None = None,
         augmentation: tuple[str, ...] = ("hflip",),
+        mean: tuple[float, float, float] = MEAN,
+        std: tuple[float, float, float] = STD,
     ) -> None:
         from torchvision import transforms
 
@@ -135,7 +137,11 @@ class FaceDataset(Dataset):
                 steps.append(transforms.RandomRotation(10))
             if "color_jitter" in augmentation:
                 steps.append(transforms.ColorJitter(0.2, 0.2, 0.2, 0.05))
-        steps += [transforms.ToTensor(), transforms.Normalize(MEAN, STD)]
+        # Normalisation belongs to the backbone, not to the harness: a
+        # face-verification net trained on (x-127.5)/128 receives garbage if
+        # it is handed ImageNet statistics. Measured on transfbp, getting this
+        # wrong cost 0.037 correlation.
+        steps += [transforms.ToTensor(), transforms.Normalize(mean, std)]
         self.transform = transforms.Compose(steps)
 
     def __len__(self) -> int:

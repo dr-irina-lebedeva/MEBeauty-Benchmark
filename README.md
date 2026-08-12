@@ -232,7 +232,7 @@ Entries without a link are published in venues with no stable open URL; the cita
 | `r3cnn` | deep | 0.6949 | 0.6919 | 0.6616 | 0.8372 | 332s |
 | `cnn-resnext50` | deep | 0.6672 | 0.6457 | 0.6635 | 0.8611 | 1145s |
 | `gan2014` | deep | 0.6342 | 0.6353 | 0.7160 | 0.9060 | 70s |
-| `aanet` | deep | 0.5383 | 0.5829 | 0.7549 | 1.0101 | 294s |
+| `aanet` | deep | 0.5522 | 0.5779 | 0.7431 | 0.9655 | 260s |
 | `cnn-resnet18` | deep | 0.4065 | 0.4817 | 0.8336 | 1.0609 | 138s |
 | `rater-dinov2` | foundation | 0.7798 | 0.7734 | 0.5662 | 0.7206 | 2232s |
 | `dinov2-partial` | foundation | 0.7711 | 0.7669 | 0.5658 | 0.7373 | 1413s |
