@@ -15,20 +15,101 @@ trained and scored under one protocol on the **MEBeauty** multi-ethnic dataset.
 > identification, verification, biometric matching or surveillance.
 > If you use this benchmark or the dataset, please [cite the paper](#citation).
 
-No download script, no preprocessing, no `data/` directory to populate. The dataset
-streams from the Hugging Face Hub:
+---
+
+## Contents
+
+- [Start here](#start-here-about-2-minutes) — install and run something in 2 minutes
+- [Common tasks](#common-tasks) — the commands you will actually use
+- [If you are writing a thesis](#if-you-are-writing-a-thesis) — which numbers to report
+- [Troubleshooting](#troubleshooting)
+- [The methods](#the-methods) — 21 methods, with links to their papers
+- [Results](#results) — held-out and cross-validated
+- [Adding a method](#adding-a-method) · [Using your own dataset](#using-your-own-dataset)
+
+---
+
+## Start here (about 2 minutes)
+
+No dataset download, no preprocessing, no `data/` folder to fill. Everything
+streams from the Hugging Face Hub.
+
+**1. Get access to the dataset.** It is gated, but approval is automatic —
+open the [dataset page](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty),
+sign in, accept the terms. Then create a token at
+[huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+
+**2. Install and log in.**
 
 ```bash
 pip install "fbp-benchmark[all]"
-huggingface-cli login          # the dataset is gated; approval is automatic
-fbp-benchmark run --method cnn-resnet18
+huggingface-cli login          # paste your token
 ```
 
-**Dataset:** [dr-irina-lebedeva/MEBeauty](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty) ·
-**Original release:** [fbplab/MEBeauty-database](https://github.com/fbplab/MEBeauty-database) ·
-**Paper:** [Neural Computing and Applications (2022)](https://doi.org/10.1007/s00521-021-06535-0)
+**3. Run something.** These three finish in seconds on a laptop, no GPU:
 
----
+```bash
+fbp-benchmark run --era classical --out results
+fbp-benchmark run --method mean-baseline --out results
+fbp-benchmark report
+```
+
+You should see correlations around 0.31–0.38 for the classical methods and
+0.00 for the baseline. If you do, everything works.
+
+**4. Train a real model.** This one needs a GPU (or ~20 minutes on an Apple
+M-series laptop) and is the strongest method in the benchmark:
+
+```bash
+fbp-benchmark run --method dinov2-partial --out results
+```
+
+## Common tasks
+
+| I want to... | Command |
+|---|---|
+| See every method | `fbp-benchmark list` |
+| Train one method | `fbp-benchmark run --method comboloss` |
+| Train a whole era | `fbp-benchmark run --era foundation` |
+| Run 5-fold cross-validation | `fbp-benchmark run --method X --protocol cv --fold 0` |
+| Quick smoke test (1 epoch) | `fbp-benchmark run --method X --epochs 1` |
+| Show my results table | `fbp-benchmark report` |
+| Use a different dataset | `fbp-benchmark run --dataset configs/my_dataset.yaml` |
+| Save trained weights | `fbp-benchmark run --method X --save-weights checkpoints` |
+
+## If you are writing a thesis
+
+**Which numbers to report.** Use 5-fold cross-validation, not the held-out
+split. The held-out split has 250 test images, and a paired bootstrap shows it
+cannot tell two good methods apart — differences below about 0.04 correlation
+are noise. We learned this the hard way: a method that looked best on the
+held-out split lost significantly under cross-validation.
+
+**Say which label you used.** The dataset ships `beauty_score` (recommended)
+and `plain_mean_score`. They correlate 0.97 but differ by up to 1.2 on
+individual faces, so a table that does not name its label is ambiguous.
+
+**Know the ceiling.** About 19% of the label variance is rater sampling noise,
+so a perfect predictor would score roughly 0.90, not 1.0. The best method here
+reaches 0.80. Do not chase 0.95.
+
+**Comparing your own method.** Add it (see [Adding a method](#adding-a-method)),
+run it under the same protocol, and use
+`fbp_benchmark.metrics.paired_bootstrap_difference` to check whether a gap is
+real before claiming an improvement.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `401` / `GatedRepoError` | Accept the terms on the dataset page, then `huggingface-cli login` |
+| `No module named torch` | `pip install "fbp-benchmark[all]"` — the base install omits torch on purpose |
+| No GPU | The classical methods and the baseline run on CPU in seconds. Deep methods will work but take hours |
+| Out of memory | Lower the batch size: `--method X --epochs 30` then edit `setups.py`, or use a smaller backbone |
+| Training feels stuck | Deep methods print nothing between epochs. `uol` takes ~2 hours; that is normal |
+| `needs demographic columns` | That method needs `fbp_extended`; it is the default, so check your `--config` |
+| `needs individual ratings` | Use `--dataset configs/mebeauty_rater_aware.yaml` |
+| Results differ slightly from the tables | Expected across devices (CUDA vs MPS vs CPU). Ordering should hold |
 
 ## Why this exists
 
@@ -207,21 +288,7 @@ the baseline — write nothing rather than an empty file.
 > produce them is ~5.5 hours of compute. Reproduce locally with the commands
 > above, or open an issue if hosted weights would help you.
 
-## Running it
-
-```bash
-fbp-benchmark run                          # every method, holdout split
-fbp-benchmark run --era classical          # one era
-fbp-benchmark run --method rw-ldl          # one method
-fbp-benchmark run --protocol cv --fold 0   # 5-fold cross-validation
-fbp-benchmark report                       # render results/ as a leaderboard
-```
-
-Results land in `results/<method>.json` with per-image predictions beside them. Every
-file records the git commit, whether the tree was modified, library versions and the
-device — so a number can be reproduced, or knowingly discounted.
-
-From Python:
+## Using it from Python
 
 ```python
 from fbp_benchmark import load_protocol, run
@@ -230,6 +297,11 @@ protocol = load_protocol()  # MEBeauty, from the Hub
 result = run("cnn-resnet18", protocol)
 print(result.metrics)  # {'PC': ..., 'SROCC': ..., 'MAE': ...}
 ```
+
+Results land in `results/<method>.json`, with per-image predictions beside
+them. Every file records the git commit, whether the working tree was
+modified, the library versions and the device — so a number can be reproduced,
+or knowingly discounted.
 
 ## Using your own dataset
 
