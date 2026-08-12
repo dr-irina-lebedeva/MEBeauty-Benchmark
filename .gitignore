@@ -14,8 +14,7 @@ __pycache__/
 *.pem
 *.key
 
-# Hugging Face cache and any local dataset copies. The benchmark streams the
-# dataset from the Hub, so nothing here is required to run it.
+# The benchmark streams the dataset from the Hub; nothing local is required.
 data/
 .cache/
 

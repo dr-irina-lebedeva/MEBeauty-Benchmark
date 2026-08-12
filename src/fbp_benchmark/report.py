@@ -85,12 +85,7 @@ def _row(method: str, era: str, values: dict[str, float], trailing: str | None) 
 
 
 def leaderboard(runs: list[Run], time_column: bool = True) -> str:
-    """Markdown table, grouped by era and ranked within it.
-
-    Ranked *within* era rather than globally: putting a 2006 geometric
-    regressor on the same line as a fine-tuned transformer invites a
-    conclusion neither supports.
-    """
+    """Markdown table, grouped by era and ranked within it."""
     if not runs:
         return "_No results yet. Run `fbp-benchmark run`._"
 
@@ -217,11 +212,7 @@ ERA_BLURB = {
 
 
 def methods_section() -> str:
-    """The method catalogue, with a link to each paper.
-
-    Generated from the registry so a method cannot appear here without being
-    runnable, and cannot be added without its citation.
-    """
+    """The method catalogue, with a link to each paper."""
     from .registry import available
 
     lines = []

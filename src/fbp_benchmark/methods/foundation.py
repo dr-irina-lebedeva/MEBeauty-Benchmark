@@ -1,45 +1,9 @@
-"""Post-2025 additions: foundation-model features, TTA, and ensembling.
+"""Foundation-model era: large pretrained backbones, frozen or lightly adapted.
 
-Everything in `deep.py` and `modern.py` reimplements a published method. This
-module is different: it is what the literature since 2025 says should work on
-*this* dataset, adapted rather than reproduced, and it exists to answer "can
-we do better than the survey table?"
-
-**The reasoning, which matters more than the code.** benchmark-v1 has 1,962
-training images. Every published method here fine-tunes an ImageNet backbone,
-and at this scale that is the binding constraint: a ResNet-18 has 11M
-parameters chasing 1,962 labels, so most of the training run is spent
-memorising. The 2025-2026 results reflect this -- the gains come from *better
-representations*, not better heads:
-
-| Reported on SCUT-FBP5500 | PC |
-|---|---|
-| R3CNN (2022) | 0.9142 |
-| FairViT-GAN (2025) | 0.9230 |
-| MD-Net / SynergyNet (2025) | 0.9235 |
-| Hybrid VMamba-ViT (2025) | 0.9261 |
-
-MD-Net's own ablation is the clearest evidence: removing its diffusion prior
-costs 0.021 PC, removing Mamba costs 0.015, and replacing cross-attention
-fusion with concatenation costs 0.011. The *pretrained prior* carries more
-than the architecture.
-
-So this module takes the cheapest version of that lesson: a frozen
-self-supervised backbone that has seen far more faces than this dataset
-contains, with a small head on top. Nothing is fine-tuned by default, so there
-is almost nothing to overfit.
-
-**Why DINOv2 and not DINOv3.** DINOv3 is stronger and would be the better
-choice, but its weights are gated behind a licence requiring personal details.
-This project does not automate its way around a licence -- the same reason
-`validate_on_scut.py` will not download SCUT-FBP5500. DINOv2 is Apache-2.0 and
-ungated, so it is what ships. Anyone who has accepted the DINOv3 licence can
-set `--backbone` to a DINOv3 checkpoint and this code runs unchanged.
-
-**What is deliberately not implemented.** MD-Net needs a Stable Diffusion
-U-Net encoder and Vision Mamba. `mamba-ssm` requires CUDA kernels and does not
-run on Apple Silicon, so MD-Net cannot be reproduced on this machine at all --
-recorded here rather than quietly omitted.
+Adapted rather than reproduced. With 1,962 training images the binding
+constraint is representation, not architecture, so these entries replace the
+ImageNet backbone used elsewhere with a self-supervised one and change little
+else. `dinov2-partial` is the strongest method in the benchmark.
 """
 
 from __future__ import annotations
@@ -61,11 +25,7 @@ DEFAULT_BACKBONE = "facebook/dinov2-base"
 
 
 class FoundationBackbone(nn.Module):
-    """A frozen self-supervised transformer, exposing pooled + patch tokens.
-
-    Wrapped rather than used directly so the rest of the harness sees the same
-    interface as a torchvision backbone.
-    """
+    """A frozen self-supervised transformer, exposing pooled + patch tokens."""
 
     def __init__(self, name: str = DEFAULT_BACKBONE, trainable_blocks: int = 0):
         super().__init__()
@@ -103,16 +63,7 @@ class FoundationBackbone(nn.Module):
     notes="frozen backbone, linear head",
 )
 class DINOv2Regression(_DeepMethod):
-    """Frozen DINOv2 features, small MLP head, L1 regression.
-
-    The simplest form of the 2025 lesson, and the one most likely to hold up:
-    no architecture novelty at all, just a representation trained on far more
-    images than this dataset has labels for.
-
-    Test-time augmentation is on by default -- a horizontal flip and its
-    average. Faces are near-symmetric, the training augmentation already
-    includes flips, and it costs one extra forward pass.
-    """
+    """Frozen DINOv2 features, small MLP head, L1 regression."""
 
     name = "dinov2-linear"
     predicts_distribution = False
@@ -241,12 +192,7 @@ class DINOv2Regression(_DeepMethod):
     notes="last blocks unfrozen",
 )
 class DINOv2Partial(DINOv2Regression):
-    """The same, with the last transformer blocks unfrozen.
-
-    Included so the frozen-vs-tuned question is answered by measurement rather
-    than by the argument in this module's docstring. If unfreezing helps, the
-    argument was wrong and the table will say so.
-    """
+    """The same, with the last transformer blocks unfrozen."""
 
     name = "dinov2-partial"
 
@@ -255,20 +201,7 @@ class DINOv2Partial(DINOv2Regression):
 
 
 class Ensemble:
-    """Average the predictions of several already-run methods.
-
-    Not a method in the usual sense -- it never sees an image. It reads the
-    per-image predictions the harness already saves and combines them, which
-    is part of why those files are written.
-
-    **Combined by rank, not by raw score.** The members disagree about scale:
-    a distribution's expectation is pulled toward the centre of the range,
-    while a plain regressor is not, so averaging raw scores lets the
-    widest-spread member dominate. Ranks are averaged instead, then mapped
-    back onto the training labels' own distribution by quantile, so MAE and
-    RMSE stay meaningful -- a pure rank average would score terribly on both
-    while correlating fine.
-    """
+    """Average the predictions of several already-run methods."""
 
     name = "ensemble"
 
@@ -304,22 +237,7 @@ class Ensemble:
     notes="ViT-B/16 backbone",
 )
 class TransFBP(_DeepMethod):
-    """Boukhari & Dornaika 2026: cross-attention over ViT tokens.
-
-    A ViT's CLS token is a pooled summary; the patch tokens hold where the
-    information actually is. This method keeps both and lets the CLS token
-    attend over the patches before regression, rather than discarding the
-    spatial detail that pooling throws away.
-
-    The paper's attention-guided TransMix augmentation is **not** implemented:
-    it mixes two images and their labels in proportion to attention mass, which
-    needs the attention map during augmentation and would make this entry's
-    training loop differ structurally from every other. Omitting it is recorded
-    here because it is part of the paper's contribution, so this entry
-    under-represents the method.
-
-    Requires a ViT backbone; `TrainConfig.backbone` is overridden accordingly.
-    """
+    """Boukhari & Dornaika 2026: cross-attention over ViT tokens."""
 
     name = "transfbp"
 
@@ -337,13 +255,7 @@ class TransFBP(_DeepMethod):
         )
 
     def _tokens(self, images):
-        """Patch and CLS tokens from the ViT encoder.
-
-        `self.backbone` is torchvision's ViT with its classification head
-        removed. Its `forward` returns only the pooled CLS token, which is
-        exactly the information this method exists to avoid discarding, so the
-        encoder is driven directly instead.
-        """
+        """Patch and CLS tokens from the ViT encoder."""
         x = self.backbone._process_input(images)
         cls = self.backbone.class_token.expand(x.shape[0], -1, -1)
         x = self.backbone.encoder(torch.cat([cls, x], dim=1))

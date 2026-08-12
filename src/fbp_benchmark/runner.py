@@ -43,12 +43,7 @@ class Result:
 
 
 def check_requirements(entry: Entry, protocol: Protocol) -> None:
-    """Fail early and readably when the dataset lacks what a method needs.
-
-    Without this, a distribution method handed a dataset with no histogram
-    trains on zeros and reports a plausible-looking bad score, which reads as
-    'the method is weak' rather than 'the run was misconfigured'.
-    """
+    """Fail early and readably when the dataset lacks what a method needs."""
     missing = []
     if "distributions" in entry.requires and protocol.train.distributions is None:
         missing.append(
@@ -141,12 +136,7 @@ def save(result: Result, directory: str | Path) -> Path:
 
 
 def save_weights(method: object, directory: str | Path, name: str) -> Path | None:
-    """Persist a trained method's weights, if it has any.
-
-    Classical methods hold a scikit-learn estimator rather than tensors, and
-    the baseline holds a single float; both return None rather than writing a
-    misleading empty checkpoint.
-    """
+    """Persist a trained method's weights, if it has any."""
     modules = getattr(method, "_modules", None)
     if modules is None:
         return None

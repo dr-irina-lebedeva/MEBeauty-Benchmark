@@ -50,13 +50,7 @@ class Method(TypingProtocol):
 
 
 def assert_no_test_leak(method: Method, protocol: Protocol, seed: int = 0) -> None:
-    """Fail if a method's predictions depend on the test labels.
-
-    Shuffles the test labels and re-predicts. A method that only reads pixels,
-    landmarks and training data cannot notice; one that peeks at the answers
-    will produce different output. This is cheap insurance against the single
-    mistake that would invalidate an entire results table.
-    """
+    """Fail if a method's predictions depend on the test labels."""
     rng = np.random.default_rng(seed)
     baseline = method.predict(protocol.test).scores
 
@@ -77,13 +71,7 @@ def assert_no_test_leak(method: Method, protocol: Protocol, seed: int = 0) -> No
     notes="floor: predicts the training mean",
 )
 class MeanBaseline:
-    """Predict the training mean for every image.
-
-    The floor any real method must clear. Its Pearson correlation is 0 by
-    construction, which is exactly why it belongs in the table: it shows what
-    'no signal' scores on these metrics, and its MAE is often closer to a weak
-    model's than readers expect.
-    """
+    """Predict the training mean for every image."""
 
     name = "mean-baseline"
 

@@ -38,12 +38,7 @@ from .training import (
     trainable=True,
 )
 class CNNRegression(_DeepMethod):
-    """Plain L1 regression on a fine-tuned backbone.
-
-    The baseline shared by Xie 2015, the SCUT-FBP5500 paper and the 2022
-    MEBeauty release. L1 rather than L2 because beauty labels are means over a
-    handful of raters and a squared penalty lets the noisiest labels dominate.
-    """
+    """Plain L1 regression on a fine-tuned backbone."""
 
     name = "cnn-resnet18"
 
@@ -80,13 +75,7 @@ class CNNResNeXt(CNNRegression):
     trainable=True,
 )
 class LabelDistributionLearning(_DeepMethod):
-    """Ren & Geng 2017: predict the rating distribution, not just its mean.
-
-    Trained with KL against the true distribution; the reported score is the
-    distribution's expectation. This is the method MEBeauty's soft labels exist
-    for -- it is the only entry here that uses information a mean throws away,
-    and it is scored on the distribution metrics as well as the point ones.
-    """
+    """Ren & Geng 2017: predict the rating distribution, not just its mean."""
 
     name = "ldl-ren2017"
     predicts_distribution = True
@@ -120,25 +109,7 @@ class LabelDistributionLearning(_DeepMethod):
     trainable=True,
 )
 class ComboLoss(_DeepMethod):
-    """Xu & Xiang 2020: L_combo = 2*L_reg + L_exp + L_cls.
-
-    Three complementary terms, quoted from the paper: `L_reg` is L1 between a
-    **regression output** and the label, `L_exp` is L1 between that same
-    regression output and the expectation of the classification distribution,
-    and `L_cls` is a class-balanced cross-entropy. Coefficients alpha=2,
-    beta=1, gamma=1 are the paper's.
-
-    The regression output and the classification distribution must be
-    *separate heads*: `L_exp` is what ties them together, so computing both
-    from one distribution head makes `L_reg` and `L_exp` the same quantity and
-    deletes the term. An earlier version of this class did exactly that, and
-    also used MSE where the paper uses L1.
-
-    `L_cls` is weighted by inverse class frequency in the training split.
-    MEBeauty's scores pile up around 6, so an unweighted cross-entropy would
-    let the middle bins dominate -- which is the imbalance the paper's
-    "category balancing weights" exist to correct.
-    """
+    """Xu & Xiang 2020: L_combo = 2*L_reg + L_exp + L_cls."""
 
     name = "comboloss"
     predicts_distribution = True
@@ -157,13 +128,7 @@ class ComboLoss(_DeepMethod):
 
     @staticmethod
     def class_weights_for(labels: np.ndarray) -> torch.Tensor:
-        """Inverse-frequency weights over the score bins.
-
-        MEBeauty's scores pile up around 6, so an unweighted cross-entropy
-        would be dominated by the middle bins. Normalised to mean 1 over the
-        occupied bins so the loss keeps its scale; empty bins get 0 rather
-        than dividing by zero, and contribute nothing anyway.
-        """
+        """Inverse-frequency weights over the score bins."""
         bins = np.clip(np.round(labels) - 1, 0, len(SCORE_BINS) - 1).astype(int)
         counts = np.bincount(bins, minlength=len(SCORE_BINS))
         weights = np.where(counts > 0, len(bins) / np.maximum(counts, 1), 0.0)
@@ -217,13 +182,7 @@ class ComboLoss(_DeepMethod):
     trainable=True,
 )
 class R3CNN(_DeepMethod):
-    """Lin et al.: absolute regression guided by relative ranking.
-
-    Each batch contributes both terms -- regression on individual scores, and a
-    margin ranking loss over every pair within the batch. Pairs come from the
-    batch rather than a separately-built pair set, which keeps memory flat; at
-    1,962 images an explicit pair list is unnecessary.
-    """
+    """Lin et al.: absolute regression guided by relative ranking."""
 
     name = "r3cnn"
 
@@ -264,18 +223,7 @@ class R3CNN(_DeepMethod):
     trainable=True,
 )
 class AttributeAware(_DeepMethod):
-    """Lin et al. AaNet: demographic attributes modulate the visual features.
-
-    The original learns filter modulation from attributes. Here the shipped
-    gender and ethnicity labels are embedded and used to gate the backbone's
-    features, which preserves the mechanism -- attributes change *how* the
-    image is read, not just what is added to the final score.
-
-    Worth stating plainly in any write-up: this method conditions on ethnicity
-    and gender by design. On a multi-ethnic beauty dataset that is exactly the
-    thing a fairness analysis should scrutinise, not a neutral architectural
-    choice.
-    """
+    """Lin et al. AaNet: demographic attributes modulate the visual features."""
 
     name = "aanet"
 
@@ -292,12 +240,7 @@ class AttributeAware(_DeepMethod):
         return nn.Sequential(nn.Dropout(0.2), nn.Linear(features, 1))
 
     def attribute_codes(self, split: Split) -> np.ndarray:
-        """gender/ethnicity -> a stable integer code.
-
-        Codes are assigned in first-seen order and reused, so val and test map
-        to the same embedding rows as train. A combination never seen in
-        training falls back to 0 rather than indexing out of bounds.
-        """
+        """gender/ethnicity -> a stable integer code."""
         keys = (split.metadata["gender"] + "/" + split.metadata["ethnicity"]).tolist()
         for key in keys:
             if key not in self._lookup and len(self._lookup) < self.MAX_ATTRIBUTES:
@@ -329,20 +272,7 @@ class AttributeAware(_DeepMethod):
     notes="reimplementation; no external unlabelled corpus",
 )
 class Gan2014(_DeepMethod):
-    """Deep self-taught learning: learn features without labels, then regress.
-
-    The 2014 method pretrains a feature extractor on unlabelled faces and fits
-    a shallow regressor on top, the appeal being that unlabelled faces are
-    plentiful while rated ones are not.
-
-    **Substitution, stated plainly.** The original's external unlabelled corpus
-    is not available here, so the self-taught stage is a denoising
-    autoencoder trained on this dataset's *training images only, without their
-    labels*. That preserves the mechanism -- representation learned from pixels
-    alone, labels used only by the final regressor -- while staying inside the
-    protocol. It does not reproduce the original's advantage, which came from
-    seeing far more faces than the labelled set contains.
-    """
+    """Deep self-taught learning: learn features without labels, then regress."""
 
     name = "gan2014"
 
@@ -388,11 +318,8 @@ class Gan2014(_DeepMethod):
             for images, _labels, _distributions, _attributes in loader:
                 images = images.to(self.device)
                 optimiser.zero_grad()
-                # Detached: the target must be a fixed thing to reconstruct.
-                # Left attached, stage 1 can drive the loss to zero by
-                # collapsing the backbone toward a constant -- reconstructing
-                # a constant is trivial -- which destroys the representation
-                # the whole method is about.
+                # Detached: left attached, the loss collapses the backbone
+                # to a constant, which is trivially reconstructable.
                 target = self.backbone(images).detach()
                 # Denoising: corrupt the representation, ask for it back.
                 noisy = target + torch.randn_like(target) * 0.1
@@ -436,19 +363,7 @@ class Gan2014(_DeepMethod):
     trainable=True,
 )
 class PICNN(_DeepMethod):
-    """Xu et al. 2017: fuse whole-face and region features.
-
-    The psychological premise is that raters attend to specific regions rather
-    than the face as a whole, so the network is given those regions explicitly.
-    Three crops -- upper (eyes/brows), middle (nose), lower (mouth/jaw) -- are
-    taken from the aligned image and encoded by a shared backbone alongside the
-    full face, then concatenated.
-
-    Regions are fixed horizontal bands rather than landmark-driven boxes. That
-    is defensible only because every input is already landmark-aligned: the
-    eyes sit at the same height in every crop, which is precisely what the
-    alignment step guarantees. On unaligned images this would be wrong.
-    """
+    """Xu et al. 2017: fuse whole-face and region features."""
 
     name = "pi-cnn"
 
@@ -487,29 +402,7 @@ class PICNN(_DeepMethod):
     trainable=True,
 )
 class UncertaintyOrderLearning(_DeepMethod):
-    """Liang et al. 2024: an ordinal scale with per-image uncertainty.
-
-    Two departures from plain regression, both of which suit this dataset:
-
-    - **Ordinal, not continuous.** The head emits a distribution over the 1-10
-      scale, so the model can express "somewhere between 6 and 7" rather than
-      being forced to a point.
-    - **Uncertainty is predicted, not assumed.** A second output is a
-      per-image log-variance, used in a heteroscedastic loss: the model may
-      down-weight its own errors on images it finds ambiguous, provided it says
-      so in advance.
-
-    That matters here specifically. MEBeauty's labels rest on between 7 and 103
-    ratings, so their reliability genuinely varies -- a model that must be
-    equally confident everywhere is being asked for something the data does not
-    support.
-
-    The paper recovers scores through a Bradley-Terry treatment of pairwise
-    comparisons. This implementation keeps the ordinal-plus-uncertainty core
-    and uses batch-internal pairwise ordering, as in `R3CNN`, rather than
-    building an explicit comparison graph -- at 1,962 images the graph adds
-    memory without adding information.
-    """
+    """Liang et al. 2024: an ordinal scale with per-image uncertainty."""
 
     name = "uol"
     predicts_distribution = True
@@ -603,24 +496,7 @@ class UncertaintyOrderLearning(_DeepMethod):
     trainable=True,
 )
 class FPEM(_DeepMethod):
-    """Li et al. 2025: fuse a general visual backbone with face-specific priors.
-
-    The paper's claim is that facial beauty needs three complementary signals --
-    general visual features, face-identity structure, and a learned aesthetic
-    prior -- combined by cross-attention rather than concatenation.
-
-    **Substitutions, stated plainly.** The original uses Swin, FaceNet and a
-    CLIP aesthetic predictor. Here the general branch is the configured
-    torchvision backbone and the prior branches are two independently
-    initialised projections of it. That preserves the *architecture* -- three
-    streams, cross-attention fusion, joint regression and ranking -- but not the
-    external knowledge, which is where much of the paper's benefit lives. This
-    entry should be read as "the fusion architecture on equal footing", not as
-    a reproduction of FPEM's reported performance.
-
-    Wiring real encoders is a matter of replacing `_prior_features`; the fusion
-    and heads need no change.
-    """
+    """Li et al. 2025: fuse a general visual backbone with face-specific priors."""
 
     name = "fpem"
 
@@ -639,13 +515,7 @@ class FPEM(_DeepMethod):
         return nn.Sequential(nn.LayerNorm(width), nn.Dropout(0.2), nn.Linear(width, 1))
 
     def _prior_features(self, visual):
-        """Stand-ins for FaceNet and CLIP-aesthetic embeddings.
-
-        Separate projections of the shared backbone. Genuinely weaker than the
-        paper's independent encoders -- these cannot contribute knowledge the
-        backbone does not already hold -- and named here so the results table
-        can say so.
-        """
+        """Stand-ins for FaceNet and CLIP-aesthetic embeddings."""
         return self.project_identity(visual), self.project_aesthetic(visual)
 
     def _forward(self, images, attributes=None):

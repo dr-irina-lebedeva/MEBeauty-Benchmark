@@ -1,26 +1,13 @@
 """The method registry: one name, one implementation, one era.
 
-A method is added by decorating its class. Nothing else -- no list to update
-in a second file, which is where registries usually drift out of date:
+Methods register by decoration, so there is no second list to keep in sync:
 
     @register("my-method", era="deep", reference="Author et al., 2027")
-    class MyMethod:
-        def fit(self, protocol): ...
-        def predict(self, split): ...
+    class MyMethod: ...
 
-`era` is what the results table groups on:
-
-* `classical`  -- landmarks and hand-crafted features with a shallow
-  regressor. The first decade of the field.
-* `deep`       -- convolutional networks trained end to end.
-* `foundation` -- large pretrained vision or vision-language backbones used as
-  frozen features or lightly adapted.
-* `baseline`   -- not a method. Reference points that bound the table.
-
-Registration is by import: `fbp_benchmark.methods` imports every era module,
-so anything decorated is available by the time `available()` is called. A
-method whose dependencies are missing raises only when it is *instantiated*,
-so `list-methods` still works without torch installed.
+`era` groups the results table: `classical` (landmark geometry), `deep`
+(convolutional networks trained end to end), `foundation` (large pretrained
+backbones) and `baseline` (reference points, not methods).
 """
 
 from __future__ import annotations
@@ -123,12 +110,7 @@ def get(name: str) -> Entry:
 
 
 def create(name: str, seed: int = 0, **overrides) -> Method:
-    """Instantiate a registered method.
-
-    Trainable methods are built from their own paper's schedule, with any
-    `overrides` (epochs, patience) applied on top. Everything else takes a
-    seed only.
-    """
+    """Instantiate a registered method."""
     entry = get(name)
     if not entry.trainable:
         return entry.factory(seed=seed)

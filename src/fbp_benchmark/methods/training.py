@@ -41,13 +41,7 @@ def best_device() -> torch.device:
 
 @dataclass
 class TrainConfig:
-    """One method's training configuration.
-
-    Defaults are conservative; real values come from `setups.py`, which
-    records each paper's published setup and what had to change. Build one
-    with `TrainConfig.from_setup(...)` rather than filling it in by hand, so a
-    run's settings always trace back to a citation.
-    """
+    """One method's training configuration."""
 
     epochs: int = 30
     batch_size: int = 32
@@ -109,10 +103,8 @@ class FaceDataset(Dataset):
         # paths on disk. `ImageSource` decodes lazily, so a DataLoader worker
         # touches one row at a time exactly as it would with `Image.open`.
         self.images = split.images
-        # Attribute-conditioned methods need these per sample; everything else
-        # gets zeros and ignores them. Carried by the dataset rather than
-        # stashed on the method, so a shuffled batch can never be paired with
-        # the wrong attributes.
+        # Carried by the dataset, not the method, so a shuffled batch cannot
+        # be paired with the wrong attributes. Zeros when unused.
         self.attributes = torch.tensor(
             attribute_codes if attribute_codes is not None else np.zeros(len(split)),
             dtype=torch.long,
@@ -128,11 +120,8 @@ class FaceDataset(Dataset):
         # that did not is not silently given an advantage.
         steps = []
         if "resize_256" in augmentation and "random_crop_224" in augmentation:
-            # The paper's recipe: resize to 256, then take a `size` crop --
-            # random while training, centred at evaluation. Evaluating with a
-            # plain resize instead (as this did) shows the model a face at a
-            # different scale from the one it trained on, which is a
-            # self-inflicted domain shift, not a property of the method.
+            # Resize then crop -- random while training, centred at eval.
+            # A plain resize at eval would be a self-inflicted domain shift.
             steps.append(transforms.Resize((256, 256)))
             steps.append(
                 transforms.RandomCrop(size) if train else transforms.CenterCrop(size)
@@ -163,12 +152,7 @@ class FaceDataset(Dataset):
 
 
 def make_backbone(name: str) -> tuple[nn.Module, int]:
-    """A pretrained backbone with its classifier removed.
-
-    Returns the module and its output width. The three families expose their
-    classifier under different attributes (`fc`, `classifier`, `heads`), which
-    is why this cannot be one line.
-    """
+    """A pretrained backbone with its classifier removed."""
     from torchvision import models
 
     factories = {
@@ -282,18 +266,7 @@ class _DeepMethod:
         return self.head(self.backbone(images))
 
     def _modules(self) -> dict[str, nn.Module]:
-        """Every trainable module this method owns, keyed by attribute name.
-
-        Methods build extra submodules in `build_head` -- AaNet's attribute
-        embedding and gate, FPEM's projections and fusion, TransFBP's
-        cross-attention -- and assign them to `self` rather than folding them
-        into the returned head. Those are discovered here instead of being
-        listed by name, because a hardcoded list silently omits whatever is
-        added next: an omitted module is never moved to the device (a crash),
-        never given to the optimiser (it trains at its random initialisation),
-        and never restored with the best epoch (the "best" weights are a
-        mixture of two epochs). All three of those were real.
-        """
+        """Every trainable module this method owns, keyed by attribute name."""
         found = {"backbone": self.backbone, "head": self.head}
         for name, value in vars(self).items():
             if isinstance(value, nn.Module) and name not in found:

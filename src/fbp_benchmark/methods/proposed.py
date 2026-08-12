@@ -1,57 +1,14 @@
-"""RW-LDL: label distribution learning that knows how noisy each label is.
+"""Proposed methods: reliability-weighted LDL and rater-aware training.
 
-**The observation this is built on.** Every method in `benchmark-v1` treats
-its training labels as equally trustworthy. On MEBeauty they are not: a label
-rests on anywhere from 10 to 102 ratings, and the standard error of the mean
-ranges over **4.3x** across the test split. An image rated 11 times with wide
-disagreement is a far weaker target than one rated 102 times with narrow
-agreement, and fitting both with the same loss spends capacity learning noise.
+`rw-ldl` weights each training label by how well supported it is -- MEBeauty
+labels rest on 8 to 92 ratings, so they are not equally trustworthy.
 
-This is not a quirk of one dataset. It is what happens whenever subjective
-labels are collected from an unbalanced rater pool -- which is most affective
-computing datasets. It is invisible on SCUT-FBP5500 only because every image
-there was rated by the same 60 people, so the variation does not arise.
+`rater-dinov2` goes further and fits the model the label is *defined* by,
+`rating(r,i) = quality(i) + offset(r)`, supervising on individual ratings
+rather than their mean.
 
-**Two changes, both consequences of taking the sampling process seriously.**
-
-*1. Fit the counts, not the histogram.* Standard LDL minimises KL divergence
-between the predicted distribution and the *normalised* rating histogram. That
-throws away the sample size: a histogram from 10 ratings and one from 100 are
-treated identically, though the first is mostly sampling noise. If the model
-predicts `p` and the raters are a sample from that population, the observed
-counts `c` follow Multinomial(n, p), whose negative log-likelihood is
-
-    -sum_k c_k log p_k
-
-This is the *same expression* as cross-entropy against the histogram, except
-weighted by `n` -- so reliability weighting is not an extra hyperparameter
-bolted on, it falls out of writing down the correct likelihood. That is the
-part worth arguing for: KL against a normalised histogram is the approximation,
-and the multinomial likelihood is what it approximates.
-
-*2. Weight the regression term by label precision.* The label's own standard
-error is `se = std / sqrt(n)`. Inverse-variance weighting is the textbook
-treatment for observations of differing precision (it is what meta-analysis
-does), but it explodes when `se` is near zero, so the weights are regularised
-with a floor at the median standard error:
-
-    w = 1 / (se^2 + s0^2),  s0 = median(se)
-
-then normalised to mean 1 so the loss keeps its scale and `--epochs` means the
-same thing as for every other method.
-
-**What is honestly novel here, and what is not.** Multinomial likelihood and
-inverse-variance weighting are both old, standard statistics. Neither is
-invented here. The contribution is the observation that facial-beauty
-benchmarks systematically discard the label-reliability information they
-already ship, plus the combination that exploits it -- and, importantly, a
-measurement of whether it helps. If it does not beat `ldl-ren2017`, that is
-the result and it will be reported as such.
-
-**Deliberately not used at test time.** `n_ratings` and `std` are properties
-of the *labels*, so using them to predict would be reading the answer. They
-enter the loss only; prediction sees pixels alone, and the harness's leak
-check confirms it.
+Both are evaluated in the same tables as the published methods. Under 5-fold
+cross-validation neither beats `dinov2-partial`.
 """
 
 from __future__ import annotations
@@ -83,19 +40,7 @@ DEFAULT_REGRESSION_WEIGHT = 1.0
     notes="proposed",
 )
 class ReliabilityWeightedLDL(_DeepMethod):
-    """Multinomial-likelihood LDL with precision-weighted regression.
-
-    Predicts a distribution over the 1-10 scale; the reported score is its
-    expectation, exactly as `ldl-ren2017` does, so the two differ *only* in
-    the loss and the comparison isolates it.
-
-    **How the counts reach the loss.** Rather than widen the dataset's return
-    signature for every other method, `fit` hands the training and validation
-    splits a distribution tensor holding raw counts instead of probabilities.
-    Everything the loss needs follows from those: `n` is their sum, and the
-    rating mean and variance come from the histogram itself. Prediction is
-    untouched and never sees them.
-    """
+    """Multinomial-likelihood LDL with precision-weighted regression."""
 
     name = "rw-ldl"
     predicts_distribution = True
@@ -167,11 +112,9 @@ class ReliabilityWeightedLDL(_DeepMethod):
         n = counts.sum(-1).clamp(min=1.0)
 
         if self.use_multinomial:
-            # -sum_k c_k log p_k. Identical in form to cross-entropy against
-            # the histogram, but weighted by n -- which is the whole point:
-            # the reliability weighting is the likelihood, not an add-on.
-            # Divided by the mean rating count so the loss magnitude does not
-            # depend on how heavily this particular dataset was rated.
+            # -sum_k c_k log p_k: cross-entropy weighted by rating count,
+            # so reliability weighting is the likelihood, not an add-on.
+            # Scaled by mean count to keep the magnitude dataset-independent.
             distribution_term = (-(counts * log_p).sum(-1) / self._mean_n).mean()
         else:
             empirical = counts / n.unsqueeze(-1)
@@ -220,11 +163,7 @@ class RWLDLNoWeighting(ReliabilityWeightedLDL):
     notes="ablation: KL instead of multinomial",
 )
 class RWLDLKLOnly(ReliabilityWeightedLDL):
-    """Ablation: precision weighting, but plain KL instead of the likelihood.
-
-    With `RWLDLNoWeighting` this isolates which of the two changes does the
-    work -- or shows that neither does, which is equally worth reporting.
-    """
+    """Ablation: precision weighting, but plain KL instead of the likelihood."""
 
     name = "rw-ldl-kl"
 
@@ -241,45 +180,7 @@ class RWLDLKLOnly(ReliabilityWeightedLDL):
     notes="proposed: rater effects on a foundation backbone",
 )
 class RaterAwareFoundation(DINOv2Partial):
-    """Predict the *rater-marginal*, by learning the model the label is defined by.
-
-    `beauty_score` is not an arbitrary summary. It is the fitted `quality(i)`
-    in `rating(r, i) = quality(i) + offset(r)`. Every other method in this
-    benchmark ignores that: they regress the summary statistic, discarding
-    55,542 individual ratings to fit 1,962 means.
-
-    This one fits the generative model instead. The network predicts
-    `quality(i)`; a learned scalar per rater supplies `offset(r)`; and the loss
-    is taken against every individual rating rather than against their mean.
-    At test time only `quality(i)` is used, which is exactly the published
-    label -- so the training objective and the evaluation target are the same
-    quantity, not a proxy for it.
-
-    **Three things fall out for free.**
-
-    *No extra compute.* One forward pass per image, as before. The loss sums
-    over that image's 8-92 ratings, so supervision multiplies ~28x while the
-    backbone cost is unchanged.
-
-    *Reliability weighting, unparameterised.* An image rated 92 times
-    contributes 92 loss terms and one rated 8 times contributes 8. `rw-ldl`
-    buys the same effect with an explicit inverse-variance scheme and a tuned
-    floor; here it is a consequence of counting observations.
-
-    *Rater bias cannot leak into the image score.* A harsh rater's ratings are
-    explained by their own offset rather than by the faces they happened to
-    see -- the same correction the label itself was built with.
-
-    **Offsets are re-centred every step, weighted by rating count.** Without an
-    anchor the model is degenerate: any constant can move between `quality` and
-    `offset`. Count-weighting matches how `beauty_score` was defined, and keeps
-    the predictions on the scale the ratings were given on.
-
-    Not novel in general machine learning -- annotator embeddings are
-    established in subjective NLP, speech MOS and medical segmentation. Novel
-    in facial beauty prediction, where the per-rater data needed for it has
-    only just been published.
-    """
+    """Predict the *rater-marginal*, by learning the model the label is defined by."""
 
     name = "rater-dinov2"
     predicts_distribution = False
@@ -372,12 +273,7 @@ class RaterAwareFoundation(DINOv2Partial):
         return modules
 
     def _fit_loop(self, protocol: Protocol) -> None:
-        """As the parent's loop, but supervised by individual ratings.
-
-        `attribute_codes` carries the row index rather than a demographic code,
-        which is what lets the loss find each image's ratings without the
-        DataLoader having to collate a ragged structure.
-        """
+        """As the parent's loop, but supervised by individual ratings."""
         train_loader = DataLoader(
             FaceDataset(
                 protocol.train,

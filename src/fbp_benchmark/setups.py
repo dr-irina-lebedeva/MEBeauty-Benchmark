@@ -1,43 +1,16 @@
-"""Per-method training setups, sourced from the papers where they are stated.
+"""Per-method training schedules, sourced from the papers that state them.
 
-Hyperparameters are not neutral. A method trained under someone else's
-schedule is not that method, and a benchmark whose settings were invented by
-its author measures the author's tuning rather than the literature. So each
-entry here records:
+A method trained under someone else's schedule is not that method, so each
+entry records where its numbers came from:
 
-- `source`: `paper` if the value is quoted from the publication, `adapted` if
-  the paper's value could not transfer and a substitute was reasoned, or
-  `default` if the paper does not state one.
-- `quote`: the paper's own words, verbatim, where available.
-- `deviation`: what was changed for this benchmark and why.
+- `source`: `paper` (quoted), `adapted` (could not transfer, substitute
+  reasoned) or `default` (the paper does not state one).
+- `quote`: the paper's own words, where available.
+- `deviation`: what was changed here, and why.
 
-**Why anything deviates at all.** Every published setup here was written for
-SCUT-FBP5500 (5,500 images, 5-fold cross-validation, labels on 1-5) or SCUT-FBP
-(500 images). MEBeauty's benchmark-v1 is 1,962 training images, a fixed split,
-and labels on 1-10. Three consequences run through the table below:
-
-1. **Epoch counts are ceilings, not targets.** An earlier version of this file
-   rescaled epochs to match each paper's *optimiser step* count. That was
-   wrong: ComboLoss's 200 epochs over 4,400 images shows each image 200 times.
-   Matching its step count instead -- 200 x ceil(4400/64) = 13,800 -- on 1,962
-   images at batch 64 (22 steps per epoch) would take ~627 epochs, showing
-   each image 627 times: more overfitting, not less. Overfitting tracks
-   epochs, not steps.
-   The paper's epoch count is kept as an upper bound and early stopping
-   decides the real length.
-2. **Iteration-based schedules must be rescaled.** AaNet's warm-up and decay
-   are defined in iterations, so they are converted through this dataset's
-   steps-per-epoch rather than copied.
-3. **Label scale differs.** Losses that are scale-sensitive (L2, smooth-L1's
-   beta) behave differently on 1-10 than on 1-5. Noted per method where it
-   bites.
-
-**Early stopping on validation is imposed on every method**, including those
-whose papers used a fixed schedule with no validation split. Published setups
-could afford fixed schedules because 5-fold cross-validation averaged the
-variance away; a single fixed split cannot, and a fixed schedule here would
-report whatever the last epoch happened to give. This is a deliberate,
-uniform deviation and is recorded as such in every entry.
+Published setups target SCUT-FBP5500 (5,500 images, labels on 1-5); this
+benchmark has 1,962 training images on 1-10, so epoch counts are treated as
+ceilings and early stopping on validation is imposed uniformly.
 """
 
 from __future__ import annotations
@@ -93,7 +66,7 @@ class Setup:
 #: Imposed on every method regardless of its paper. See the module docstring.
 UNIFORM_DEVIATION = (
     "Early stopping on the validation split (patience 5) replaces the paper's "
-    "fixed schedule: benchmark-v1 is a single fixed split, so a fixed epoch "
+    "fixed schedule: this benchmark uses a single fixed split, so a fixed epoch "
     "count would report whatever the last epoch produced rather than the "
     "method's best honest result."
 )
@@ -107,12 +80,7 @@ MAX_EPOCHS = 60
 
 
 def capped_epochs(paper_epochs: int) -> int:
-    """The paper's epoch count, bounded by what this dataset can support.
-
-    Returns the paper's value when it is already modest, and `MAX_EPOCHS`
-    otherwise. Early stopping on validation almost always halts first; this
-    only bounds the pathological case.
-    """
+    """The paper's epoch count, bounded by what this dataset can support."""
     return min(paper_epochs, MAX_EPOCHS)
 
 
@@ -217,7 +185,7 @@ SETUPS: dict[str, Setup] = {
         ),
         deviation=(
             "The paper reports 5-fold cross-validation and a 60/40 split on "
-            "5,500 images with labels on 1-5; benchmark-v1 is a fixed split on "
+            "5,500 images with labels on 1-5; this benchmark is a fixed split on "
             "1,962 training images with labels on 1-10. L1 is used rather "
             "than the paper's L2 because the doubled label scale puts about "
             "four times the weight on the same relative error, letting the "

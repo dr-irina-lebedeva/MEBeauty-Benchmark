@@ -1,27 +1,11 @@
-"""Evaluation metrics for facial beauty prediction.
+"""Point and distribution metrics. Every published number passes through here.
 
-Every number a benchmark reports depends on these, so each one is defined
-explicitly rather than deferred to whatever a library happens to do.
+Point metrics (Pearson, Spearman, MAE, RMSE) apply to every method.
+Distribution metrics apply only when a method predicts a distribution *and*
+the dataset ships a real histogram -- never one reconstructed from a mean.
 
-**Point-prediction metrics.** The facial-beauty literature reports Pearson
-correlation (PC), MAE and RMSE almost universally; Spearman (SROCC) appears
-in ranking-oriented work. All four ship, because they answer different
-questions: PC and SROCC measure whether a model orders faces correctly,
-MAE and RMSE whether it lands on the right value. A model can be excellent
-at one and poor at the other.
-
-**Distribution metrics.** MEBeauty ships per-image rating distributions, so
-label-distribution methods (Ren & Geng 2017 and descendants) can be scored on
-what they actually predict instead of being collapsed to a mean first. The six
-measures here are the standard set from the label-distribution-learning
-literature: Chebyshev, Clark, Canberra and KL are distances (lower is better);
-cosine and intersection are similarities (higher is better).
-
-**On correlation with n=523.** A test-set PC is a sample statistic, not a
-constant. Two methods differing by 0.01 are not distinguishable at this size.
-`correlation_ci` gives a bootstrap interval so comparisons can be made
-honestly, and `paired_bootstrap_difference` tests two methods on the *same*
-images, which is far more sensitive than comparing two independent intervals.
+`paired_bootstrap_difference` is the test that says whether a gap between two
+methods is real; on a 250-image split, differences below ~0.04 are not.
 """
 
 from __future__ import annotations
@@ -140,12 +124,7 @@ def _normalise(distributions: np.ndarray) -> np.ndarray:
 def distribution_metrics(
     predicted: np.ndarray, actual: np.ndarray
 ) -> DistributionMetrics:
-    """Score predicted rating distributions.
-
-    The six standard label-distribution measures. Inputs are renormalised
-    first: a predicted distribution that does not sum to 1 is a model bug, not
-    a reason to score it against a differently-scaled target.
-    """
+    """Score predicted rating distributions."""
     predicted = _normalise(np.asarray(predicted, dtype=float))
     actual = _normalise(np.asarray(actual, dtype=float))
     if predicted.shape != actual.shape:
@@ -187,12 +166,7 @@ def correlation_ci(
     iterations: int = 2000,
     seed: int = 0,
 ) -> tuple[float, float]:
-    """Bootstrap 95% interval for Pearson correlation.
-
-    Reported alongside PC because a test set of a few hundred images gives an
-    interval wide enough that small differences between methods are noise. A
-    table of bare correlations invites conclusions the sample cannot support.
-    """
+    """Bootstrap 95% interval for Pearson correlation."""
     predicted = np.asarray(predicted, dtype=float).ravel()
     actual = np.asarray(actual, dtype=float).ravel()
     rng = np.random.default_rng(seed)
@@ -211,13 +185,7 @@ def paired_bootstrap_difference(
     iterations: int = 2000,
     seed: int = 0,
 ) -> dict[str, float]:
-    """Is method A's correlation really higher than method B's?
-
-    Resamples images and recomputes *both* correlations on the same resample,
-    so the shared difficulty of the images cancels out. Comparing two
-    independent confidence intervals instead would be far more conservative
-    and would miss real differences.
-    """
+    """Is method A's correlation really higher than method B's?"""
     predicted_a = np.asarray(predicted_a, dtype=float).ravel()
     predicted_b = np.asarray(predicted_b, dtype=float).ravel()
     actual = np.asarray(actual, dtype=float).ravel()
@@ -249,14 +217,7 @@ def evaluate(
     predicted_distributions: np.ndarray | None = None,
     true_distributions: np.ndarray | None = None,
 ) -> dict[str, float]:
-    """Every metric a result carries, in one flat dictionary.
-
-    Point metrics always. Distribution metrics only when the method predicted
-    a distribution *and* the dataset ships one to compare against -- scoring a
-    point-only method on distribution measures, or scoring against a histogram
-    reconstructed from the mean, would put numbers in the table that mean
-    something different from their column heading.
-    """
+    """Every metric a result carries, in one flat dictionary."""
     scores = point_metrics(np.asarray(predicted), np.asarray(actual)).as_dict()
     if predicted_distributions is None or true_distributions is None:
         return scores

@@ -35,10 +35,8 @@ def _git(*args: str) -> str:
 def environment() -> dict[str, object]:
     """Record what produced a result, so it can be reproduced or discounted."""
     commit = _git("rev-parse", "HEAD")
-    # A commit hash alone is a false promise when the code is modified: the
-    # result did not come from that commit and cannot be reproduced by
-    # checking it out. Recorded so a reader can discount the run rather than
-    # trust a hash that does not describe it.
+    # A commit hash alone is a false promise when the tree is modified, so
+    # record that too and let the reader discount the run.
     dirty = bool(_git("status", "--porcelain", "--", *CODE_PATHS))
 
     info: dict[str, object] = {

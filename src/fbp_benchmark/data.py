@@ -104,13 +104,7 @@ class DatasetSpec:
 
 
 class ImageSource:
-    """Lazy access to a split's images.
-
-    Methods receive this rather than file paths. Hugging Face decodes an image
-    only when the row is touched, so holding a whole split costs a handle, not
-    2,462 decoded bitmaps -- and the same interface works whether the bytes
-    came from the Hub or from a local folder.
-    """
+    """Lazy access to a split's images."""
 
     def __init__(self, dataset: Any, column: str) -> None:
         self._dataset = dataset
@@ -304,13 +298,7 @@ def load_protocol(
     fold: int | None = None,
     seed: int = 0,
 ) -> Protocol:
-    """Fetch a dataset from the Hub and assemble the three splits.
-
-    `holdout` uses the dataset's own split. `cv` needs `fold`, and builds the
-    test set from that fold, the validation set from the next one round, and
-    trains on the rest -- so every image is tested exactly once across a full
-    sweep and no image is ever in two roles at once.
-    """
+    """Fetch a dataset from the Hub and assemble the three splits."""
     from datasets import load_dataset
 
     spec = spec or DatasetSpec()

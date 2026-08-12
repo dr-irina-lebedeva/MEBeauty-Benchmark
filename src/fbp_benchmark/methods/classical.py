@@ -1,28 +1,10 @@
-"""Landmark-geometry methods: Eisenthal 2006, Kagian 2008, Fan 2012.
+"""The classical era: facial geometry with a shallow regressor.
 
-The first decade of facial-beauty prediction shared one pipeline -- landmarks,
-hand-built geometric features, a shallow regressor -- and differed in how the
-features were formed and which regressor followed. All three run on CPU in
-seconds, which makes them the natural floor for a benchmark whose upper rows
-are transformers.
-
-**These are reimplementations in the papers' spirit, not exact reproductions,
-and the results table must say so.** Each original used a different landmark
-set to the 68 points MEBeauty ships -- Eisenthal's were placed by hand, Kagian
-used 84 -- so the feature spaces cannot be identical. What is preserved is the
-part that defines each method:
-
-| Method | Feature construction | Regressor |
-|---|---|---|
-| Eisenthal 2006 | normalised pairwise distances + symmetry + appearance summary | KNN + ridge ensemble |
-| Kagian 2008 | all normalised pairwise distances, then feature selection | SVR (RBF) |
-| Fan 2012 | ratios of distances -- proportions, not lengths | polynomial ridge |
-
-**Why normalisation is not a detail.** Raw pixel distances encode how large the
-face is in frame, which is a property of the crop, not the person. Every method
-here divides by inter-ocular distance first. Without that, a model can score
-respectably by learning the photographer's zoom -- the geometric equivalent of
-the shortcut this project has already had to remove twice.
+All three methods share one pipeline -- landmarks, hand-crafted geometric
+features, feature selection, a shallow model -- and differ in which features
+they build. They are reimplementations: the originals used different landmark
+sets and manual annotation, so a score here is evidence about this
+implementation, not a verdict on the paper.
 """
 
 from __future__ import annotations
@@ -50,14 +32,7 @@ SYMMETRY_PAIRS = ((0, 16), (4, 12), (19, 24), (36, 45), (39, 42), (48, 54), (31,
 
 
 def landmarks_for(protocol: Protocol) -> dict[str, np.ndarray]:
-    """image_id -> (68, 2) landmarks, pooled from every split.
-
-    Landmarks travel with the rows rather than in a side file, so this only
-    merges the three splits' dictionaries. Raises rather than degrading
-    silently: these methods *are* their geometry, and one that quietly
-    predicted the training mean for every image because a column was missing
-    would look like a weak method rather than a misconfigured run.
-    """
+    """image_id -> (68, 2) landmarks, pooled from every split."""
     pooled: dict[str, np.ndarray] = {}
     for split in (protocol.train, protocol.val, protocol.test):
         pooled.update(split.landmarks)
@@ -72,12 +47,7 @@ def landmarks_for(protocol: Protocol) -> dict[str, np.ndarray]:
 
 
 def _normalised(points: np.ndarray) -> np.ndarray:
-    """Centre on the face and scale by inter-ocular distance.
-
-    Removes translation and scale, so what remains is shape. Falls back to
-    overall spread if the eyes coincide (extreme profile views, which this
-    dataset does contain).
-    """
+    """Centre on the face and scale by inter-ocular distance."""
     left = points[LEFT_EYE].mean(axis=0)
     right = points[RIGHT_EYE].mean(axis=0)
     scale = float(np.linalg.norm(right - left))
@@ -94,12 +64,7 @@ def pairwise_distances(points: np.ndarray, indices=KEY_POINTS) -> np.ndarray:
 
 
 def symmetry_features(points: np.ndarray) -> np.ndarray:
-    """How far each mirror pair sits from the face's own midline.
-
-    Symmetry is the one geometric property the psychology literature is most
-    consistent about, and it is not recoverable from unsigned pairwise
-    distances -- hence a separate block.
-    """
+    """How far each mirror pair sits from the face's own midline."""
     normalised = _normalised(points)
     midline = normalised[27:31, 0].mean()
     return np.array(
@@ -111,11 +76,7 @@ def symmetry_features(points: np.ndarray) -> np.ndarray:
 
 
 def proportion_features(points: np.ndarray, indices=KEY_POINTS) -> np.ndarray:
-    """Ratios between distances -- Fan's proportions rather than lengths.
-
-    Scale-invariant by construction, so this block survives even if the
-    inter-ocular normalisation is imperfect.
-    """
+    """Ratios between distances -- Fan's proportions rather than lengths."""
     distances = pairwise_distances(points, indices)
     # Ratios against a fixed reference set, rather than all N^2 pairs, which
     # would explode the feature count past the sample size.
@@ -202,14 +163,7 @@ class _GeometricMethod:
     requires=("landmarks",),
 )
 class Eisenthal2006(_GeometricMethod):
-    """Geometry + symmetry + appearance summary, KNN and ridge averaged.
-
-    The 2006 paper combined geometric measurements with appearance and
-    averaged several predictors. The appearance half used eigenfaces over raw
-    pixels; here it is a coarse intensity summary of the aligned crop, which
-    preserves the idea (texture carries signal beyond shape) without pretending
-    to be the same feature.
-    """
+    """Geometry + symmetry + appearance summary, KNN and ridge averaged."""
 
     name = "eisenthal2006"
     n_features = 60
@@ -259,12 +213,7 @@ class Kagian2008(_GeometricMethod):
     requires=("landmarks",),
 )
 class Fan2012(_GeometricMethod):
-    """Facial proportions with a polynomial ridge.
-
-    The paper's claim is that *ratios* between measurements predict
-    attractiveness better than the measurements themselves, fitted
-    nonlinearly. Both halves are preserved: ratio features, quadratic model.
-    """
+    """Facial proportions with a polynomial ridge."""
 
     name = "fan2012"
     n_features = 80
