@@ -19,7 +19,7 @@ import logging
 _LOG = logging.getLogger(__name__)
 
 #: Every module that registers methods, in era order.
-ERA_MODULES = ("classical", "deep", "foundation", "proposed")
+ERA_MODULES = ("classical", "deep", "transfer", "foundation", "proposed")
 
 unavailable: dict[str, str] = {}
 

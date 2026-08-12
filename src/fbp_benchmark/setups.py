@@ -85,6 +85,28 @@ def capped_epochs(paper_epochs: int) -> int:
 
 
 SETUPS: dict[str, Setup] = {
+    # Same backbone and schedule as `xattn-vit`, without the cross-attention
+    # block, so the pair isolates that contribution.
+    "vit-fbp": Setup(
+        method="vit-fbp",
+        reference="Boukhari 2023, IJEETC 13(3)",
+        optimizer="adamw",
+        learning_rate=3e-5,
+        weight_decay=1e-4,
+        batch_size=16,
+        epochs=25,
+        backbone="vit_b_16",
+        image_size=224,
+        scheduler="cosine",
+        augmentation=("hflip",),
+        source="adapted",
+        deviation=UNIFORM_DEVIATION,
+        notes=(
+            "The paper reports PC 0.9534 on SCUT-FBP5500 but does not state "
+            "its schedule, so this follows standard ViT fine-tuning practice "
+            "and is matched to xattn-vit so the two are comparable."
+        ),
+    ),
     # Proposed. Identical schedule to `dinov2-partial` on purpose: the two
     # differ only in what they are supervised by, so any gap is attributable
     # to the objective rather than to tuning.
@@ -442,9 +464,9 @@ SETUPS: dict[str, Setup] = {
             "not stated in the paper. " + UNIFORM_DEVIATION
         ),
     ),
-    "transfbp": Setup(
-        method="transfbp",
-        reference="Boukhari & Dornaika 2026, Cognitive Computation",
+    "xattn-vit": Setup(
+        method="xattn-vit",
+        reference="Boukhari & Dornaika 2026 (cross-attention ViT)",
         source="adapted",
         optimizer="adamw",
         learning_rate=3e-5,

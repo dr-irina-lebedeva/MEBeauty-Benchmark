@@ -48,11 +48,20 @@ dependencies = [
 # The deep and foundation eras. `pip install fbp-benchmark[all]` is the normal
 # install; the split exists so a 2 GB dependency is a choice, not a surprise.
 deep = ["torch>=2.13.0", "torchvision>=0.28.0"]
-foundation = ["torch>=2.13.0", "torchvision>=0.28.0", "transformers>=5.0.0"]
+foundation = [
+    "torch>=2.13.0",
+    "torchvision>=0.28.0",
+    "transformers>=5.0.0",
+    # Face-verification backbone for transfbp. An ImageNet one would not be
+    # the same method -- the paper's premise is that identity features carry
+    # the signal.
+    "facenet-pytorch>=2.6.0",
+]
 all = [
     "torch>=2.13.0",
     "torchvision>=0.28.0",
     "transformers>=5.0.0",
+    "facenet-pytorch>=2.6.0",
     "scipy>=1.14",
 ]
 
@@ -63,6 +72,17 @@ Paper = "https://doi.org/10.1007/s00521-021-06535-0"
 
 [project.scripts]
 fbp-benchmark = "fbp_benchmark.cli:main"
+
+# facenet-pytorch carries stale upper bounds (torchvision<0.18, numpy<2). Both
+# are verified unnecessary: the VGGFace2 weights load and embed a batch
+# unmodified on torchvision 0.28 and numpy 2.x. Without these overrides its
+# pins would drag the whole project back three years.
+[tool.uv]
+override-dependencies = [
+    "torchvision>=0.28.0",
+    "torch>=2.13.0",
+    "numpy>=2.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.11.31,<0.12.0"]

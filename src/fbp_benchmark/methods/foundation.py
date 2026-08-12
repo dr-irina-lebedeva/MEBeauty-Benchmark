@@ -230,16 +230,16 @@ class Ensemble:
 
 
 @register(
-    "transfbp",
+    "xattn-vit",
     era="foundation",
-    reference="Boukhari & Dornaika 2026, Cognitive Computation",
+    reference="Boukhari & Dornaika 2026 (cross-attention ViT)",
     trainable=True,
     notes="ViT-B/16 backbone",
 )
-class TransFBP(_DeepMethod):
-    """Boukhari & Dornaika 2026: cross-attention over ViT tokens."""
+class CrossAttentionViT(_DeepMethod):
+    """Cross-attention between the CLS token and the patch tokens of a ViT."""
 
-    name = "transfbp"
+    name = "xattn-vit"
 
     def __init__(self, config: TrainConfig | None = None, seed: int = 0) -> None:
         super().__init__(config or TrainConfig(), seed)
@@ -266,6 +266,40 @@ class TransFBP(_DeepMethod):
         attended, _ = self.cross_attention(cls, patches, patches)
         # Residual: keep the pooled summary, add what attention found.
         return self.head((cls + attended).squeeze(1))
+
+    def loss(self, output, labels, distributions):
+        return F.smooth_l1_loss(output.squeeze(-1), labels)
+
+
+@register(
+    "vit-fbp",
+    paper="https://www.ijeetc.com/vol13/IJEETC-V13N3-252.pdf",
+    era="foundation",
+    reference="Boukhari 2023, IJEETC 13(3) (ViT-FBP)",
+    trainable=True,
+    notes="plain ViT-B/16, fine-tuned end to end",
+)
+class ViTFBP(_DeepMethod):
+    """A plain ViT-B/16 fine-tuned for regression, with no added structure.
+
+    The paper's claim is that a transformer beats the CNN baselines once its
+    schedule is tuned for the task rather than inherited from ImageNet. It
+    ships here as the control for `xattn-vit`: the two share a backbone and
+    differ only in whether cross-attention is added, so any gap is
+    attributable to that.
+    """
+
+    name = "vit-fbp"
+
+    def __init__(self, config: TrainConfig | None = None, seed: int = 0) -> None:
+        super().__init__(config or TrainConfig(), seed)
+        self.config.backbone = "vit_b_16"
+        self.config.image_size = 224
+
+    def build_head(self, features: int) -> nn.Module:
+        return nn.Sequential(
+            nn.LayerNorm(features), nn.Dropout(0.1), nn.Linear(features, 1)
+        )
 
     def loss(self, output, labels, distributions):
         return F.smooth_l1_loss(output.squeeze(-1), labels)
