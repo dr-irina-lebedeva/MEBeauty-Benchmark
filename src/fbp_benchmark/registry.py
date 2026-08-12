@@ -47,6 +47,10 @@ class Entry:
     factory: Callable[..., Method]
     era: Era
     reference: str
+    #: URL of the publication. Empty when no stable link was verified -- an
+    #: invented DOI is worse than none, so the citation still appears in the
+    #: methods table, just without a hyperlink.
+    paper: str = ""
     #: What the method needs from the dataset beyond images and a label.
     #: Checked before a run so a missing column fails immediately with a
     #: readable message rather than deep inside a training loop.
@@ -65,6 +69,7 @@ def register(
     *,
     era: Era,
     reference: str,
+    paper: str = "",
     requires: tuple[str, ...] = (),
     trainable: bool = False,
     notes: str = "",
@@ -85,6 +90,7 @@ def register(
             factory=factory,  # type: ignore[arg-type]
             era=era,
             reference=reference,
+            paper=paper,
             requires=requires,
             trainable=trainable,
             notes=notes,

@@ -27,6 +27,8 @@ COLUMNS: tuple[tuple[str, bool], ...] = (
 #: The README block this module owns. Anything between the markers is replaced.
 START = "<!-- RESULTS:START -->"
 END = "<!-- RESULTS:END -->"
+METHODS_START = "<!-- METHODS:START -->"
+METHODS_END = "<!-- METHODS:END -->"
 
 
 @dataclass(frozen=True)
@@ -204,3 +206,70 @@ def build_table(directory: str | Path) -> str:
     if folds:
         text += "\n\n# Cross-validation\n\n" + fold_summary(folds) + "\n"
     return text
+
+
+ERA_BLURB = {
+    "baseline": "reference points that bound the table",
+    "classical": "landmark geometry with a shallow regressor",
+    "deep": "convolutional networks trained end to end",
+    "foundation": "large pretrained backbones, frozen or lightly adapted",
+}
+
+
+def methods_section() -> str:
+    """The method catalogue, with a link to each paper.
+
+    Generated from the registry so a method cannot appear here without being
+    runnable, and cannot be added without its citation.
+    """
+    from .registry import available
+
+    lines = []
+    for era in ERA_ORDER:
+        entries = available(era)
+        if not entries:
+            continue
+        lines += [
+            f"**{era.capitalize()}** — {ERA_BLURB.get(era, '')}",
+            "",
+            "| Method | Paper |",
+            "|---|---|",
+        ]
+        for entry in entries:
+            citation = entry.reference
+            if entry.paper:
+                citation = f"[{citation}]({entry.paper})"
+            note = f" — {entry.notes}" if entry.notes else ""
+            lines.append(f"| `{entry.name}` | {citation}{note} |")
+        lines.append("")
+    lines.append(
+        "Entries without a link are published in venues with no stable open "
+        "URL; the citation is given in full. Most entries are "
+        "**reimplementations** — they preserve the published mechanism, not "
+        "the original weights or feature extractors, so a score is evidence "
+        "about this implementation on this dataset rather than a verdict on "
+        "the original work."
+    )
+    return "\n".join(lines).strip() + "\n"
+
+
+def _replace_block(text: str, start: str, end: str, body: str) -> str:
+    return re.sub(
+        re.escape(start) + r".*?" + re.escape(end),
+        f"{start}\n\n{body}\n{end}",
+        text,
+        flags=re.DOTALL,
+    )
+
+
+def update_methods(path: str | Path = "README.md") -> bool:
+    """Rewrite the README's method catalogue. True if the file changed."""
+    path = Path(path)
+    text = path.read_text(encoding="utf-8")
+    if METHODS_START not in text or METHODS_END not in text:
+        raise ValueError(f"{path} has no method markers ({METHODS_START})")
+    updated = _replace_block(text, METHODS_START, METHODS_END, methods_section())
+    if updated == text:
+        return False
+    path.write_text(updated, encoding="utf-8")
+    return True

@@ -32,8 +32,9 @@ from .training import (
 
 @register(
     "cnn-resnet18",
+    paper="https://arxiv.org/abs/1801.06345",
     era="deep",
-    reference="He et al., 2016 (ResNet baseline)",
+    reference="Liang et al. 2018, ICPR (SCUT-FBP5500 baseline)",
     trainable=True,
 )
 class CNNRegression(_DeepMethod):
@@ -55,8 +56,9 @@ class CNNRegression(_DeepMethod):
 
 @register(
     "cnn-resnext50",
+    paper="https://arxiv.org/abs/1801.06345",
     era="deep",
-    reference="Xie et al., 2017 (ResNeXt baseline)",
+    reference="Liang et al. 2018, ICPR (SCUT-FBP5500 best backbone)",
     trainable=True,
 )
 class CNNResNeXt(CNNRegression):
@@ -71,8 +73,9 @@ class CNNResNeXt(CNNRegression):
 
 @register(
     "ldl-ren2017",
+    paper="https://www.ijcai.org/proceedings/2017/369",
     era="deep",
-    reference="Ren & Geng, 2017",
+    reference="Ren & Geng 2017, IJCAI",
     requires=("distributions",),
     trainable=True,
 )
@@ -111,8 +114,9 @@ class LabelDistributionLearning(_DeepMethod):
 
 @register(
     "comboloss",
+    paper="https://arxiv.org/abs/2010.10721",
     era="deep",
-    reference="Xu & Xiang, 2020",
+    reference="Xu & Xiang 2020, arXiv:2010.10721",
     trainable=True,
 )
 class ComboLoss(_DeepMethod):
@@ -207,8 +211,9 @@ class ComboLoss(_DeepMethod):
 
 @register(
     "r3cnn",
+    paper="https://doi.org/10.1109/TAFFC.2019.2933523",
     era="deep",
-    reference="Lin, Liang, Jin & Chen, 2019",
+    reference="Lin, Liang & Jin 2019/2022, IEEE Trans. Affective Computing",
     trainable=True,
 )
 class R3CNN(_DeepMethod):
@@ -252,8 +257,9 @@ class R3CNN(_DeepMethod):
 
 @register(
     "aanet",
+    paper="https://doi.org/10.24963/ijcai.2019/119",
     era="deep",
-    reference="Lin, Liang & Jin, 2019",
+    reference="Lin et al. 2019, IJCAI (AaNet / P-AaNet)",
     requires=("attributes",),
     trainable=True,
 )
@@ -318,7 +324,7 @@ class AttributeAware(_DeepMethod):
 @register(
     "gan2014",
     era="deep",
-    reference="Gan, Li, Zhou & Xiang, 2014",
+    reference="Gan et al. 2014, Neurocomputing 133",
     trainable=True,
     notes="reimplementation; no external unlabelled corpus",
 )
@@ -424,8 +430,9 @@ class Gan2014(_DeepMethod):
 
 @register(
     "pi-cnn",
+    paper="https://ieeexplore.ieee.org/document/7952438",
     era="deep",
-    reference="Xie et al., 2015",
+    reference="Xu et al. 2017, ICASSP",
     trainable=True,
 )
 class PICNN(_DeepMethod):
@@ -474,8 +481,9 @@ class PICNN(_DeepMethod):
 
 @register(
     "uol",
+    paper="https://arxiv.org/abs/2409.00603",
     era="deep",
-    reference="Uncertainty-oriented Order Learning, 2024",
+    reference="Liang et al. 2024, arXiv:2409.00603 (Uncertainty-oriented Order Learning)",
     trainable=True,
 )
 class UncertaintyOrderLearning(_DeepMethod):
@@ -589,8 +597,9 @@ class UncertaintyOrderLearning(_DeepMethod):
 
 @register(
     "fpem",
+    paper="https://arxiv.org/abs/2501.02509",
     era="deep",
-    reference="Facial Prior Enhanced Model, 2024",
+    reference="Li et al. 2025, ICCV (FPEM: Face Prior Enhanced Facial Attractiveness Prediction for Live Videos), arXiv:2501.02509",
     trainable=True,
 )
 class FPEM(_DeepMethod):

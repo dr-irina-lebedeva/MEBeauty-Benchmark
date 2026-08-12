@@ -96,8 +96,9 @@ class FoundationBackbone(nn.Module):
 
 @register(
     "dinov2-linear",
+    paper="https://arxiv.org/abs/2304.07193",
     era="foundation",
-    reference="Oquab et al., 2024 (DINOv2 features)",
+    reference="Oquab et al. 2024 (DINOv2) + this benchmark",
     trainable=True,
     notes="frozen backbone, linear head",
 )
@@ -233,8 +234,9 @@ class DINOv2Regression(_DeepMethod):
 
 @register(
     "dinov2-partial",
+    paper="https://arxiv.org/abs/2304.07193",
     era="foundation",
-    reference="Oquab et al., 2024 (DINOv2 features)",
+    reference="Oquab et al. 2024 (DINOv2) + this benchmark",
     trainable=True,
     notes="last blocks unfrozen",
 )
@@ -297,7 +299,7 @@ class Ensemble:
 @register(
     "transfbp",
     era="foundation",
-    reference="Transformer-based FBP, 2023",
+    reference="Boukhari & Dornaika 2026, Cognitive Computation",
     trainable=True,
     notes="ViT-B/16 backbone",
 )

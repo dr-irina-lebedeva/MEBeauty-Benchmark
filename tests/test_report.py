@@ -101,3 +101,39 @@ def test_readme_without_markers_refuses_to_guess(tmp_path):
 def test_empty_results_render_a_notice_rather_than_an_empty_table(tmp_path):
     assert "No results" in report.leaderboard([])
     assert "No cross-validation" in report.fold_summary({})
+
+
+def test_methods_section_lists_every_registered_method():
+    from fbp_benchmark.registry import available
+
+    section = report.methods_section()
+    for entry in available():
+        assert f"`{entry.name}`" in section, entry.name
+
+
+def test_methods_section_links_papers_where_a_url_is_known():
+    from fbp_benchmark.registry import available
+
+    section = report.methods_section()
+    linked = [e for e in available() if e.paper]
+    assert linked, "no method carries a paper URL"
+    for entry in linked:
+        assert f"]({entry.paper})" in section, entry.name
+
+
+def test_a_method_without_a_url_still_shows_its_citation():
+    # An invented DOI is worse than none, so unlinked entries must not vanish.
+    from fbp_benchmark.registry import available
+
+    section = report.methods_section()
+    for entry in available():
+        if not entry.paper and entry.reference != "--":
+            assert entry.reference in section, entry.name
+
+
+def test_updating_methods_is_idempotent(tmp_path):
+    readme = tmp_path / "README.md"
+    readme.write_text(f"{report.METHODS_START}\nold\n{report.METHODS_END}\n")
+    assert report.update_methods(readme) is True
+    assert report.update_methods(readme) is False
+    assert "old" not in readme.read_text()

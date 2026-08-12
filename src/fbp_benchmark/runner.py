@@ -86,6 +86,7 @@ def run(
     protocol: Protocol,
     seed: int = 0,
     check_leak: bool = True,
+    weights_dir: str | Path | None = None,
     **overrides,
 ) -> Result:
     """Train `name` on the protocol's training split and score it on test."""
@@ -104,6 +105,11 @@ def run(
         # Cheap insurance against the one mistake that would invalidate the
         # entire table. Runs the method again with the test labels shuffled.
         assert_no_test_leak(method, protocol, seed=seed)
+
+    if weights_dir is not None:
+        written = save_weights(method, weights_dir, name)
+        if written is not None:
+            print(f"    weights -> {written}")
 
     metrics = evaluate(
         protocol.test.labels,
@@ -130,5 +136,27 @@ def save(result: Result, directory: str | Path) -> Path:
     np.savez_compressed(
         directory / f"{result.method}_predictions.npz",
         predictions=result.predictions,
+    )
+    return path
+
+
+def save_weights(method: object, directory: str | Path, name: str) -> Path | None:
+    """Persist a trained method's weights, if it has any.
+
+    Classical methods hold a scikit-learn estimator rather than tensors, and
+    the baseline holds a single float; both return None rather than writing a
+    misleading empty checkpoint.
+    """
+    modules = getattr(method, "_modules", None)
+    if modules is None:
+        return None
+    import torch
+
+    directory = Path(directory).expanduser().resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{name}.pt"
+    torch.save(
+        {key: module.state_dict() for key, module in modules().items()},
+        path,
     )
     return path

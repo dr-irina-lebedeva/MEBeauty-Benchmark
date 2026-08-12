@@ -51,7 +51,10 @@ def test_check_readme_fails_when_the_table_is_stale(tmp_path, capsys):
         json.dumps({"method": "m", "era": "deep", "metrics": {"PC": 0.5}, "seconds": 1})
     )
     readme = tmp_path / "README.md"
-    readme.write_text("<!-- RESULTS:START -->\nstale\n<!-- RESULTS:END -->\n")
+    readme.write_text(
+        "<!-- RESULTS:START -->\nstale\n<!-- RESULTS:END -->\n"
+        "<!-- METHODS:START -->\n<!-- METHODS:END -->\n"
+    )
     code = cli.main(
         ["report", "--out", str(tmp_path), "--readme", str(readme), "--check-readme"]
     )
@@ -63,7 +66,10 @@ def test_check_readme_passes_after_updating(tmp_path):
         json.dumps({"method": "m", "era": "deep", "metrics": {"PC": 0.5}, "seconds": 1})
     )
     readme = tmp_path / "README.md"
-    readme.write_text("<!-- RESULTS:START -->\n<!-- RESULTS:END -->\n")
+    readme.write_text(
+        "<!-- RESULTS:START -->\n<!-- RESULTS:END -->\n"
+        "<!-- METHODS:START -->\n<!-- METHODS:END -->\n"
+    )
     args = ["report", "--out", str(tmp_path), "--readme", str(readme)]
     assert cli.main([*args, "--update-readme"]) == 0
     assert cli.main([*args, "--check-readme"]) == 0

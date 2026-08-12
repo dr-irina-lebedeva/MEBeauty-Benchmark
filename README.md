@@ -1,8 +1,19 @@
-# FBP-Benchmark
+# FBP-Benchmark — Facial Beauty Prediction on MEBeauty
 
-A reproducible benchmark for **facial beauty prediction** — twenty methods spanning
-twenty years, from hand-crafted facial geometry to foundation models, all trained and
-scored under one protocol.
+[![CI](https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark/actions/workflows/ci.yml/badge.svg)](https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark/actions/workflows/ci.yml)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
+[![Code licence: MIT](https://img.shields.io/badge/code%20licence-MIT-green.svg)](LICENSE)
+[![Dataset: research only](https://img.shields.io/badge/dataset-non--commercial%20research%20only-red.svg)](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-MEBeauty-yellow)](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty)
+
+A reproducible benchmark for **facial beauty prediction (FBP)** — twenty-one methods
+spanning twenty years, from hand-crafted facial geometry to foundation models, all
+trained and scored under one protocol on the **MEBeauty** multi-ethnic dataset.
+
+> **Academic research only.** The dataset is non-commercial, for facial
+> attractiveness assessment research — **not** for face recognition,
+> identification, verification, biometric matching or surveillance.
+> If you use this benchmark or the dataset, please [cite the paper](#citation).
 
 No download script, no preprocessing, no `data/` directory to populate. The dataset
 streams from the Hugging Face Hub:
@@ -42,21 +53,55 @@ with the paper's own words beside it.
 ## The methods
 
 ```bash
-fbp-benchmark list
+fbp-benchmark list          # names, eras, and what each one needs
 ```
 
-| Era | Methods | What they are |
-|---|---|---|
-| **classical** | `eisenthal2006`, `kagian2008`, `fan2012` | landmark geometry + a shallow regressor |
-| **deep** | `gan2014`, `cnn-resnet18`, `cnn-resnext50`, `pi-cnn`, `ldl-ren2017`, `r3cnn`, `aanet`, `comboloss`, `uol`, `fpem` | CNNs fine-tuned end to end |
-| **foundation** | `transfbp`, `dinov2-linear`, `dinov2-partial` | large pretrained backbones, frozen or lightly adapted |
-| **proposed** | `rw-ldl` and two ablations | reliability-weighted label-distribution learning |
-| **baseline** | `mean-baseline` | predicts the training mean — the floor every method must clear |
+<!-- METHODS:START -->
 
-Most entries are **reimplementations**: they preserve the published mechanism, not the
-original weights or feature extractors. A low score is evidence about *this
-implementation on this dataset*, not a verdict on the original work. Each class
-docstring says what was substituted.
+**Baseline** — reference points that bound the table
+
+| Method | Paper |
+|---|---|
+| `mean-baseline` | -- — floor: predicts the training mean |
+
+**Classical** — landmark geometry with a shallow regressor
+
+| Method | Paper |
+|---|---|
+| `eisenthal2006` | [Eisenthal, Dror & Ruppin 2006, Neural Computation 18(1)](https://doi.org/10.1162/089976606774841602) |
+| `fan2012` | Fan et al. 2012, Pattern Recognition 45(6) |
+| `kagian2008` | [Kagian et al. 2008, Vision Research 48(2)](https://www.sciencedirect.com/science/article/pii/S0042698907005032) |
+
+**Deep** — convolutional networks trained end to end
+
+| Method | Paper |
+|---|---|
+| `aanet` | [Lin et al. 2019, IJCAI (AaNet / P-AaNet)](https://doi.org/10.24963/ijcai.2019/119) |
+| `cnn-resnet18` | [Liang et al. 2018, ICPR (SCUT-FBP5500 baseline)](https://arxiv.org/abs/1801.06345) |
+| `cnn-resnext50` | [Liang et al. 2018, ICPR (SCUT-FBP5500 best backbone)](https://arxiv.org/abs/1801.06345) |
+| `comboloss` | [Xu & Xiang 2020, arXiv:2010.10721](https://arxiv.org/abs/2010.10721) |
+| `fpem` | [Li et al. 2025, ICCV (FPEM: Face Prior Enhanced Facial Attractiveness Prediction for Live Videos), arXiv:2501.02509](https://arxiv.org/abs/2501.02509) |
+| `gan2014` | Gan et al. 2014, Neurocomputing 133 — reimplementation; no external unlabelled corpus |
+| `ldl-ren2017` | [Ren & Geng 2017, IJCAI](https://www.ijcai.org/proceedings/2017/369) |
+| `pi-cnn` | [Xu et al. 2017, ICASSP](https://ieeexplore.ieee.org/document/7952438) |
+| `r3cnn` | [Lin, Liang & Jin 2019/2022, IEEE Trans. Affective Computing](https://doi.org/10.1109/TAFFC.2019.2933523) |
+| `rw-ldl` | This work (reliability-weighted LDL) — proposed |
+| `rw-ldl-kl` | This work (ablation: no multinomial likelihood) — ablation: KL instead of multinomial |
+| `rw-ldl-noweight` | This work (ablation: no precision weighting) — ablation: no reliability weighting |
+| `uol` | [Liang et al. 2024, arXiv:2409.00603 (Uncertainty-oriented Order Learning)](https://arxiv.org/abs/2409.00603) |
+
+**Foundation** — large pretrained backbones, frozen or lightly adapted
+
+| Method | Paper |
+|---|---|
+| `dinov2-linear` | [Oquab et al. 2024 (DINOv2) + this benchmark](https://arxiv.org/abs/2304.07193) — frozen backbone, linear head |
+| `dinov2-partial` | [Oquab et al. 2024 (DINOv2) + this benchmark](https://arxiv.org/abs/2304.07193) — last blocks unfrozen |
+| `rater-dinov2` | proposed in this benchmark — proposed: rater effects on a foundation backbone |
+| `transfbp` | Boukhari & Dornaika 2026, Cognitive Computation — ViT-B/16 backbone |
+
+Entries without a link are published in venues with no stable open URL; the citation is given in full. Most entries are **reimplementations** — they preserve the published mechanism, not the original weights or feature extractors, so a score is evidence about this implementation on this dataset rather than a verdict on the original work.
+
+<!-- METHODS:END -->
 
 ## Results
 
@@ -105,6 +150,62 @@ Every image is tested exactly once across the folds, so this is the comparison t
 paired bootstrap puts the gap between the best two at p = 0.48. Under 5-fold
 cross-validation the ordering reverses and becomes significant
 (p < 0.001), which is why the CV table is the one to cite.
+
+## Reproducing the results
+
+Every number in the tables above came from these commands. Results carry the
+commit that produced them, so a run can be reproduced or knowingly discounted.
+
+```bash
+git clone https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark
+cd MEBeauty-Benchmark
+uv sync --locked --all-extras --dev     # or: pip install -e ".[all]"
+
+huggingface-cli login                   # dataset is gated, approval automatic
+
+# Held-out table: every method, its own paper's schedule
+fbp-benchmark run --out results
+
+# Cross-validation table: the comparison to trust
+for fold in 0 1 2 3 4; do
+  fbp-benchmark run --method dinov2-partial --protocol cv --fold $fold \
+    --out results/cv/fold$fold
+done
+
+fbp-benchmark report                    # render, or --update-readme
+```
+
+Two methods need a richer dataset config than the default:
+
+```bash
+# rw-ldl and rater-dinov2 need the individual per-rater ratings
+fbp-benchmark run --method rater-dinov2 --dataset configs/mebeauty_rater_aware.yaml
+```
+
+**What to expect.** The full held-out sweep took ~5.5 hours on an Apple M-series
+laptop; `uol` alone is 2h20m. Deep methods are seeded and deterministic given
+the same torch version and device, but exact reproduction across a different
+device (CUDA vs MPS vs CPU) will differ in the third decimal.
+
+## Trained models
+
+Weights are saved on request and can be published to the Hub alongside the
+dataset:
+
+```bash
+fbp-benchmark run --method dinov2-partial --save-weights checkpoints
+huggingface-cli upload dr-irina-lebedeva/MEBeauty-models checkpoints/
+```
+
+A checkpoint stores each module's `state_dict` keyed by name (`backbone`,
+`head`, and any method-specific parts), so it reloads without needing this
+package's internals. Methods with no tensors — the classical regressors and
+the baseline — write nothing rather than an empty file.
+
+> Checkpoints are not published yet. The weights behind the tables above were
+> not retained: the sweep predated `--save-weights`, and re-running it to
+> produce them is ~5.5 hours of compute. Reproduce locally with the commands
+> above, or open an issue if hosted weights would help you.
 
 ## Running it
 
@@ -242,3 +343,18 @@ shown.
 **Maintainer:** Irina Lebedeva, PhD — dr.irina.lebedeva@gmail.com ·
 [irina-lebedeva.com](https://irina-lebedeva.com/) ·
 [LinkedIn](https://www.linkedin.com/in/ailina/)
+
+---
+
+## Keywords
+
+Facial beauty prediction · facial attractiveness prediction · facial aesthetics ·
+beauty score regression · MEBeauty dataset · multi-ethnic face dataset ·
+FBP benchmark · SCUT-FBP5500 comparison · label distribution learning ·
+DINOv2 · vision transformer · foundation models · deep learning ·
+affective computing · face analysis · reproducible research · PyTorch
+
+`facial-beauty-prediction` `facial-attractiveness` `facial-aesthetics`
+`beauty-prediction` `fbp` `mebeauty` `benchmark` `computer-vision`
+`deep-learning` `affective-computing` `label-distribution-learning`
+`foundation-models` `dinov2` `face-analysis` `reproducible-research` `pytorch`

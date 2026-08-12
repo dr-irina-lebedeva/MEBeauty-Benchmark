@@ -77,7 +77,7 @@ DEFAULT_REGRESSION_WEIGHT = 1.0
 @register(
     "rw-ldl",
     era="deep",
-    reference="proposed in this benchmark",
+    reference="This work (reliability-weighted LDL)",
     requires=("distributions",),
     trainable=True,
     notes="proposed",
@@ -197,7 +197,7 @@ class ReliabilityWeightedLDL(_DeepMethod):
 @register(
     "rw-ldl-noweight",
     era="deep",
-    reference="ablation of rw-ldl",
+    reference="This work (ablation: no precision weighting)",
     requires=("distributions",),
     trainable=True,
     notes="ablation: no reliability weighting",
@@ -214,7 +214,7 @@ class RWLDLNoWeighting(ReliabilityWeightedLDL):
 @register(
     "rw-ldl-kl",
     era="deep",
-    reference="ablation of rw-ldl",
+    reference="This work (ablation: no multinomial likelihood)",
     requires=("distributions",),
     trainable=True,
     notes="ablation: KL instead of multinomial",

@@ -196,8 +196,9 @@ class _GeometricMethod:
 
 @register(
     "eisenthal2006",
+    paper="https://doi.org/10.1162/089976606774841602",
     era="classical",
-    reference="Eisenthal, Dror & Ruppin, 2006",
+    reference="Eisenthal, Dror & Ruppin 2006, Neural Computation 18(1)",
     requires=("landmarks",),
 )
 class Eisenthal2006(_GeometricMethod):
@@ -231,8 +232,9 @@ class Eisenthal2006(_GeometricMethod):
 
 @register(
     "kagian2008",
+    paper="https://www.sciencedirect.com/science/article/pii/S0042698907005032",
     era="classical",
-    reference="Kagian et al., 2008",
+    reference="Kagian et al. 2008, Vision Research 48(2)",
     requires=("landmarks",),
 )
 class Kagian2008(_GeometricMethod):
@@ -253,7 +255,7 @@ class Kagian2008(_GeometricMethod):
 @register(
     "fan2012",
     era="classical",
-    reference="Fan et al., 2012",
+    reference="Fan et al. 2012, Pattern Recognition 45(6)",
     requires=("landmarks",),
 )
 class Fan2012(_GeometricMethod):

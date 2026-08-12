@@ -11,9 +11,20 @@ requires-python = ">=3.12"
 keywords = [
     "facial-beauty-prediction",
     "facial-attractiveness",
+    "facial-aesthetics",
+    "beauty-prediction",
+    "attractiveness-prediction",
+    "fbp",
+    "mebeauty",
     "benchmark",
     "computer-vision",
+    "deep-learning",
     "affective-computing",
+    "label-distribution-learning",
+    "foundation-models",
+    "dinov2",
+    "face-analysis",
+    "reproducible-research",
 ]
 classifiers = [
     "Intended Audience :: Science/Research",

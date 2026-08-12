@@ -73,7 +73,13 @@ def cmd_run(args: argparse.Namespace) -> int:
     failures = 0
     for name in names:
         try:
-            result = run(name, protocol, seed=args.seed, **overrides)
+            result = run(
+                name,
+                protocol,
+                seed=args.seed,
+                weights_dir=args.save_weights,
+                **overrides,
+            )
         except Exception as exc:  # noqa: BLE001 - see below
             # Deliberately broad. A sweep of twenty methods must not be ended
             # by one that cannot import its backbone or runs out of memory;
@@ -88,24 +94,45 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
-    from .report import build_table, readme_section, update_readme
+    from .report import (
+        build_table,
+        methods_section,
+        readme_section,
+        update_methods,
+        update_readme,
+    )
 
     if args.check_readme:
         # CI gate: the README's table must match `results/`. A hand-edited
         # leaderboard is one that quietly stops matching the code.
         current = Path(args.readme).read_text(encoding="utf-8")
-        if readme_section(args.out).strip() not in current:
+        stale = [
+            name
+            for name, block in (
+                ("results", readme_section(args.out)),
+                ("method catalogue", methods_section()),
+            )
+            if block.strip() not in current
+        ]
+        if stale:
             print(
-                f"{args.readme} results are out of date. "
+                f"{args.readme}: {' and '.join(stale)} out of date. "
                 "Run `fbp-benchmark report --update-readme`.",
                 file=sys.stderr,
             )
             return 1
-        print(f"{args.readme} results are up to date.")
+        print(f"{args.readme} is up to date.")
         return 0
     if args.update_readme:
-        changed = update_readme(args.readme, args.out)
-        print(f"{args.readme}: {'updated' if changed else 'already current'}")
+        changed = [
+            label
+            for label, did in (
+                ("results", update_readme(args.readme, args.out)),
+                ("methods", update_methods(args.readme)),
+            )
+            if did
+        ]
+        print(f"{args.readme}: {', '.join(changed) if changed else 'already current'}")
         return 0
     print(build_table(args.out))
     return 0
@@ -140,6 +167,11 @@ def main(argv: list[str] | None = None) -> int:
         "--epochs", type=int, help="override every schedule (smoke tests)"
     )
     p_run.add_argument("--patience", type=int)
+    p_run.add_argument(
+        "--save-weights",
+        metavar="DIR",
+        help="write each trained model's weights here, for upload to the Hub",
+    )
     p_run.add_argument(
         "--skip-slow", action="store_true", help="classical methods only"
     )
