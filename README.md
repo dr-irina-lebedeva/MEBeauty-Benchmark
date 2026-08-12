@@ -65,7 +65,7 @@ from fbp_benchmark import load_protocol, run
 
 protocol = load_protocol()
 result = run("dinov2-partial", protocol)
-print(result.metrics)     # {'PC': ..., 'SROCC': ..., 'MAE': ..., 'RMSE': ...}
+print(result.metrics)  # {'PC': ..., 'SROCC': ..., 'MAE': ..., 'RMSE': ...}
 ```
 
 ## Evaluation protocol
