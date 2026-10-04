@@ -3,8 +3,8 @@
 [![CI](https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark/actions/workflows/ci.yml/badge.svg)](https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark/actions/workflows/ci.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![Code licence: MIT](https://img.shields.io/badge/code%20licence-MIT-green.svg)](LICENSE)
-[![Dataset: research only](https://img.shields.io/badge/dataset-non--commercial%20research%20only-red.svg)](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-MEBeauty-yellow)](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty)
+[![Dataset: research only](https://img.shields.io/badge/dataset-non--commercial%20research%20only-red.svg)](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-MEBeauty-yellow)](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction)
 
 A reproducible benchmark for **facial beauty prediction (FBP)** — twenty-one methods
 spanning twenty years, from hand-crafted facial geometry to foundation models, all
@@ -19,7 +19,7 @@ trained and scored under one protocol on the **MEBeauty** multi-ethnic dataset.
 
 | | |
 |---|---|
-| **Dataset — improved, current** | [huggingface.co/datasets/dr-irina-lebedeva/MEBeauty](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty) |
+| **Dataset — improved, current** | [huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction) |
 | **Benchmark code** | this repository |
 | **Original 2021 release** *(dataset + code, superseded)* | [github.com/fbplab/MEBeauty-database](https://github.com/fbplab/MEBeauty-database) |
 | **Paper** | [Neural Computing and Applications 34(17), 2022](https://doi.org/10.1007/s00521-021-06535-0) |
@@ -55,7 +55,7 @@ rather than displaying them.*
 git clone https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark
 cd MEBeauty-Benchmark
 uv sync --all-extras                 # recommended; installs Python 3.12 if needed
-huggingface-cli login
+hf auth login
 ```
 
 With [uv](https://docs.astral.sh/uv/), prefix commands with `uv run`:
@@ -69,8 +69,8 @@ pip install -e ".[all]"              # omit [all] for the CPU-only classical met
 ```
 
 **Dataset access.** The dataset is gated with automatic approval: accept the
-terms on the [dataset page](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty)
-while signed in, then `huggingface-cli login` with a token from
+terms on the [dataset page](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction)
+while signed in, then `hf auth login` with a token from
 [your settings](https://huggingface.co/settings/tokens).
 
 Nothing else is required — no download script, no preprocessing step and no
@@ -130,10 +130,19 @@ correlate 0.97 but differ by up to 1.2 on individual images.
 sampling noise, so a perfect predictor would not reach 1.0. The strongest
 method here reaches 0.80.
 
-**Some methods are seed-sensitive.** `cnn-resnet18` ranges 0.41-0.71 across
-four seeds under its published SGD schedule. Schedules are not retuned here,
-so a single-seed number for an unstable method is one draw; cross-validation
-averages five and is the safer figure.
+**Some methods are unstable.** `cnn-resnet18` ranges 0.41-0.71 across four
+seeds under its published SGD schedule. `aanet` and `uol` are unstable even at
+a *fixed* seed: four runs of `aanet` at seed 0, same commit and same device,
+gave PC 0.4969, 0.5270, 0.5448 and 0.5522. Early stopping picks the best epoch
+by validation MAE, and that choice is sensitive to MPS reduction
+nondeterminism, so a flat validation curve resolves differently run to run.
+Schedules are not retuned here, so a single-seed number for an unstable method
+is one draw; cross-validation averages five and is the safer figure.
+
+All results in the tables below come from commit `f2ee365`. `aanet` and `uol`
+differ from earlier published runs not because of a code change — their code
+paths are functionally unchanged across PR #4 — but because of that
+epoch-selection sensitivity.
 
 **Test differences, do not eyeball them.**
 `fbp_benchmark.metrics.paired_bootstrap_difference` returns the difference, a
@@ -146,9 +155,9 @@ cross a boundary; the benchmark never re-derives them.
 
 | | |
 |---|---|
-| `GatedRepoError` / `401` | accept the dataset terms, then `huggingface-cli login` |
+| `GatedRepoError` / `401` | accept the dataset terms, then `hf auth login` |
 | `needs individual ratings` | that method requires `--dataset configs/mebeauty_rater_aware.yaml` |
-| Results differ in the third decimal | expected across CUDA / MPS / CPU; ordering holds |
+| Results differ in the third decimal | expected across CUDA / MPS / CPU **for the same code version**; ordering holds. `aanet` and `uol` vary more than this even at a fixed seed — see [Evaluation protocol](#evaluation-protocol) |
 
 ## Methods
 
@@ -221,22 +230,25 @@ Entries without a link are published in venues with no stable open URL; the cita
 | `eisenthal2006` | classical | 0.3769 | 0.3928 | 0.8549 | 1.0672 | 1s |
 | `kagian2008` | classical | 0.3694 | 0.3849 | 0.8989 | 1.1091 | 0s |
 | `fan2012` | classical | 0.3115 | 0.3295 | 0.9235 | 1.1416 | 0s |
-| `rw-ldl` | deep | 0.7643 | 0.7540 | 0.5749 | 0.7429 | 468s |
-| `comboloss` | deep | 0.7599 | 0.7617 | 0.5958 | 0.7538 | 2799s |
-| `rw-ldl-kl` | deep | 0.7530 | 0.7411 | 0.6012 | 0.7598 | 175s |
-| `uol` | deep | 0.7487 | 0.7411 | 0.6062 | 0.7764 | 8504s |
-| `rw-ldl-noweight` | deep | 0.7470 | 0.7302 | 0.5984 | 0.7666 | 206s |
-| `fpem` | deep | 0.7255 | 0.7151 | 0.6251 | 0.7922 | 429s |
-| `ldl-ren2017` | deep | 0.7202 | 0.7137 | 0.6381 | 0.7987 | 180s |
-| `pi-cnn` | deep | 0.7087 | 0.7127 | 0.6374 | 0.8138 | 1862s |
-| `r3cnn` | deep | 0.6949 | 0.6919 | 0.6616 | 0.8372 | 332s |
-| `cnn-resnext50` | deep | 0.6672 | 0.6457 | 0.6635 | 0.8611 | 1145s |
-| `gan2014` | deep | 0.6342 | 0.6353 | 0.7160 | 0.9060 | 70s |
-| `aanet` | deep | 0.5522 | 0.5779 | 0.7431 | 0.9655 | 260s |
-| `cnn-resnet18` | deep | 0.4065 | 0.4817 | 0.8336 | 1.0609 | 138s |
-| `rater-dinov2` | foundation | 0.7798 | 0.7734 | 0.5662 | 0.7206 | 2232s |
-| `dinov2-partial` | foundation | 0.7711 | 0.7669 | 0.5658 | 0.7373 | 1413s |
-| `dinov2-linear` | foundation | 0.7223 | 0.7319 | 0.6476 | 0.8267 | 903s |
+| `transfbp` | deep | 0.8136 | 0.8203 | 0.5162 | 0.6742 | 16s |
+| `rw-ldl` | deep | 0.7643 | 0.7540 | 0.5749 | 0.7429 | 612s |
+| `comboloss` | deep | 0.7607 | 0.7571 | 0.5894 | 0.7504 | 2560s |
+| `rw-ldl-kl` | deep | 0.7530 | 0.7411 | 0.6012 | 0.7598 | 212s |
+| `rw-ldl-noweight` | deep | 0.7470 | 0.7302 | 0.5984 | 0.7666 | 283s |
+| `uol` | deep | 0.7353 | 0.7334 | 0.6130 | 0.7924 | 6735s |
+| `fpem` | deep | 0.7262 | 0.7165 | 0.6246 | 0.7913 | 463s |
+| `ldl-ren2017` | deep | 0.7202 | 0.7137 | 0.6381 | 0.7987 | 192s |
+| `pi-cnn` | deep | 0.7087 | 0.7127 | 0.6374 | 0.8138 | 1975s |
+| `r3cnn` | deep | 0.6928 | 0.6988 | 0.6603 | 0.8411 | 350s |
+| `cnn-resnext50` | deep | 0.6672 | 0.6457 | 0.6635 | 0.8611 | 1289s |
+| `gan2014` | deep | 0.6342 | 0.6353 | 0.7160 | 0.9060 | 88s |
+| `aanet` | deep | 0.4969 | 0.5786 | 0.7587 | 1.0133 | 286s |
+| `cnn-resnet18` | deep | 0.4065 | 0.4817 | 0.8336 | 1.0609 | 206s |
+| `rater-dinov2` | foundation | 0.7798 | 0.7734 | 0.5662 | 0.7206 | 1885s |
+| `dinov2-partial` | foundation | 0.7711 | 0.7669 | 0.5658 | 0.7373 | 1408s |
+| `vit-fbp` | foundation | 0.7541 | 0.7506 | 0.6007 | 0.7661 | 2527s |
+| `xattn-vit` | foundation | 0.7412 | 0.7392 | 0.6109 | 0.7727 | 1548s |
+| `dinov2-linear` | foundation | 0.7223 | 0.7319 | 0.6476 | 0.8267 | 857s |
 
 ### 5-fold cross-validation
 
@@ -244,8 +256,13 @@ Every image is tested exactly once across the folds, so this is the comparison t
 
 | Method | Era | PC (mean ± sd) | SROCC (mean ± sd) | MAE (mean ± sd) | RMSE (mean ± sd) |
 |---|---|---|---|---|---|
+| `transfbp` | deep | 0.8081 ± 0.0103 | 0.8118 ± 0.0118 | 0.5265 ± 0.0079 | 0.6916 ± 0.0207 |
 | `dinov2-partial` | foundation | 0.8035 ± 0.0136 | 0.8022 ± 0.0104 | 0.5371 ± 0.0061 | 0.7056 ± 0.0231 |
 | `rater-dinov2` | foundation | 0.7959 ± 0.0196 | 0.7932 ± 0.0183 | 0.5562 ± 0.0182 | 0.7243 ± 0.0291 |
+| `xattn-vit` | foundation | 0.7801 ± 0.0105 | 0.7779 ± 0.0176 | 0.5707 ± 0.0230 | 0.7394 ± 0.0151 |
+| `rw-ldl` | deep | 0.7766 ± 0.0197 | 0.7753 ± 0.0152 | 0.5777 ± 0.0206 | 0.7464 ± 0.0362 |
+| `vit-fbp` | foundation | 0.7730 ± 0.0094 | 0.7705 ± 0.0115 | 0.5776 ± 0.0204 | 0.7466 ± 0.0239 |
+| `comboloss` | deep | 0.7506 ± 0.0182 | 0.7520 ± 0.0174 | 0.5999 ± 0.0132 | 0.7835 ± 0.0169 |
 
 <!-- RESULTS:END -->
 
@@ -284,7 +301,7 @@ git clone https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark
 cd MEBeauty-Benchmark
 uv sync --locked --all-extras --dev     # or: pip install -e ".[all]"
 
-huggingface-cli login                   # dataset is gated, approval automatic
+hf auth login                           # dataset is gated, approval automatic
 
 # Held-out table: every method, its own paper's schedule
 fbp-benchmark run --out results
@@ -306,9 +323,11 @@ fbp-benchmark run --method rater-dinov2 --dataset configs/mebeauty_rater_aware.y
 ```
 
 **What to expect.** The full held-out sweep took ~5.5 hours on an Apple M-series
-laptop; `uol` alone is 2h20m. Deep methods are seeded and deterministic given
-the same torch version and device, but exact reproduction across a different
-device (CUDA vs MPS vs CPU) will differ in the third decimal.
+laptop; `uol` alone is 2h20m. Deep methods are seeded, and most reproduce
+exactly given the same commit, torch version and device; across a different
+device (CUDA vs MPS vs CPU) expect third-decimal differences. `aanet` and
+`uol` are the exceptions — they do not reproduce exactly even at a fixed seed,
+because early-stopping epoch selection amplifies MPS nondeterminism.
 
 ## Trained models
 
@@ -317,7 +336,7 @@ dataset:
 
 ```bash
 fbp-benchmark run --method dinov2-partial --save-weights checkpoints
-huggingface-cli upload dr-irina-lebedeva/MEBeauty-models checkpoints/
+hf upload dr-irina-lebedeva/MEBeauty-FBP-models checkpoints/
 ```
 
 A checkpoint stores each module's `state_dict` keyed by name (`backbone`,
@@ -434,7 +453,7 @@ make test-slow       # end-to-end; downloads pretrained weights
 Code is MIT. **The dataset is not** — it is for non-commercial academic research on
 facial attractiveness assessment only, and specifically not for face recognition,
 identification or any biometric use. See the
-[dataset card](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty) for the full
+[dataset card](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction) for the full
 terms, which you accept when requesting access.
 
 Attractiveness ratings are subjective opinions of the people who gave them. A model
