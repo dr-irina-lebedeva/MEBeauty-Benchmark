@@ -291,12 +291,21 @@ class _DeepMethod:
             module.load_state_dict(state)
             module.to(self.device)
 
-    def fit(self, protocol: Protocol) -> None:
-        set_seed(self.seed)
+    def build_modules(self) -> None:
+        """Construct the backbone and head, untrained, on this device.
+
+        Split out of `fit` so saved weights can be loaded into a method
+        without training it -- see `fbp_benchmark.pretrained`. Subclasses that
+        use a different backbone family override this, not `fit`.
+        """
         self.backbone, features = make_backbone(self.config.backbone)
         self.head = self.build_head(features)
         self.backbone.to(self.device)
         self.head.to(self.device)
+
+    def fit(self, protocol: Protocol) -> None:
+        set_seed(self.seed)
+        self.build_modules()
 
         train_loader = DataLoader(
             FaceDataset(
