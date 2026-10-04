@@ -95,44 +95,64 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_report(args: argparse.Namespace) -> int:
     from .report import (
+        END,
+        METHODS_END,
+        METHODS_START,
+        START,
         build_table,
         methods_section,
         readme_section,
-        update_methods,
-        update_readme,
+        replace_block,
+        summary_section,
+    )
+
+    # Three generated blocks across three files: the README carries the
+    # condensed summary, `docs/` carries the full tables and the catalogue.
+    # Paths are derived from --readme so a caller pointed at a scratch
+    # directory never writes into the real repository.
+    docs = Path(args.docs) if args.docs else Path(args.readme).parent / "docs"
+    targets = (
+        (
+            Path(args.readme),
+            START,
+            END,
+            lambda: summary_section(args.out),
+        ),
+        (docs / "results.md", START, END, lambda: readme_section(args.out)),
+        (docs / "methods.md", METHODS_START, METHODS_END, methods_section),
     )
 
     if args.check_readme:
-        # CI gate: the README's table must match `results/`. A hand-edited
+        # CI gate: generated tables must match `results/`. A hand-edited
         # leaderboard is one that quietly stops matching the code.
-        current = Path(args.readme).read_text(encoding="utf-8")
-        stale = [
-            name
-            for name, block in (
-                ("results", readme_section(args.out)),
-                ("method catalogue", methods_section()),
-            )
-            if block.strip() not in current
-        ]
+        stale = []
+        for path, _start, _end, build in targets:
+            if not path.exists():
+                stale.append(f"{path} (missing)")
+            elif build().strip() not in path.read_text(encoding="utf-8"):
+                stale.append(str(path))
         if stale:
             print(
-                f"{args.readme}: {' and '.join(stale)} out of date. "
+                f"{' and '.join(stale)} out of date. "
                 "Run `fbp-benchmark report --update-readme`.",
                 file=sys.stderr,
             )
             return 1
-        print(f"{args.readme} is up to date.")
+        print("Generated tables are up to date.")
         return 0
     if args.update_readme:
-        changed = [
-            label
-            for label, did in (
-                ("results", update_readme(args.readme, args.out)),
-                ("methods", update_methods(args.readme)),
-            )
-            if did
-        ]
-        print(f"{args.readme}: {', '.join(changed) if changed else 'already current'}")
+        # A target that does not exist is skipped rather than created: the
+        # surrounding prose is written by hand, and --check-readme reports a
+        # missing file as stale, so CI still catches a genuine omission.
+        changed, skipped = [], []
+        for path, start, end, build in targets:
+            if not path.exists():
+                skipped.append(str(path))
+            elif replace_block(path, start, end, build()):
+                changed.append(str(path))
+        if skipped:
+            print(f"skipped (no such file): {', '.join(skipped)}", file=sys.stderr)
+        print(", ".join(changed) if changed else "already current")
         return 0
     print(build_table(args.out))
     return 0
@@ -183,6 +203,12 @@ def main(argv: list[str] | None = None) -> int:
     p_report = sub.add_parser("report", help="render the results table")
     p_report.add_argument("--out", default=str(DEFAULT_RESULTS))
     p_report.add_argument("--readme", default="README.md")
+    p_report.add_argument(
+        "--docs",
+        default=None,
+        help="directory holding results.md and methods.md "
+        "(default: a `docs` directory beside --readme)",
+    )
     p_report.add_argument(
         "--update-readme", action="store_true", help="write the table into the README"
     )

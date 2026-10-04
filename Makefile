@@ -33,10 +33,10 @@ coverage:  ## Fast tests with a coverage floor
 test-slow:  ## End-to-end method tests (slow, needs network)
 	uv run pytest -m slow
 
-results:  ## Regenerate the README results table from results/
+results:  ## Regenerate the tables in README.md and docs/ from results/
 	uv run fbp-benchmark report --update-readme
 
-figures:  ## Regenerate the README figures from the dataset and results/
+figures:  ## Regenerate the figures from the dataset and results/
 	uv run --with matplotlib python scripts/make_figures.py
 
 check: lint types test  ## What CI gates on
