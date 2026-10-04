@@ -33,6 +33,11 @@ earlier published runs not because of a code change — their code paths are
 functionally unchanged across PR #4 — but because of that epoch-selection
 sensitivity.
 
+**Accuracy is not uniform across subgroups.** For the published reference
+model, correlation differs significantly by ethnicity — see
+[subgroups.md](subgroups.md), which is reproducible from the committed
+prediction dumps with `scripts/subgroups.py`.
+
 **Test differences, do not eyeball them.**
 `fbp_benchmark.metrics.paired_bootstrap_difference` returns the difference, a
 95% interval and a p-value for any two methods' predictions.
