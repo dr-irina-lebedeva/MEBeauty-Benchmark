@@ -48,22 +48,31 @@ dependencies = [
 # The deep and foundation eras. `pip install fbp-benchmark[all]` is the normal
 # install; the split exists so a 2 GB dependency is a choice, not a surprise.
 deep = ["torch>=2.13.0", "torchvision>=0.28.0"]
+# transformers is upper-bounded on purpose. 5.18 renamed DINOv2's attention
+# submodules (attention.attention.query -> attention.q_proj), which changes the
+# state-dict layout of every published checkpoint. `load_pretrained` remaps the
+# two known layouts, but a bound that has been tested is better than trusting
+# the next rename to be handled. Tested: 5.14.1 and 5.18.0.
 foundation = [
     "torch>=2.13.0",
     "torchvision>=0.28.0",
-    "transformers>=5.0.0",
-    # Face-verification backbone for transfbp. An ImageNet one would not be
-    # the same method -- the paper's premise is that identity features carry
-    # the signal.
-    "facenet-pytorch>=2.6.0",
+    "transformers>=5.0.0,<5.19.0",
 ]
+# Everything that resolves against released packages. `transfbp` is not here:
+# facenet-pytorch pins torchvision<0.18, three years stale, which the uv
+# overrides below lift for this repository but which pip cannot lift for a
+# downstream install -- `pip install fbp-benchmark[all]` would simply fail.
 all = [
     "torch>=2.13.0",
     "torchvision>=0.28.0",
-    "transformers>=5.0.0",
-    "facenet-pytorch>=2.6.0",
+    "transformers>=5.0.0,<5.19.0",
     "scipy>=1.14",
 ]
+# Face-verification backbone for transfbp. An ImageNet one would not be the
+# same method -- the paper's premise is that identity features carry the
+# signal. Needs the overrides below, so install it inside this repository
+# (`uv sync --all-extras`) rather than downstream.
+transfbp = ["facenet-pytorch>=2.6.0"]
 
 [project.urls]
 Dataset = "https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction"

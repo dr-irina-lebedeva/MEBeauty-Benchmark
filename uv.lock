@@ -585,7 +585,6 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
-    { name = "facenet-pytorch" },
     { name = "scipy" },
     { name = "torch" },
     { name = "torchvision" },
@@ -596,10 +595,12 @@ deep = [
     { name = "torchvision" },
 ]
 foundation = [
-    { name = "facenet-pytorch" },
     { name = "torch" },
     { name = "torchvision" },
     { name = "transformers" },
+]
+transfbp = [
+    { name = "facenet-pytorch" },
 ]
 
 [package.dev-dependencies]
@@ -618,8 +619,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "datasets", specifier = ">=5.0.0" },
-    { name = "facenet-pytorch", marker = "extra == 'all'", specifier = ">=2.6.0" },
-    { name = "facenet-pytorch", marker = "extra == 'foundation'", specifier = ">=2.6.0" },
+    { name = "facenet-pytorch", marker = "extra == 'transfbp'", specifier = ">=2.6.0" },
     { name = "huggingface-hub", specifier = ">=1.24.0" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "pandas", specifier = ">=3.0.5" },
@@ -632,10 +632,10 @@ requires-dist = [
     { name = "torchvision", marker = "extra == 'all'", specifier = ">=0.28.0" },
     { name = "torchvision", marker = "extra == 'deep'", specifier = ">=0.28.0" },
     { name = "torchvision", marker = "extra == 'foundation'", specifier = ">=0.28.0" },
-    { name = "transformers", marker = "extra == 'all'", specifier = ">=5.0.0" },
-    { name = "transformers", marker = "extra == 'foundation'", specifier = ">=5.0.0" },
+    { name = "transformers", marker = "extra == 'all'", specifier = ">=5.0.0,<5.19.0" },
+    { name = "transformers", marker = "extra == 'foundation'", specifier = ">=5.0.0,<5.19.0" },
 ]
-provides-extras = ["deep", "foundation", "all"]
+provides-extras = ["deep", "foundation", "all", "transfbp"]
 
 [package.metadata.requires-dev]
 dev = [

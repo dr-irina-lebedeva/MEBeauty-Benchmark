@@ -59,8 +59,12 @@ Entries without a link are published in venues with no stable open URL; the cita
 
 <!-- METHODS:END -->
 
-**Pretrained weights: `transfbp`.** Its backbone is InceptionResnetV1
-pretrained on VGGFace2, obtained via
+**Pretrained weights: `transfbp`.** It needs the `transfbp` extra
+(`uv sync --all-extras`, or `pip install -e ".[all,transfbp]"` inside this
+repository) — facenet-pytorch pins a three-year-old torchvision, which this
+project's uv overrides lift but a downstream `pip install` cannot, so it is not
+part of `[all]`. Its backbone is InceptionResnetV1 pretrained on VGGFace2,
+obtained via
 [facenet-pytorch](https://github.com/timesler/facenet-pytorch) (MIT-licensed
 code). VGGFace2 was released for non-commercial research and withdrawn by its
 authors in 2021. The weights are downloaded by the user at run time and are
