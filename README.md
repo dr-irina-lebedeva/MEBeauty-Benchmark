@@ -117,10 +117,11 @@ print(result.metrics)  # {'PC': ..., 'SROCC': ..., 'MAE': ..., 'RMSE': ...}
 Two protocols ship, and a result must state which it used.
 
 **Cross-validation is the one to report.** The held-out split has 250 test
-images, and a paired bootstrap cannot separate the top methods on it —
-differences below roughly 0.04 correlation are not resolvable. The ordering of
-the two best methods reverses between the two protocols, and only the
-cross-validated difference is significant.
+images; cross-validation scores all 2,462, and averages over five fits rather
+than resting on one. Differences below roughly 0.04 correlation are not
+resolvable on 250 images, and the two protocols can disagree: `dinov2-partial`
+and `rater-dinov2` are indistinguishable on the held-out split (p = 0.48) but
+separate cleanly under CV, with the sign reversed (p < 0.001).
 
 **Name the label.** `beauty_score` corrects for rater leniency and is the
 recommended target; `plain_mean_score` is the uncorrected average. They
@@ -128,7 +129,7 @@ correlate 0.97 but differ by up to 1.2 on individual images.
 
 **The ceiling is about 0.90.** Roughly 19% of the test-label variance is rater
 sampling noise, so a perfect predictor would not reach 1.0. The strongest
-method here reaches 0.80.
+method here reaches 0.81.
 
 **Some methods are unstable.** `cnn-resnet18` ranges 0.41-0.71 across four
 seeds under its published SGD schedule. `aanet` and `uol` are unstable even at
@@ -266,10 +267,17 @@ Every image is tested exactly once across the folds, so this is the comparison t
 
 <!-- RESULTS:END -->
 
-**The held-out split cannot separate the top methods.** With 250 test images a
-paired bootstrap puts the gap between the best two at p = 0.48. Under 5-fold
-cross-validation the ordering reverses and becomes significant
-(p < 0.001), which is why the CV table is the one to cite.
+**The top of the table is not resolved.** `transfbp` leads both protocols, but
+its margin over `dinov2-partial` does not survive the larger sample: on the
+250-image held-out split the gap is +0.043 correlation (95% CI 0.006 to 0.081,
+p = 0.02), while pooled across all five folds it falls to +0.007 (95% CI
+−0.005 to 0.018, p = 0.26, n = 2,462). Read `transfbp` and `dinov2-partial` as
+tied at the top, and treat the held-out margin as an artefact of 250 images.
+
+Further down the table the two protocols can disagree outright:
+`dinov2-partial` and `rater-dinov2` are indistinguishable on the held-out
+split (p = 0.48) but separate under CV with the sign reversed (p < 0.001).
+This is why the CV table is the one to cite.
 
 ## Why this exists
 
