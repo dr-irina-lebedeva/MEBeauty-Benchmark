@@ -26,7 +26,11 @@ hf-model-card/
 # Benchmark output. Results are committed deliberately, one at a time, not by
 # a bulk `git add` -- a results file records the commit that produced it, so
 # sweeping them in alongside code changes makes that record a lie.
-results/**/*.npz
+#
+# Prediction dumps used to be ignored. They are ~2 KB each (232 KB for the
+# whole benchmark) and they are the only record of per-image predictions, so
+# any subgroup or significance analysis depends on them. Ten were lost once
+# because they were ignored; they are tracked now.
 
 # Experiments and models
 outputs/
