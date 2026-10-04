@@ -91,12 +91,15 @@ class DINOv2Regression(_DeepMethod):
             nn.Linear(256, 1),
         )
 
-    def fit(self, protocol: Protocol) -> None:
-        set_seed(self.seed)
+    def build_modules(self) -> None:
         self.backbone = FoundationBackbone(self.backbone_name, self.trainable_blocks)
         self.head = self.build_head(self.backbone.width * 2)
         self.backbone.to(self.device)
         self.head.to(self.device)
+
+    def fit(self, protocol: Protocol) -> None:
+        set_seed(self.seed)
+        self.build_modules()
         self._fit_loop(protocol)
 
     def _fit_loop(self, protocol: Protocol) -> None:

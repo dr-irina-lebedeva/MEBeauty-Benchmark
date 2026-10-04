@@ -37,6 +37,22 @@ different device (CUDA vs MPS vs CPU) expect third-decimal differences.
 fixed seed, because early-stopping epoch selection amplifies MPS
 nondeterminism.
 
+## Using the published weights
+
+```python
+from fbp_benchmark import load_pretrained, predict
+
+model = load_pretrained("dinov2-partial")
+score = predict(model, "face.jpg")  # 1-10
+```
+
+`load_pretrained` fetches `config.json` and `<method>.pt` from
+[dr-irina-lebedeva/MEBeauty-FBP-models](https://huggingface.co/dr-irina-lebedeva/MEBeauty-FBP-models)
+and loads them into the registered method. `predict` applies the evaluation
+preprocessing — resize 256, centre crop, ImageNet statistics, test-time flip
+averaging, clipped to the score range — so a score matches the published
+metrics. Pass `weights=` a local path to skip the download.
+
 ## From Python
 
 ```python
