@@ -198,7 +198,7 @@ fbp-benchmark list          # names, eras, and what each one needs
 | `rw-ldl` | This work (reliability-weighted LDL) — proposed |
 | `rw-ldl-kl` | This work (ablation: no multinomial likelihood) — ablation: KL instead of multinomial |
 | `rw-ldl-noweight` | This work (ablation: no precision weighting) — ablation: no reliability weighting |
-| `transfbp` | [Xu, Jinhai & Yuan 2018, arXiv:1803.07253 (TransFBP)](https://arxiv.org/abs/1803.07253) — frozen face-verification features + Bayesian ridge; no fine-tuning |
+| `transfbp` | [Xu, Jinhai & Yuan 2018, arXiv:1803.07253 (TransFBP)](https://arxiv.org/abs/1803.07253) — frozen face-verification features + Bayesian ridge; no fine-tuning. Backbone is InceptionResnetV1 pretrained on VGGFace2, obtained via facenet-pytorch (MIT code); VGGFace2 was released for non-commercial research and withdrawn by its authors in 2021, and the weights are downloaded by the user at run time, not redistributed by this repository |
 | `uol` | [Liang et al. 2024, arXiv:2409.00603 (Uncertainty-oriented Order Learning)](https://arxiv.org/abs/2409.00603) |
 
 **Foundation** — large pretrained backbones, frozen or lightly adapted
