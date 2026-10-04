@@ -40,12 +40,8 @@ FACENET_STD = (0.5, 0.5, 0.5)
     era="deep",
     reference="Xu, Jinhai & Yuan 2018, arXiv:1803.07253 (TransFBP)",
     notes=(
-        "frozen face-verification features + Bayesian ridge; no fine-tuning. "
-        "Backbone is InceptionResnetV1 pretrained on VGGFace2, obtained via "
-        "facenet-pytorch (MIT code); VGGFace2 was released for non-commercial "
-        "research and withdrawn by its authors in 2021, and the weights are "
-        "downloaded by the user at run time, not redistributed by this "
-        "repository"
+        "frozen face-verification features (InceptionResnetV1, VGGFace2) + "
+        "Bayesian ridge; no fine-tuning. See licensing note below the table."
     ),
 )
 class TransFBP:

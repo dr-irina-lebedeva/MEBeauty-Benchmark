@@ -198,7 +198,7 @@ fbp-benchmark list          # names, eras, and what each one needs
 | `rw-ldl` | This work (reliability-weighted LDL) — proposed |
 | `rw-ldl-kl` | This work (ablation: no multinomial likelihood) — ablation: KL instead of multinomial |
 | `rw-ldl-noweight` | This work (ablation: no precision weighting) — ablation: no reliability weighting |
-| `transfbp` | [Xu, Jinhai & Yuan 2018, arXiv:1803.07253 (TransFBP)](https://arxiv.org/abs/1803.07253) — frozen face-verification features + Bayesian ridge; no fine-tuning. Backbone is InceptionResnetV1 pretrained on VGGFace2, obtained via facenet-pytorch (MIT code); VGGFace2 was released for non-commercial research and withdrawn by its authors in 2021, and the weights are downloaded by the user at run time, not redistributed by this repository |
+| `transfbp` | [Xu, Jinhai & Yuan 2018, arXiv:1803.07253 (TransFBP)](https://arxiv.org/abs/1803.07253) — frozen face-verification features (InceptionResnetV1, VGGFace2) + Bayesian ridge; no fine-tuning. See licensing note below the table. |
 | `uol` | [Liang et al. 2024, arXiv:2409.00603 (Uncertainty-oriented Order Learning)](https://arxiv.org/abs/2409.00603) |
 
 **Foundation** — large pretrained backbones, frozen or lightly adapted
@@ -214,6 +214,13 @@ fbp-benchmark list          # names, eras, and what each one needs
 Entries without a link are published in venues with no stable open URL; the citation is given in full. Most entries are **reimplementations** — they preserve the published mechanism, not the original weights or feature extractors, so a score is evidence about this implementation on this dataset rather than a verdict on the original work.
 
 <!-- METHODS:END -->
+
+**Pretrained weights: `transfbp`.** Its backbone is InceptionResnetV1
+pretrained on VGGFace2, obtained via
+[facenet-pytorch](https://github.com/timesler/facenet-pytorch) (MIT-licensed
+code). VGGFace2 was released for non-commercial research and withdrawn by its
+authors in 2021. The weights are downloaded by the user at run time and are
+not redistributed by this repository.
 
 ## Results
 
