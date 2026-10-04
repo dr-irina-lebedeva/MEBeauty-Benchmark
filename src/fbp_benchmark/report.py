@@ -14,6 +14,7 @@ from pathlib import Path
 
 import numpy as np
 
+from .data import MEBEAUTY_REPO
 from .registry import ERA_ORDER
 
 #: Columns shown, and whether higher is better.
@@ -126,16 +127,29 @@ def fold_summary(folds: dict[str, list[Run]]) -> str:
 
 
 def provenance(runs: list[Run]) -> str:
-    """One line describing what the table was produced against."""
+    """One line describing what the table was produced against.
+
+    Displays the dataset's *current* id. A result records the id it was run
+    against, which is provenance and is never rewritten -- but the Hub renames
+    repositories, so the recorded id can be stale as documentation. Where the
+    two differ, the current id is shown and the recorded one is named.
+    """
     if not runs:
         return ""
     head = runs[0].protocol
     sizes = head.get("sizes") or {}
     size_text = " / ".join(f"{k} {v:,}" for k, v in sizes.items())
-    return (
-        f"`{head.get('dataset')}` config `{head.get('config')}`, "
+    recorded = head.get("dataset")
+    line = (
+        f"`{MEBEAUTY_REPO}` config `{head.get('config')}`, "
         f"label `{head.get('label')}`, seed {head.get('seed')} — {size_text}."
     )
+    if recorded and recorded != MEBEAUTY_REPO:
+        line += (
+            f" The runs were recorded under the previous id `{recorded}`,"
+            " which is the same dataset."
+        )
+    return line
 
 
 def readme_section(results: str | Path = "results") -> str:

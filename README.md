@@ -230,7 +230,7 @@ not redistributed by this repository.
 
 ### Held-out split
 
-`dr-irina-lebedeva/MEBeauty` config `fbp_extended`, label `beauty_score`, seed 0 — train 1,962 / val 250 / test 250.
+`dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction` config `fbp_extended`, label `beauty_score`, seed 0 — train 1,962 / val 250 / test 250. The runs were recorded under the previous id `dr-irina-lebedeva/MEBeauty`, which is the same dataset.
 
 | Method | Era | PC | SROCC | MAE | RMSE | Time |
 |---|---|---|---|---|---|---|
