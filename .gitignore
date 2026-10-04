@@ -25,7 +25,7 @@ hf-card/
 # Benchmark output. Results are committed deliberately, one at a time, not by
 # a bulk `git add` -- a results file records the commit that produced it, so
 # sweeping them in alongside code changes makes that record a lie.
-results/*.npz
+results/**/*.npz
 
 # Experiments and models
 outputs/
