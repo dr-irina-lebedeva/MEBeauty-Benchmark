@@ -41,6 +41,50 @@ def _hub_file(repo_id: str, filename: str, revision: str | None) -> str:
     return hf_hub_download(repo_id, filename, revision=revision)
 
 
+#: transformers 5.18 renamed DINOv2's attention submodules. A checkpoint saved
+#: before the rename cannot be loaded after it, and vice versa, so the two
+#: layouts are translated here rather than pinning every user to one version.
+#: Left is pre-5.18, right is 5.18+.
+_ATTENTION_RENAMES: tuple[tuple[str, str], ...] = (
+    ("attention.attention.query.", "attention.q_proj."),
+    ("attention.attention.key.", "attention.k_proj."),
+    ("attention.attention.value.", "attention.v_proj."),
+    ("attention.output.dense.", "attention.o_proj."),
+)
+
+
+def _rename(state: dict[str, Any], forward: bool) -> dict[str, Any]:
+    pairs = (
+        _ATTENTION_RENAMES
+        if forward
+        else tuple((new, old) for old, new in _ATTENTION_RENAMES)
+    )
+    renamed = {}
+    for key, value in state.items():
+        for src, dst in pairs:
+            if src in key:
+                key = key.replace(src, dst)
+                break
+        renamed[key] = value
+    return renamed
+
+
+def align_state(module: Any, state: dict[str, Any]) -> dict[str, Any]:
+    """Translate a module's state dict between DINOv2 attention layouts.
+
+    Returned unchanged when it already matches, so a method whose backbone is
+    not a transformers model is unaffected.
+    """
+    expected = set(module.state_dict())
+    if not expected - set(state):
+        return state
+    for forward in (True, False):
+        candidate = _rename(state, forward)
+        if not expected - set(candidate):
+            return candidate
+    return state
+
+
 def load_pretrained(
     name: str = "dinov2-partial",
     repo_id: str = DEFAULT_MODEL_REPO,
@@ -93,7 +137,7 @@ def load_pretrained(
             f"it has {sorted(state)}. Wrong method name, or a stale file."
         )
     for key, module in modules.items():
-        module.load_state_dict(state[key])
+        module.load_state_dict(align_state(module, state[key]))
         module.eval()
 
     method.pretrained_config = config

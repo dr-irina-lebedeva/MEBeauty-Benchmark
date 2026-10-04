@@ -101,3 +101,34 @@ def test_the_config_is_fetched_before_the_weights(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="stop before"):
         load_pretrained("dinov2-partial")
     assert asked[0] == "config.json", asked
+
+
+def test_align_state_translates_both_dinov2_attention_layouts():
+    """transformers 5.18 renamed these; checkpoints predate the rename."""
+    from fbp_benchmark.pretrained import align_state
+
+    class Fake:
+        def __init__(self, keys):
+            self._keys = keys
+
+        def state_dict(self):
+            return dict.fromkeys(self._keys, 0)
+
+    new_style = [
+        "model.encoder.layer.0.attention.q_proj.weight",
+        "model.encoder.layer.0.attention.o_proj.bias",
+    ]
+    old_style = [
+        "model.encoder.layer.0.attention.attention.query.weight",
+        "model.encoder.layer.0.attention.output.dense.bias",
+    ]
+    old_checkpoint = dict.fromkeys(old_style, 1)
+    assert set(align_state(Fake(new_style), old_checkpoint)) == set(new_style)
+
+    new_checkpoint = dict.fromkeys(new_style, 1)
+    assert set(align_state(Fake(old_style), new_checkpoint)) == set(old_style)
+
+    # Already aligned, and unrelated keys, are returned untouched.
+    assert align_state(Fake(new_style), new_checkpoint) is new_checkpoint
+    other = {"backbone.fc.weight": 1}
+    assert align_state(Fake(["backbone.fc.weight"]), other) is other

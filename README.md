@@ -35,11 +35,23 @@ while signed in, then log in with a token from
 ```bash
 git clone https://github.com/dr-irina-lebedeva/MEBeauty-Benchmark
 cd MEBeauty-Benchmark
-uv sync --all-extras                        # or: pip install -e ".[all]"
-hf auth login
+uv sync --all-extras
+uv run hf auth login
 
-fbp-benchmark run --method dinov2-partial   # train and evaluate one method
+uv run fbp-benchmark run --method dinov2-partial   # train and evaluate one method
 ```
+
+The `uv run` prefix is what puts the installed commands on your path. With pip
+instead, activate a virtual environment first and drop the prefix:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[all]"            # add [transfbp] too, inside this repo only
+```
+
+The first run downloads the dataset and a pretrained backbone (about 750 MB,
+cached afterwards) and trains for roughly 18 minutes on an Apple M-series
+laptop.
 
 ## Results
 
