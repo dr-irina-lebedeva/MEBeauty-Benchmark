@@ -28,5 +28,5 @@ The MEBeauty dataset is licensed separately and more restrictively: it is for
 non-commercial academic research on facial attractiveness assessment only, and
 explicitly not for face recognition, identification, verification, biometric
 matching, re-identification or surveillance. Redistribution of the images is
-not permitted. See https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty
+not permitted. See https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction
 for the terms you accept when requesting access.

@@ -66,7 +66,7 @@ all = [
 ]
 
 [project.urls]
-Dataset = "https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty"
+Dataset = "https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction"
 "Original dataset" = "https://github.com/fbplab/MEBeauty-database"
 Paper = "https://doi.org/10.1007/s00521-021-06535-0"
 

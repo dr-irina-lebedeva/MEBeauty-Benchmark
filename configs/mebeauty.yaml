@@ -2,9 +2,9 @@
 # uses these values with no --dataset flag.
 #
 # Access is gated with automatic approval: accept the terms once at
-# https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty then
-# `huggingface-cli login`.
-repo_id: dr-irina-lebedeva/MEBeauty
+# https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction then
+# `hf auth login`.
+repo_id: dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction
 config: fbp_extended
 image_column: image
 label_column: beauty_score

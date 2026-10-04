@@ -18,6 +18,10 @@ __pycache__/
 data/
 .cache/
 
+# Scratch copy of the published dataset card, pulled with `hf download` for
+# editing. The card lives in the dataset repository, not here.
+hf-card/
+
 # Benchmark output. Results are committed deliberately, one at a time, not by
 # a bulk `git add` -- a results file records the commit that produced it, so
 # sweeping them in alongside code changes makes that record a lie.
