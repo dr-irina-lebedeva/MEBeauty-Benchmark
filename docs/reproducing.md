@@ -90,7 +90,12 @@ A checkpoint stores each module's `state_dict` keyed by name (`backbone`,
 package's internals. Methods with no tensors — the classical regressors and
 the baseline — write nothing rather than an empty file.
 
-> Checkpoints are not published yet. The weights behind the published tables
-> were not retained: the sweep predated `--save-weights`, and re-running it to
-> produce them is ~5.5 hours of compute. Reproduce locally with the commands
-> above, or open an issue if hosted weights would help you.
+> **Published weights.** `dinov2-partial` is published as the reference model
+> at [dr-irina-lebedeva/MEBeauty-FBP-models](https://huggingface.co/dr-irina-lebedeva/MEBeauty-FBP-models),
+> with loading code in its model card. It was retrained with `--save-weights`
+> and reproduced the published metrics bit-exactly.
+>
+> The other methods' weights were not retained: that sweep predated
+> `--save-weights`, and re-running it is ~5.5 hours of compute. Reproduce
+> locally with the commands above, or open an issue if more hosted weights
+> would help you.

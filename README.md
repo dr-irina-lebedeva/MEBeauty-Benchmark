@@ -21,7 +21,7 @@ it.
 | | |
 |---|---|
 | **Dataset** | [huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction](https://huggingface.co/datasets/dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction) |
-| **Trained models** | [dr-irina-lebedeva/MEBeauty-FBP-models](https://huggingface.co/dr-irina-lebedeva/MEBeauty-FBP-models) — *coming soon* |
+| **Trained models** | [dr-irina-lebedeva/MEBeauty-FBP-models](https://huggingface.co/dr-irina-lebedeva/MEBeauty-FBP-models) — `dinov2-partial` reference weights |
 | **Original 2021 release** *(dataset + code, superseded)* | [github.com/fbplab/MEBeauty-database](https://github.com/fbplab/MEBeauty-database) |
 | **Paper** | [Neural Computing and Applications 34(17), 2022](https://doi.org/10.1007/s00521-021-06535-0) |
 
