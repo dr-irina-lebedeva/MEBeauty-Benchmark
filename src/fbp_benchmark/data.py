@@ -45,7 +45,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from PIL.Image import Image
 
 #: The dataset this benchmark was built for.
-MEBEAUTY_REPO = "dr-irina-lebedeva/MEBeauty"
+MEBEAUTY_REPO = "dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction"
 
 
 @dataclass(frozen=True)

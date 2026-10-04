@@ -14,7 +14,7 @@
     "Cosine": 0.8262,
     "Intersection": 0.7068
   },
-  "seconds": 206.4,
+  "seconds": 283.2,
   "dataset": "dr-irina-lebedeva/MEBeauty",
   "config": "fbp_extended",
   "label": "beauty_score",
@@ -31,8 +31,8 @@
     "test": 250
   },
   "environment": {
-    "timestamp": "2026-08-06T05:11:38+00:00",
-    "git_commit": "05780b64963e7d0ffd408f6892da802b18052114",
+    "timestamp": "2026-08-12T21:50:42+00:00",
+    "git_commit": "f2ee365f2f916ef3d27aaabe69055880753b06a2",
     "git_tree_dirty": false,
     "reproducible_from_commit": true,
     "python": "3.12.13",

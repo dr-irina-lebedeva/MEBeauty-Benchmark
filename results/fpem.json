@@ -2,13 +2,13 @@
   "method": "fpem",
   "era": "deep",
   "metrics": {
-    "PC": 0.7255,
-    "SROCC": 0.7151,
-    "MAE": 0.6251,
-    "RMSE": 0.7922,
+    "PC": 0.7262,
+    "SROCC": 0.7165,
+    "MAE": 0.6246,
+    "RMSE": 0.7913,
     "n": 250
   },
-  "seconds": 429.4,
+  "seconds": 463.3,
   "dataset": "dr-irina-lebedeva/MEBeauty",
   "config": "fbp_extended",
   "label": "beauty_score",
@@ -25,8 +25,8 @@
     "test": 250
   },
   "environment": {
-    "timestamp": "2026-08-05T23:45:56+00:00",
-    "git_commit": "72e6b0877c0db9e9b5bd6710db62c4441be0f83f",
+    "timestamp": "2026-08-12T20:48:25+00:00",
+    "git_commit": "f2ee365f2f916ef3d27aaabe69055880753b06a2",
     "git_tree_dirty": false,
     "reproducible_from_commit": true,
     "python": "3.12.13",

@@ -1,6 +1,6 @@
 # Same dataset, richer config: adds gender and ethnicity so results can be
 # broken down by subgroup, and the uncropped image alongside the aligned crop.
-repo_id: dr-irina-lebedeva/MEBeauty
+repo_id: dr-irina-lebedeva/MEBeauty-Facial-Beauty-Prediction
 config: fbp_extended
 label_column: beauty_score
 distribution_column: rating_distribution

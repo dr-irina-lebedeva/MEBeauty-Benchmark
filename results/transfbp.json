@@ -1,14 +1,14 @@
 {
-  "method": "cnn-resnet18",
+  "method": "transfbp",
   "era": "deep",
   "metrics": {
-    "PC": 0.4065,
-    "SROCC": 0.4817,
-    "MAE": 0.8336,
-    "RMSE": 1.0609,
+    "PC": 0.8136,
+    "SROCC": 0.8203,
+    "MAE": 0.5162,
+    "RMSE": 0.6742,
     "n": 250
   },
-  "seconds": 206.1,
+  "seconds": 15.7,
   "dataset": "dr-irina-lebedeva/MEBeauty",
   "config": "fbp_extended",
   "label": "beauty_score",
@@ -25,7 +25,7 @@
     "test": 250
   },
   "environment": {
-    "timestamp": "2026-08-12T19:36:13+00:00",
+    "timestamp": "2026-08-12T21:51:01+00:00",
     "git_commit": "f2ee365f2f916ef3d27aaabe69055880753b06a2",
     "git_tree_dirty": false,
     "reproducible_from_commit": true,

@@ -1,31 +1,31 @@
 {
-  "method": "cnn-resnet18",
-  "era": "deep",
+  "method": "xattn-vit",
+  "era": "foundation",
   "metrics": {
-    "PC": 0.4065,
-    "SROCC": 0.4817,
-    "MAE": 0.8336,
-    "RMSE": 1.0609,
-    "n": 250
+    "PC": 0.7867,
+    "SROCC": 0.8065,
+    "MAE": 0.5351,
+    "RMSE": 0.7286,
+    "n": 495
   },
-  "seconds": 206.1,
+  "seconds": 3178.5,
   "dataset": "dr-irina-lebedeva/MEBeauty",
   "config": "fbp_extended",
   "label": "beauty_score",
-  "protocol": "holdout",
-  "fold": null,
+  "protocol": "cv",
+  "fold": 1,
   "seed": 0,
   "score_range": [
     1.0,
     10.0
   ],
   "sizes": {
-    "train": 1962,
-    "val": 250,
-    "test": 250
+    "train": 1475,
+    "val": 492,
+    "test": 495
   },
   "environment": {
-    "timestamp": "2026-08-12T19:36:13+00:00",
+    "timestamp": "2026-08-13T21:06:29+00:00",
     "git_commit": "f2ee365f2f916ef3d27aaabe69055880753b06a2",
     "git_tree_dirty": false,
     "reproducible_from_commit": true,
