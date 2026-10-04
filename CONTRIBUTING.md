@@ -41,8 +41,10 @@ These exist because each one has already gone wrong here:
 - **Do not remove the leak check.** Every method is run twice with the test
   labels shuffled. It is the one guard against the mistake that invalidates a
   whole results table.
-- **Do not hand-edit the README results.** They are generated —
-  `make results` — and CI fails if they drift from `results/`.
+- **Do not hand-edit the generated tables.** The results blocks in
+  `README.md` and `docs/results.md`, and the catalogue in `docs/methods.md`,
+  are generated — `make results` — and CI fails if they drift from `results/`
+  or the registry.
 - **Do not add dataset preparation code.** The dataset is consumed from the
   Hub as published.
 

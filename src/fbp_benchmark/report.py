@@ -1,8 +1,9 @@
-"""Turn a results directory into tables, and keep the README's copy honest.
+"""Turn a results directory into tables, and keep their copies honest.
 
-The README's results are **generated**, never hand-edited, and CI fails if they
-drift from `results/`. A leaderboard typed by hand is a leaderboard that
-quietly stops matching the code that produced it.
+Three blocks are generated, never hand-edited, and CI fails if any drifts: the
+condensed summary in `README.md`, the full tables in `docs/results.md`, and the
+method catalogue in `docs/methods.md`. A leaderboard typed by hand is a
+leaderboard that quietly stops matching the code that produced it.
 """
 
 from __future__ import annotations
@@ -153,7 +154,10 @@ def provenance(runs: list[Run]) -> str:
 
 
 def readme_section(results: str | Path = "results") -> str:
-    """The generated block that lives between the README markers."""
+    """The full results block: every method, both protocols.
+
+    Lives in `docs/results.md`. The README carries `summary_section` instead.
+    """
     results = Path(results)
     runs = load_runs(results)
     folds = load_folds(results / "cv")
@@ -185,25 +189,65 @@ def readme_section(results: str | Path = "results") -> str:
     return "\n".join(parts).strip() + "\n"
 
 
-def update_readme(
-    path: str | Path = "README.md", results: str | Path = "results"
-) -> bool:
-    """Rewrite the README's results block. True if the file changed."""
-    path = Path(path)
+def summary_section(results: str | Path = "results") -> str:
+    """The condensed block for the README: the CV table and nothing else.
+
+    Cross-validation is the protocol the benchmark asks readers to cite, so it
+    is the one table worth putting in front of them. The held-out split, every
+    method and the provenance line live in `docs/results.md`.
+    """
+    folds = load_folds(Path(results) / "cv")
+    if not folds:
+        return "_No cross-validation results yet._\n"
+    n_folds = max(len(v) for v in folds.values())
+    return (
+        "\n".join(
+            [
+                (
+                    f"**{n_folds}-fold cross-validation** — every image tested "
+                    "exactly once, and the numbers to cite."
+                ),
+                "",
+                fold_summary(folds),
+                "",
+                (
+                    "For the held-out split, all twenty-one methods and the run "
+                    "provenance, see [docs/results.md](docs/results.md)."
+                ),
+            ]
+        ).strip()
+        + "\n"
+    )
+
+
+def replace_block(path: Path, start: str, end: str, body: str) -> bool:
+    """Swap whatever sits between two markers. True if the file changed."""
     text = path.read_text(encoding="utf-8")
-    if START not in text or END not in text:
+    if start not in text or end not in text:
         raise ValueError(
-            f"{path} has no results markers. Add:\n{START}\n{END}\n"
+            f"{path} has no {start} / {end} markers. Add:\n{start}\n{end}\n"
             "so this module knows what it may replace."
         )
-    block = f"{START}\n\n{readme_section(results)}\n{END}"
+    block = f"{start}\n\n{body}\n{end}"
     updated = re.sub(
-        re.escape(START) + r".*?" + re.escape(END), block, text, flags=re.DOTALL
+        re.escape(start) + r".*?" + re.escape(end), block, text, flags=re.DOTALL
     )
     if updated == text:
         return False
     path.write_text(updated, encoding="utf-8")
     return True
+
+
+def update_readme(
+    path: str | Path = "README.md", results: str | Path = "results"
+) -> bool:
+    """Rewrite the README's condensed results block."""
+    return replace_block(Path(path), START, END, summary_section(results))
+
+
+def update_results_doc(path: str | Path, results: str | Path = "results") -> bool:
+    """Rewrite the full results tables in `docs/results.md`."""
+    return replace_block(Path(path), START, END, readme_section(results))
 
 
 def build_table(directory: str | Path) -> str:
@@ -258,23 +302,6 @@ def methods_section() -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-def _replace_block(text: str, start: str, end: str, body: str) -> str:
-    return re.sub(
-        re.escape(start) + r".*?" + re.escape(end),
-        f"{start}\n\n{body}\n{end}",
-        text,
-        flags=re.DOTALL,
-    )
-
-
-def update_methods(path: str | Path = "README.md") -> bool:
-    """Rewrite the README's method catalogue. True if the file changed."""
-    path = Path(path)
-    text = path.read_text(encoding="utf-8")
-    if METHODS_START not in text or METHODS_END not in text:
-        raise ValueError(f"{path} has no method markers ({METHODS_START})")
-    updated = _replace_block(text, METHODS_START, METHODS_END, methods_section())
-    if updated == text:
-        return False
-    path.write_text(updated, encoding="utf-8")
-    return True
+def update_methods(path: str | Path) -> bool:
+    """Rewrite the method catalogue in `docs/methods.md`."""
+    return replace_block(Path(path), METHODS_START, METHODS_END, methods_section())

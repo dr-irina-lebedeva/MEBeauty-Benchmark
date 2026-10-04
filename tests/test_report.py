@@ -94,8 +94,27 @@ def test_readme_without_markers_refuses_to_guess(tmp_path):
     write(tmp_path, "a")
     readme = tmp_path / "README.md"
     readme.write_text("no markers here")
-    with pytest.raises(ValueError, match="no results markers"):
+    with pytest.raises(ValueError, match="markers"):
         report.update_readme(readme, tmp_path)
+
+
+def test_summary_section_is_cross_validation_only(tmp_path):
+    """The README carries the CV table; everything else lives in docs/."""
+    write(tmp_path, "held", pc=0.8)
+    write(tmp_path / "cv" / "fold0", "folded", pc=0.7)
+    summary = report.summary_section(tmp_path)
+
+    assert "cross-validation" in summary and "`folded`" in summary
+    # No held-out table, no provenance line -- those are docs/results.md's job.
+    assert "`held`" not in summary
+    assert "Held-out" not in summary
+    assert "seed 0" not in summary
+    assert "docs/results.md" in summary, "must point at the full tables"
+
+
+def test_summary_section_without_folds_says_so(tmp_path):
+    write(tmp_path, "held", pc=0.8)
+    assert "No cross-validation" in report.summary_section(tmp_path)
 
 
 def test_empty_results_render_a_notice_rather_than_an_empty_table(tmp_path):

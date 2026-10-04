@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -66,13 +67,41 @@ def test_check_readme_passes_after_updating(tmp_path):
         json.dumps({"method": "m", "era": "deep", "metrics": {"PC": 0.5}, "seconds": 1})
     )
     readme = tmp_path / "README.md"
-    readme.write_text(
-        "<!-- RESULTS:START -->\n<!-- RESULTS:END -->\n"
-        "<!-- METHODS:START -->\n<!-- METHODS:END -->\n"
-    )
+    readme.write_text("<!-- RESULTS:START -->\n<!-- RESULTS:END -->\n")
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "results.md").write_text("<!-- RESULTS:START -->\n<!-- RESULTS:END -->\n")
+    (docs / "methods.md").write_text("<!-- METHODS:START -->\n<!-- METHODS:END -->\n")
+
     args = ["report", "--out", str(tmp_path), "--readme", str(readme)]
     assert cli.main([*args, "--update-readme"]) == 0
     assert cli.main([*args, "--check-readme"]) == 0
+
+
+def test_update_never_writes_outside_the_given_readme_directory(tmp_path):
+    """A scratch --readme must not touch the repository's own docs/."""
+    (tmp_path / "m.json").write_text(
+        json.dumps({"method": "m", "era": "deep", "metrics": {"PC": 0.5}, "seconds": 1})
+    )
+    readme = tmp_path / "README.md"
+    readme.write_text("<!-- RESULTS:START -->\n<!-- RESULTS:END -->\n")
+    before = Path("docs/results.md").read_text(encoding="utf-8")
+
+    assert (
+        cli.main(
+            [
+                "report",
+                "--out",
+                str(tmp_path),
+                "--readme",
+                str(readme),
+                "--update-readme",
+            ]
+        )
+        == 0
+    )
+    assert Path("docs/results.md").read_text(encoding="utf-8") == before
+    assert not (tmp_path / "docs").exists(), "missing targets are skipped, not created"
 
 
 def test_a_command_is_required():
