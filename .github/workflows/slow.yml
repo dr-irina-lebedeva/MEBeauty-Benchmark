@@ -14,7 +14,14 @@ permissions:
 
 jobs:
   end-to-end:
-    runs-on: ubuntu-latest
+    # The scheduled run needs HF_TOKEN, which a fork does not have, so it
+    # would fail weekly in every fork. Manual runs are always allowed.
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.repository == 'dr-irina-lebedeva/MEBeauty-Benchmark'
+    # Pinned rather than ubuntu-latest: that label migrates to Ubuntu 26 from
+    # 19 October 2026, and this job should not change underneath a result.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
