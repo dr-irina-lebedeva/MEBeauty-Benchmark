@@ -18,9 +18,10 @@ __pycache__/
 data/
 .cache/
 
-# Scratch copy of the published dataset card, pulled with `hf download` for
-# editing. The card lives in the dataset repository, not here.
+# Scratch copies of the published Hub cards, pulled with `hf download` for
+# editing. They live in the dataset and model repositories, not here.
 hf-card/
+hf-model-card/
 
 # Benchmark output. Results are committed deliberately, one at a time, not by
 # a bulk `git add` -- a results file records the commit that produced it, so
