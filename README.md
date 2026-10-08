@@ -1,6 +1,8 @@
 # FBP-Benchmark — Facial Beauty Prediction on MEBeauty
 
-![MEBeauty overview: the dataset, the benchmark and the reference model](docs/figures/overview.png)
+<p align="center">
+  <img src="docs/figures/overview.png" alt="MEBeauty overview" width="420">
+</p>
 
 <sub>Faces in this banner are AI-generated illustrations. No images from the
 dataset are shown publicly.</sub>
