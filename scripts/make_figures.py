@@ -87,35 +87,93 @@ def dataset_figure() -> None:
     print("wrote", OUT / "dataset.png")
 
 
+def _load(path: Path) -> dict | None:
+    payload = json.loads(path.read_text())
+    if "metrics" in payload and "PC" in payload["metrics"]:
+        return payload
+    return None
+
+
+def collect(results: Path = Path("results")) -> list[dict]:
+    """One entry per method, cross-validated where those runs exist.
+
+    Cross-validation is the protocol the benchmark asks readers to cite, so the
+    figure uses it wherever it is available and falls back to the held-out
+    split only for methods that were never run under CV. Mixing them silently
+    would be dishonest, so each entry records which protocol produced it.
+    """
+    holdout = {
+        r["method"]: r for p in sorted(results.glob("*.json")) if (r := _load(p))
+    }
+
+    folds: dict[str, list[dict]] = {}
+    for fold_dir in sorted((results / "cv").glob("fold*")):
+        for path in sorted(fold_dir.glob("*.json")):
+            if run := _load(path):
+                folds.setdefault(run["method"], []).append(run)
+
+    entries = []
+    for method, run in holdout.items():
+        if method in folds:
+            values = [f["metrics"]["PC"] for f in folds[method]]
+            entries.append(
+                {
+                    "method": method,
+                    "era": run.get("era"),
+                    "pc": float(np.mean(values)),
+                    "sd": float(np.std(values)),
+                    "protocol": "cv",
+                }
+            )
+        else:
+            entries.append(
+                {
+                    "method": method,
+                    "era": run.get("era"),
+                    "pc": run["metrics"]["PC"],
+                    "sd": 0.0,
+                    "protocol": "holdout",
+                }
+            )
+    entries.sort(key=lambda e: e["pc"])
+    return entries
+
+
 def results_figure(results: Path = Path("results")) -> None:
-    runs = []
-    for path in sorted(results.glob("*.json")):
-        payload = json.loads(path.read_text())
-        if "metrics" in payload and "PC" in payload["metrics"]:
-            runs.append(payload)
-    if not runs:
+    entries = collect(results)
+    if not entries:
         print("no results to plot")
         return
-    runs.sort(key=lambda r: r["metrics"]["PC"])
 
-    fig, ax = plt.subplots(figsize=(8, 0.32 * len(runs) + 1.4))
+    fig, ax = plt.subplots(figsize=(8, 0.32 * len(entries) + 1.6))
+    labels = [
+        e["method"] if e["protocol"] == "cv" else f"{e['method']} *" for e in entries
+    ]
     ax.barh(
-        [r["method"] for r in runs],
-        [r["metrics"]["PC"] for r in runs],
-        color=[ERA_COLOUR.get(r.get("era"), "#4a7fb5") for r in runs],
+        labels,
+        [e["pc"] for e in entries],
+        color=[ERA_COLOUR.get(e["era"], "#4a7fb5") for e in entries],
+        # A single held-out run has no spread; NaN draws no error bar at all.
+        xerr=[e["sd"] if e["protocol"] == "cv" else np.nan for e in entries],
+        error_kw={"ecolor": INK, "elinewidth": 0.9, "capsize": 2.5, "alpha": 0.55},
     )
     # The label is noisy, so perfect prediction does not reach 1.0.
     ax.axvline(0.898, color="#c1121f", linestyle="--", linewidth=1)
     ax.text(
         0.898,
-        len(runs) - 0.4,
+        len(entries) - 0.4,
         " reliability ceiling ≈ 0.90",
         color="#c1121f",
         fontsize=8,
         va="top",
         ha="left",
     )
-    ax.set_xlabel("Pearson correlation with beauty_score (held-out split)")
+    cv_count = sum(e["protocol"] == "cv" for e in entries)
+    ax.set_xlabel(
+        "Pearson correlation with beauty_score\n"
+        f"5-fold cross-validation, mean ± sd ({cv_count} methods); "
+        "* held-out split, single run"
+    )
     ax.set_xlim(0, 1.0)
     style(ax)
     handles = [
@@ -125,7 +183,7 @@ def results_figure(results: Path = Path("results")) -> None:
     fig.tight_layout()
     fig.savefig(OUT / "results.png", dpi=160, bbox_inches="tight")
     plt.close(fig)
-    print("wrote", OUT / "results.png")
+    print("wrote", OUT / "results.png", f"({len(entries)} methods, {cv_count} with CV)")
 
 
 if __name__ == "__main__":
